@@ -24,6 +24,11 @@ class HttpClient implements IHttpClient {
 			'timeout' => $options['timeout'] ?? 30,
 		);
 
+		// Pass through redirection option if provided
+		if ( isset( $options['redirection'] ) ) {
+			$args['redirection'] = $options['redirection'];
+		}
+
 		$response = wp_remote_get( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
