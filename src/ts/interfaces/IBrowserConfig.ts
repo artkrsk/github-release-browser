@@ -1,4 +1,4 @@
-import { ISelectedAsset } from './IGitHub'
+import { ISelectedAsset } from './ISelectedAsset'
 
 export interface IBrowserConfig {
   apiUrl: string
@@ -6,9 +6,9 @@ export interface IBrowserConfig {
   actionPrefix: string
   protocol?: string
   onSelectAsset: (asset: ISelectedAsset) => void
-  features?: { useLatestRelease?: boolean; [key: string]: boolean }
+  features?: { useLatestRelease?: boolean; [key: string]: any }
   upgradeUrl?: string
-  strings?: Record<string, string>
+  strings?: { [key: string]: string }
   textDomain?: string
   assetsUrl?: string
   cachePrefix?: string

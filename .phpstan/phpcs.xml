@@ -1,0 +1,45 @@
+<?xml version="1.0"?>
+<ruleset name="Release Deploy EDD Lite">
+	<description>Arts GitHub Release Browser</description>
+
+	<!-- Files to check -->
+	<file>../src/php</file>
+
+	<!-- Exclude patterns -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/libraries/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+
+	<!-- Use WordPress Core standards (most important security/compatibility checks) -->
+	<rule ref="WordPress-Core">
+		<!-- Modern PHP: Allow short array syntax -->
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+		<!-- Allow modern file naming (GitHub.php vs class-github.php) -->
+		<exclude name="WordPress.Files.FileName"/>
+		<!-- Skip Yoda conditions (readability preference) -->
+		<exclude name="WordPress.PHP.YodaConditions"/>
+	</rule>
+
+	<rule ref="WordPress-Docs">
+		<!-- Skip file-level docblocks -->
+		<exclude name="Squiz.Commenting.FileComment"/>
+		<!-- Skip strict comment punctuation -->
+		<exclude name="Squiz.Commenting.InlineComment.InvalidEndChar"/>
+		<exclude name="Squiz.Commenting.FunctionComment.ParamCommentFullStop"/>
+		<!-- Skip property docblocks (type hints provide sufficient documentation) -->
+		<exclude name="Squiz.Commenting.VariableComment"/>
+		<!-- Allow docblocks without description text -->
+		<exclude name="Generic.Commenting.DocComment.MissingShort"/>
+	</rule>
+
+	<!-- Minimum PHP version -->
+	<config name="minimum_supported_wp_version" value="6.0"/>
+	<config name="testVersion" value="7.4-"/>
+
+	<!-- Show progress -->
+	<arg value="ps"/>
+	<arg name="colors"/>
+	<arg name="extensions" value="php"/>
+	<arg name="parallel" value="8"/>
+</ruleset>
+

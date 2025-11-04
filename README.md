@@ -25,8 +25,9 @@ use Arts\GH\ReleaseBrowser\Browser;
 
 $browser = new Browser([
     'cache_prefix' => 'my_app_',
-    'token_key' => 'github_token',
-    'protocol' => 'my-app://'
+    'github_token' => 'your_actual_github_token_here',  // Your GitHub personal access token
+    'protocol' => 'my-app://',
+    'action_prefix' => 'my_app',  // Optional: default is 'github_release_browser'
 ]);
 
 // Register modal integration for WordPress media library

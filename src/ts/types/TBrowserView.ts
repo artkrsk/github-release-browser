@@ -1,1 +1,1 @@
-export type TBrowserView = 'repos' | 'assets' | 'loading' | 'error'
+export type TBrowserView = 'repos' | 'assets'

@@ -31,14 +31,21 @@ export default {
       'react-dom': 'ReactDOM',
       '@wordpress/element': 'wp.element',
       '@wordpress/components': 'wp.components',
-      '@wordpress/i18n': 'wp.i18n'
+      '@wordpress/i18n': 'wp.i18n',
+      '@wordpress/api-fetch': 'wp.apiFetch'
     },
+    globals: {},
+    cleanOutputDir: true,
     umd: {
       name: 'ArtsGitHubReleaseBrowser',
-      exports: 'named'
+      exports: 'named',
+      globals: {}
     },
+    // Output filenames by format
     output: {
-      iife: 'index.js'
+      cjs: 'index.cjs',
+      esm: 'index.mjs',
+      iife: 'index.iife.js'
     }
   },
 

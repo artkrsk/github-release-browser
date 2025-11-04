@@ -1,0 +1,6 @@
+#!/usr/bin/env sh
+echo "Running tests..."
+npm test || exit 1
+
+echo "Running PHPStan analysis..."
+composer phpstan || exit 1

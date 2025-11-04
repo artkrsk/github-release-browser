@@ -8,31 +8,30 @@ const __dirname = dirname(__filename)
 export default defineConfig({
   test: {
     environment: 'jsdom',
-
-    // Setup files (equivalent to setupFilesAfterEnv in Jest)
-    setupFiles: ['__tests__/ts/setup.ts'],
-
-    // Module resolution
-    resolve: {
-      alias: {
-        '@interfaces': resolve(__dirname, 'src/ts/core/interfaces'),
-        '@types': resolve(__dirname, 'src/ts/core/types'),
-        '@constants': resolve(__dirname, 'src/ts/core/constants')
-      }
-    },
+    setupFiles: ['tests/setup.ts'],
+    globals: true,
 
     // Coverage configuration
     coverage: {
-      include: ['src/ts/**/*.ts'],
+      include: ['src/ts/**/*.{ts,tsx}'],
       exclude: [
-        'src/ts/**/*.cy.ts',
         'src/ts/**/interfaces/*.ts',
         'src/ts/**/types/*.ts',
         'src/ts/**/constants/*.ts',
-        'src/ts/www/**/*',
+        'src/ts/index.ts',
         'node_modules/',
         '**/*.d.ts'
       ]
+    }
+  },
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src/ts'),
+      '@interfaces': resolve(__dirname, 'src/ts/core/interfaces'),
+      '@types': resolve(__dirname, 'src/core/types'),
+      '@constants': resolve(__dirname, 'src/ts/core/constants'),
+      '@/test-utils': resolve(__dirname, 'tests/test-utils'),
+      '@test-utils': resolve(__dirname, 'tests/test-utils')
     }
   }
 })

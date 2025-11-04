@@ -589,7 +589,7 @@ class GitHubAPI extends Service {
 `src/ts/admin-init-core.ts`:
 
 ```typescript
-import { BrowserApp } from '@arts/github-release-browser'
+import { BrowserApp } from '@arts/github-release-browser'w
 
 render(
   <BrowserApp 

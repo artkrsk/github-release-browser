@@ -1,0 +1,62 @@
+// Base styles - variables, icons, and utilities
+
+// ====================================
+// CSS Custom Properties
+// ====================================
+\:root
+	// Theme Colors
+	--gh-rb-accent: var(--wp-admin-theme-color, #3858e9)
+	--gh-rb-accent-bg: rgba(56, 88, 233, 0.05)
+
+	// Status Colors
+	--gh-rb-success: #007017
+	--gh-rb-success-icon: #68de7c
+	--gh-rb-warning: #996800
+	--gh-rb-error: #d63638
+
+	// Text Colors
+	--gh-rb-text-primary: #1d2327
+	--gh-rb-text-muted: #646970
+
+	// Borders & Backgrounds
+	--gh-rb-border-divider: #dcdcde
+	--gh-rb-bg-section: #f6f7f7
+	--gh-rb-bg-white: #fff
+
+	// Pro Features
+	--gh-rb-pro-accent: #7c3aed
+
+	// Shadows & Effects
+	--gh-rb-shadow-card-hover: rgba(0, 0, 0, 0.1) 0px 0px 0px 1px
+
+	// Layout & Spacing
+	--gh-rb-radius-small: 2px
+	--gh-rb-radius-medium: 4px
+	--gh-rb-radius-large: 7px
+	--gh-rb-transition-fast: 0.1s ease
+	--gh-rb-transition-normal: 0.2s ease
+
+	// Typography
+	--gh-rb-font-size-helper: 12px
+	--gh-rb-font-size-normal: 13px
+	--gh-rb-font-size-large: 14px
+	--gh-rb-font-size-heading: 18px
+
+// ====================================
+// Icons
+// ====================================
+.github-release-browser-icon
+	display: inline-block
+	margin-right: 4px
+	font-style: normal
+	font-weight: normal
+	line-height: 1
+
+	&::before
+		display: inline-block
+
+	&_error::before
+		content: '×'
+
+	&_back::before
+		content: '←'

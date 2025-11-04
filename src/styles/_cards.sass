@@ -1,0 +1,151 @@
+// Card Component Styles
+
+.github-release-browser-card
+  margin-bottom: 10px
+  background-color: transparent
+  cursor: pointer
+  box-shadow: var(--gh-rb-shadow-card-hover)
+  border-radius: var(--gh-rb-radius-large)
+  outline: none
+  transition: box-shadow var(--gh-rb-transition-normal), background-color var(--gh-rb-transition-normal)
+
+  &:hover:not(&_selected)
+    box-shadow: var(--gh-rb-border-divider) 0px 0px 0px 1px
+
+  &_selected
+    box-shadow: var(--gh-rb-accent) 0px 0px 0px 1px
+    background-color: var(--gh-rb-accent-bg)
+
+  &__body
+    padding: 12px 16px
+
+  &__content
+    display: flex
+    justify-content: space-between
+    align-items: center
+
+  &__info
+    flex: 1
+
+  &__title
+    font-weight: 600
+    margin-bottom: 4px
+    font-size: var(--gh-rb-font-size-large)
+
+  &__star-title
+    font-size: var(--gh-rb-font-size-large)
+    display: inline-flex
+    align-items: center
+    gap: 0.2em
+    strong
+      font-size: var(--gh-rb-font-size-large)
+    .dashicons
+      width: 1em
+      height: 1em
+      font-size: 1em
+      color: goldenrod
+
+  &__subtitle
+    font-weight: 400
+    color: var(--gh-rb-text-muted)
+
+  &__meta
+    font-size: var(--gh-rb-font-size-helper)
+    color: var(--gh-rb-text-muted)
+    margin: 5px 0 0 0
+
+  &__check
+    display: inline-flex
+    align-items: center
+    justify-content: center
+    color: var(--gh-rb-accent)
+
+  &__dots
+    display: inline-flex
+    align-items: center
+    justify-content: center
+  .dashicons
+    width: 1rem
+    height: 1rem
+    font-size: 1rem
+  .dashicons-yes
+    width: 1.5rem
+    height: 1.5rem
+    font-size: 1.5rem
+
+// Asset-specific card styles
+.github-release-browser-asset-card
+  @extend .github-release-browser-card
+  background-color: var(--gh-rb-bg-white)
+  box-shadow: none
+  transition: box-shadow var(--gh-rb-transition-normal), background-color var(--gh-rb-transition-normal), opacity var(--gh-rb-transition-normal)
+  opacity: 1
+
+  &:hover:not(.github-release-browser-card_selected)
+    box-shadow: var(--gh-rb-accent) 0px 0px 0px 1px
+
+  &.github-release-browser-card_selected
+    box-shadow: var(--gh-rb-accent) 0px 0px 0px 1px
+    background-color: var(--gh-rb-accent-bg)
+
+  .github-release-browser-card__content
+    flex-direction: row
+
+// Release-specific card styles
+.github-release-browser-release-card
+  @extend .github-release-browser-card
+  margin-top: 1rem
+  margin-bottom: 1em
+  transition: box-shadow var(--gh-rb-transition-normal), background-color var(--gh-rb-transition-normal)
+
+  &:hover:not(.github-release-browser-card_selected)
+    box-shadow: var(--gh-rb-accent) 0px 0px 0px 1px
+
+  &_latest
+    .github-release-browser-card__title
+      strong
+        font-size: var(--gh-rb-font-size-large)
+
+  &_pro
+    cursor: pointer
+
+    &:hover
+      box-shadow: var(--gh-rb-accent) 0px 0px 0px 1px
+
+    .github-release-browser-card__star-title
+      opacity: 0.85
+
+// Repository panel titles
+.github-release-browser-repo-panel
+  .components-panel__body-title
+    &_selected::before
+      content: "✓ "
+
+    &_private::after
+      content: " ○"
+
+.github-release-browser-repo-panel__loading
+  padding: 10px
+  text-align: center
+
+// ====================================
+// Release List Component
+// ====================================
+.github-release-browser-release-list
+  &__heading
+    margin-top: 20px
+    margin-bottom: 10px
+
+  &__empty
+    color: var(--gh-rb-text-muted)
+
+// ====================================
+// Asset List Component
+// ====================================
+.github-release-browser-asset-list
+  &__heading
+    margin-top: 0
+    margin-bottom: 15px
+
+  &__empty
+    color: var(--gh-rb-text-muted)

@@ -5,10 +5,17 @@ namespace Arts\GH\ReleaseBrowser\Includes;
  * Frontend class for handling asset enqueuing
  */
 class Frontend {
-	private string $assets_url;
-	private array $config;
-	private static bool $enqueued = false;
+	private $assets_url;
+	private $config;
 
+	/** Prevents duplicate enqueuing across multiple instances */
+	private static $enqueued = false;
+
+	/**
+	 * Constructor
+	 *
+	 * @param array $config Configuration array.
+	 */
 	public function __construct( array $config ) {
 		$this->config = $config;
 
@@ -21,6 +28,9 @@ class Frontend {
 		}
 	}
 
+	/**
+	 * Initialize frontend hooks
+	 */
 	public function init(): void {
 		if ( self::$enqueued ) {
 			return;
@@ -30,6 +40,9 @@ class Frontend {
 		self::$enqueued = true;
 	}
 
+	/**
+	 * Enqueue frontend scripts and styles
+	 */
 	public function enqueue_scripts(): void {
 		static $enqueued = false;
 
@@ -59,12 +72,13 @@ class Frontend {
 		$js_config = array(
 			'apiUrl'       => admin_url( 'admin-ajax.php' ),
 			'nonce'        => wp_create_nonce( $this->config['action_prefix'] . '_nonce' ),
-			'actionPrefix'  => $this->config['action_prefix'] ?? 'github_release_browser',
+			'actionPrefix' => $this->config['action_prefix'] ?? 'github_release_browser',
 			'protocol'     => $this->config['protocol'] ?? 'github-release://',
 			'features'     => $this->config['features'] ?? array(),
 			'upgradeUrl'   => $this->config['upgrade_url'] ?? '',
 			'strings'      => $this->config['strings'] ?? array(),
 			'textDomain'   => $this->config['text_domain'] ?? 'github-release-browser',
+			'settingsUrl'  => $this->config['settings_url'] ?? admin_url( 'options-general.php' ),
 		);
 
 		// Pass configuration to JavaScript
