@@ -8,7 +8,7 @@
 .gitattributes export-ignore
 .gitmodules export-ignore
 node_modules export-ignore
-dist export-ignore
+# dist export-ignore # Removed - needed for npm packages
 vendor export-ignore
 __build__ export-ignore
 __assets__ export-ignore
