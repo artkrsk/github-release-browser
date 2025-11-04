@@ -332,8 +332,26 @@ class Browser {
 		}
 
 		try {
-			$download_url = $this->asset_resolver->get_download_url( array( 'browser_download_url' => $asset_url ) );
-			wp_send_json_success( array( 'download_url' => $download_url ) );
+			// Make a request to the GitHub asset URL to follow the redirect to S3
+			$token   = $this->config['github_token'] ?? '';
+			$headers = array( 'Accept' => 'application/octet-stream' );
+
+			if ( $token ) {
+				$headers['Authorization'] = "Bearer {$token}";
+			}
+
+			// Use HttpClient directly to follow redirect
+			$http_client = new \Arts\GH\ReleaseBrowser\Adapters\WordPress\HttpClient();
+			$response    = $http_client->get( $asset_url, $headers, array( 'redirection' => 0 ) );
+
+			// GitHub returns 302 redirect to S3
+			if ( $response->status_code === 302 && isset( $response->headers['location'] ) ) {
+				$download_url = $response->headers['location'];
+				wp_send_json_success( array( 'download_url' => $download_url ) );
+			} else {
+				// Fallback to the original URL if redirect fails
+				wp_send_json_success( array( 'download_url' => $asset_url ) );
+			}
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
