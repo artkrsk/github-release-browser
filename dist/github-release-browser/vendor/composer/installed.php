@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'arts/github-release-browser',
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
-        'reference' => 'fdbb3c2566e5e6216c487dcd909a9ffc3f7bdb66',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '804d19c3a79aa5988c8e65c2df26cff785c0e5b2',
         'type' => 'library',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'arts/github-release-browser' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => 'fdbb3c2566e5e6216c487dcd909a9ffc3f7bdb66',
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '804d19c3a79aa5988c8e65c2df26cff785c0e5b2',
             'type' => 'library',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),
@@ -58,7 +58,7 @@
         'phpstan/phpstan' => array(
             'pretty_version' => '2.1.x-dev',
             'version' => '2.1.9999999.9999999-dev',
-            'reference' => '68e49d36b6f669729637017daf11a2b9cad3a3f6',
+            'reference' => '47fcb45acfee555ebd898a8407ce70841b7edcaf',
             'type' => 'library',
             'install_path' => __DIR__ . '/../phpstan/phpstan',
             'aliases' => array(),
@@ -67,7 +67,7 @@
         'squizlabs/php_codesniffer' => array(
             'pretty_version' => '3.x-dev',
             'version' => '3.9999999.9999999.9999999-dev',
-            'reference' => 'e163dbfca3f39123d62f3830737eda39d6cda0c3',
+            'reference' => 'c3a24901efd473aa0c1a90cdc727da1d8c0b5b05',
             'type' => 'library',
             'install_path' => __DIR__ . '/../squizlabs/php_codesniffer',
             'aliases' => array(),

@@ -340,8 +340,8 @@
             "version_normalized": "2.1.9999999.9999999-dev",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/68e49d36b6f669729637017daf11a2b9cad3a3f6",
-                "reference": "68e49d36b6f669729637017daf11a2b9cad3a3f6",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/47fcb45acfee555ebd898a8407ce70841b7edcaf",
+                "reference": "47fcb45acfee555ebd898a8407ce70841b7edcaf",
                 "shasum": ""
             },
             "require": {
@@ -350,7 +350,7 @@
             "conflict": {
                 "phpstan/phpstan-shim": "*"
             },
-            "time": "2025-11-04T08:19:54+00:00",
+            "time": "2025-11-04T08:47:17+00:00",
             "default-branch": true,
             "bin": [
                 "phpstan",
@@ -398,12 +398,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCSStandards/PHP_CodeSniffer.git",
-                "reference": "e163dbfca3f39123d62f3830737eda39d6cda0c3"
+                "reference": "c3a24901efd473aa0c1a90cdc727da1d8c0b5b05"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/e163dbfca3f39123d62f3830737eda39d6cda0c3",
-                "reference": "e163dbfca3f39123d62f3830737eda39d6cda0c3",
+                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/c3a24901efd473aa0c1a90cdc727da1d8c0b5b05",
+                "reference": "c3a24901efd473aa0c1a90cdc727da1d8c0b5b05",
                 "shasum": ""
             },
             "require": {
@@ -415,7 +415,7 @@
             "require-dev": {
                 "phpunit/phpunit": "^4.0 || ^5.0 || ^6.0 || ^7.0 || ^8.0 || ^9.3.4"
             },
-            "time": "2025-11-04T02:59:42+00:00",
+            "time": "2025-11-04T15:11:57+00:00",
             "bin": [
                 "bin/phpcbf",
                 "bin/phpcs"
