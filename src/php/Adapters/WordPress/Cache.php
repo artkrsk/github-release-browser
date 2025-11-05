@@ -49,7 +49,7 @@ class Cache implements ICache {
 	 * @return bool Success status.
 	 */
 	public function delete( string $key ): bool {
-		return delete_transient( $this->prefix . $key );
+		return (bool) delete_transient( $this->prefix . $key );
 	}
 
 	/**
@@ -67,7 +67,7 @@ class Cache implements ICache {
 		);
 
 		foreach ( $prefixed_keys as $key ) {
-			delete_transient( $key );
+			(bool) delete_transient( $key );
 		}
 
 		return true;
