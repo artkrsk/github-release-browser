@@ -31,11 +31,12 @@ class Browser {
 		$this->config = wp_parse_args(
 			$config,
 			array(
-				'cache_prefix'          => 'gh_browser_',
-				'github_token'          => '',
-				'protocol'              => 'github-release://',
-				'enable_latest_release' => false, // Set to false for lite version
-				'settings_url'          => admin_url( 'options-general.php?page=edd-settings&tab=extensions' ),
+				'cache_prefix'           => 'gh_browser_',
+				'github_token'           => '',
+				'protocol'               => 'github-release://',
+				'enable_latest_release'  => false, // Set to false for lite version
+				'register_stream_wrapper' => false, // Set to true to enable PHP stream wrapper
+				'settings_url'           => admin_url( 'options-general.php?page=edd-settings&tab=extensions' ),
 				'strings'               => array(
 					'actions.insertIntoDownload'     => esc_html__( 'Insert into download', 'github-release-browser' ),
 					'errors.networkError'            => esc_html__( 'Network error occurred', 'github-release-browser' ),
@@ -103,6 +104,12 @@ class Browser {
 
 		$this->uri_parser     = new URIParser( $this->config['protocol'] );
 		$this->asset_resolver = new AssetResolver();
+
+		// Register PHP stream wrapper if enabled
+		if ( ! empty( $this->config['register_stream_wrapper'] ) ) {
+			$protocol = rtrim( $this->config['protocol'], ':/' );
+			\Arts\GH\ReleaseBrowser\Adapters\WordPress\StreamWrapper::register_wrapper( $this, $protocol );
+		}
 
 		// Register AJAX handlers
 		$this->register_ajax_handlers();
@@ -403,7 +410,7 @@ class Browser {
 	 * @param array $parsed Parsed URI data containing 'repo', 'release', and 'asset'.
 	 * @return array|\WP_Error Release data or error.
 	 */
-	private function resolve_release( $parsed ) {
+	public function resolve_release( $parsed ) {
 		// Handle "latest" keyword
 		if ( $parsed['release'] === 'latest' ) {
 			// Check if latest release feature is enabled
