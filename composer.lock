@@ -334,8 +334,8 @@
             "version": "2.1.x-dev",
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/d08d0c2d8c04c43082c6de74ecd612d3e9fa8b0b",
-                "reference": "d08d0c2d8c04c43082c6de74ecd612d3e9fa8b0b",
+                "url": "https://api.github.com/repos/phpstan/phpstan/zipball/e8f9992da9db06b52ec73048bc0472bf98c88a56",
+                "reference": "e8f9992da9db06b52ec73048bc0472bf98c88a56",
                 "shasum": ""
             },
             "require": {
@@ -381,7 +381,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2025-12-10T16:00:13+00:00"
+            "time": "2025-12-21T11:48:13+00:00"
         },
         {
             "name": "squizlabs/php_codesniffer",
@@ -389,12 +389,12 @@
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPCSStandards/PHP_CodeSniffer.git",
-                "reference": "be57d1c389be29ff78445a37ae33d07e94ab3c07"
+                "reference": "67dec559307b8209e3f86e9cfe9bd3114071fd45"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/be57d1c389be29ff78445a37ae33d07e94ab3c07",
-                "reference": "be57d1c389be29ff78445a37ae33d07e94ab3c07",
+                "url": "https://api.github.com/repos/PHPCSStandards/PHP_CodeSniffer/zipball/67dec559307b8209e3f86e9cfe9bd3114071fd45",
+                "reference": "67dec559307b8209e3f86e9cfe9bd3114071fd45",
                 "shasum": ""
             },
             "require": {
@@ -460,7 +460,7 @@
                     "type": "thanks_dev"
                 }
             ],
-            "time": "2025-12-08T20:25:33+00:00"
+            "time": "2025-12-21T14:31:39+00:00"
         },
         {
             "name": "szepeviktor/phpstan-wordpress",
