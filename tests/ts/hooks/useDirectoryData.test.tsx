@@ -141,6 +141,111 @@ describe('useDirectoryData', () => {
       // Should set loading false after fetch
       expect(mockSetLoadingBranches).toHaveBeenCalledWith(false)
     })
+
+    test('falls back to first branch when no main and getRepoInfo fails', async () => {
+      const branchesWithoutMain: IBranch[] = [
+        { name: 'develop', commit: { sha: 'abc', url: 'https://...' }, protected: false },
+        { name: 'feature', commit: { sha: 'def', url: 'https://...' }, protected: false }
+      ]
+      mockService.getBranches = vi.fn().mockResolvedValue(branchesWithoutMain)
+      mockService.getRepoInfo = vi.fn().mockRejectedValue(new Error('Repo info failed'))
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockService.getRepoInfo).toHaveBeenCalledWith('owner/repo')
+      expect(mockSetSelectedBranch).toHaveBeenCalledWith('develop')
+    })
+
+    test('sets error when initial contents fetch fails during fetchBranches', async () => {
+      mockService.getBranches = vi.fn().mockResolvedValue(mockBranches)
+      mockService.getContents = vi.fn().mockRejectedValue(new Error('Contents fetch failed'))
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockService.getContents).toHaveBeenCalledWith('owner/repo', '', 'main')
+      expect(mockSetError).toHaveBeenCalledWith('Contents fetch failed')
+    })
+
+    test('sets generic error message when initial contents fetch throws non-Error', async () => {
+      mockService.getBranches = vi.fn().mockResolvedValue(mockBranches)
+      mockService.getContents = vi.fn().mockRejectedValue('string error')
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockSetError).toHaveBeenCalledWith('Failed to fetch directory contents')
+    })
+
+    test('does not set error if unmounted during initial contents fetch failure', async () => {
+      mockService.getBranches = vi.fn().mockResolvedValue(mockBranches)
+      mockService.getContents = vi.fn().mockImplementation(async () => {
+        mockIsMountedRef.current = false
+        throw new Error('Contents fetch failed')
+      })
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockSetError).not.toHaveBeenCalled()
+    })
   })
 
   describe('fetchContents', () => {

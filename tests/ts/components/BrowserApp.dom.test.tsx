@@ -5,6 +5,30 @@ import userEvent from '@testing-library/user-event'
 import { BrowserApp } from '@/components/BrowserApp'
 import { createMockBrowserConfig, createMockRepo, createMockRelease, createMockAsset, render, setupTestEnvironment } from '@test-utils'
 
+// Mock GitHubService for testing refresh handlers
+// Use vi.hoisted to ensure variables are defined before vi.mock runs
+const { mockClearReleasesCache, mockClearBranchesCache, mockGetReleases, mockGetBranches, mockGetContents } = vi.hoisted(() => ({
+  mockClearReleasesCache: vi.fn(),
+  mockClearBranchesCache: vi.fn(),
+  mockGetReleases: vi.fn(),
+  mockGetBranches: vi.fn(),
+  mockGetContents: vi.fn()
+}))
+
+vi.mock('@/services/GitHubService', () => ({
+  GitHubService: class MockGitHubService {
+    getUserRepos = vi.fn()
+    getReleases = mockGetReleases
+    clearCache = vi.fn()
+    clearReleasesCache = mockClearReleasesCache
+    clearBranchesCache = mockClearBranchesCache
+    getBranches = mockGetBranches
+    getContents = mockGetContents
+    getArchiveUrl = vi.fn()
+    getRepoInfo = vi.fn()
+  }
+}))
+
 // Mock WordPress components
 vi.mock('@wordpress/components', () => ({
   Button: ({ children, onClick, disabled, variant, ...props }: any) => (
@@ -76,10 +100,11 @@ vi.mock('@/components/RepositoryList', () => ({
 }))
 
 vi.mock('@/components/AssetsView', () => ({
-  AssetsView: ({ selectedRepo, onBack }: any) => (
+  AssetsView: ({ selectedRepo, onBack, onRefresh }: any) => (
     <div data-testid="assets-view">
       <div data-testid="selected-repo">{selectedRepo}</div>
       <button onClick={onBack} data-testid="back-button">Back</button>
+      {onRefresh && <button onClick={onRefresh} data-testid="assets-refresh">Refresh</button>}
     </div>
   )
 }))
@@ -244,6 +269,12 @@ describe('BrowserApp - DOM Testing', () => {
     mockDirectoryData = createDefaultMockDirectoryData()
     mockRepositoryActions = createDefaultMockRepositoryActions()
     mockAssetConfirmation = createDefaultMockAssetConfirmation()
+    // Reset service mocks
+    mockClearReleasesCache.mockReset()
+    mockClearBranchesCache.mockReset()
+    mockGetReleases.mockReset()
+    mockGetBranches.mockReset()
+    mockGetContents.mockReset()
   })
 
   describe('Initial Rendering', () => {
@@ -1020,6 +1051,368 @@ describe('BrowserApp - DOM Testing', () => {
 
         await waitFor(() => {
           expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+      })
+    })
+  })
+
+  describe('Refresh Handlers', () => {
+    describe('handleRefreshAssets', () => {
+      test('clicking refresh in AssetsView calls clearReleasesCache', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repoReleases = { 'owner/test-repo': [mockRelease] }
+        mockBrowserState.selectedReleaseTag = 'v1.0.0'
+        mockBrowserState.selectedRelease = mockRelease
+
+        mockClearReleasesCache.mockResolvedValue(undefined)
+        mockGetReleases.mockResolvedValue([mockRelease])
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('assets-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('assets-refresh'))
+
+        await waitFor(() => {
+          expect(mockClearReleasesCache).toHaveBeenCalledWith('owner/test-repo')
+        })
+      })
+
+      test('refresh clears local state by deleting repo from repoReleases', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repoReleases = { 'owner/test-repo': [mockRelease] }
+        mockBrowserState.selectedReleaseTag = 'v1.0.0'
+        mockBrowserState.selectedRelease = mockRelease
+
+        mockClearReleasesCache.mockResolvedValue(undefined)
+        mockGetReleases.mockResolvedValue([mockRelease])
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('assets-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('assets-refresh'))
+
+        await waitFor(() => {
+          expect(mockBrowserState.setRepoReleases).toHaveBeenCalled()
+        })
+
+        // Verify the first call clears the repo from releases
+        const setRepoReleasesFirstCall = mockBrowserState.setRepoReleases.mock.calls[0][0]
+        if (typeof setRepoReleasesFirstCall === 'function') {
+          const result = setRepoReleasesFirstCall({ 'owner/test-repo': [mockRelease], 'other/repo': [] })
+          expect(result).not.toHaveProperty('owner/test-repo')
+          expect(result).toHaveProperty('other/repo')
+        }
+      })
+
+      test('refresh re-fetches releases after cache clear', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repoReleases = { 'owner/test-repo': [mockRelease] }
+        mockBrowserState.selectedReleaseTag = 'v1.0.0'
+        mockBrowserState.selectedRelease = mockRelease
+
+        const newRelease = createMockRelease({ tag_name: 'v2.0.0' })
+        mockClearReleasesCache.mockResolvedValue(undefined)
+        mockGetReleases.mockResolvedValue([newRelease])
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('assets-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('assets-refresh'))
+
+        await waitFor(() => {
+          expect(mockGetReleases).toHaveBeenCalledWith('owner/test-repo', 1)
+        })
+      })
+
+      test('setLoadingRepo is called during refresh', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repoReleases = { 'owner/test-repo': [mockRelease] }
+        mockBrowserState.selectedReleaseTag = 'v1.0.0'
+        mockBrowserState.selectedRelease = mockRelease
+
+        mockClearReleasesCache.mockResolvedValue(undefined)
+        mockGetReleases.mockResolvedValue([mockRelease])
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('assets-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('assets-refresh'))
+
+        await waitFor(() => {
+          // Should be called with repo name at start
+          expect(mockBrowserState.setLoadingRepo).toHaveBeenCalledWith('owner/test-repo')
+          // Should be called with null at end
+          expect(mockBrowserState.setLoadingRepo).toHaveBeenCalledWith(null)
+        })
+      })
+
+      test('error handling when refresh fails', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repoReleases = { 'owner/test-repo': [mockRelease] }
+        mockBrowserState.selectedReleaseTag = 'v1.0.0'
+        mockBrowserState.selectedRelease = mockRelease
+
+        mockClearReleasesCache.mockRejectedValue(new Error('Network error'))
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('assets-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('assets-refresh'))
+
+        await waitFor(() => {
+          expect(mockBrowserState.setError).toHaveBeenCalledWith('Network error')
+        })
+      })
+
+      test('error handling with non-Error object', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repoReleases = { 'owner/test-repo': [mockRelease] }
+        mockBrowserState.selectedReleaseTag = 'v1.0.0'
+        mockBrowserState.selectedRelease = mockRelease
+
+        mockClearReleasesCache.mockRejectedValue('String error')
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('assets-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('assets-refresh'))
+
+        await waitFor(() => {
+          expect(mockBrowserState.setError).toHaveBeenCalledWith('Failed to refresh')
+        })
+      })
+
+      test('does nothing when selectedRepo is null', async () => {
+        mockBrowserState.view = 'assets'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.selectedRepo = null
+        mockBrowserState.selectedRelease = mockRelease
+
+        render(<BrowserApp config={mockConfig} />)
+
+        // Assets view won't render without selectedRepo
+        expect(mockClearReleasesCache).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('handleRefreshDirectory', () => {
+      test('clicking refresh in DirectoryView calls clearBranchesCache', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        mockClearBranchesCache.mockResolvedValue(undefined)
+        mockDirectoryData.fetchBranches.mockResolvedValue(undefined)
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          expect(mockClearBranchesCache).toHaveBeenCalledWith('owner/test-repo')
+        })
+      })
+
+      test('refresh clears local state (branches and directoryContents)', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        mockClearBranchesCache.mockResolvedValue(undefined)
+        mockDirectoryData.fetchBranches.mockResolvedValue(undefined)
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          expect(mockBrowserState.setDirectoryContents).toHaveBeenCalledWith([])
+          expect(mockBrowserState.setBranches).toHaveBeenCalledWith([])
+        })
+      })
+
+      test('refresh re-fetches branches', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        mockClearBranchesCache.mockResolvedValue(undefined)
+        mockDirectoryData.fetchBranches.mockResolvedValue(undefined)
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          expect(mockDirectoryData.fetchBranches).toHaveBeenCalledWith('owner/test-repo')
+        })
+      })
+
+      test('refresh re-fetches contents for current path', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+        mockBrowserState.currentPath = 'src/components'
+
+        mockClearBranchesCache.mockResolvedValue(undefined)
+        mockDirectoryData.fetchBranches.mockResolvedValue(undefined)
+        mockDirectoryData.fetchContents.mockResolvedValue(undefined)
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          expect(mockDirectoryData.fetchContents).toHaveBeenCalledWith('owner/test-repo', 'src/components', 'main')
+        })
+      })
+
+      test('setLoadingBranches and setLoadingContents are called during refresh', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        mockClearBranchesCache.mockResolvedValue(undefined)
+        mockDirectoryData.fetchBranches.mockResolvedValue(undefined)
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          // Should be called with true at start
+          expect(mockBrowserState.setLoadingBranches).toHaveBeenCalledWith(true)
+          expect(mockBrowserState.setLoadingContents).toHaveBeenCalledWith(true)
+          // Should be called with false at end
+          expect(mockBrowserState.setLoadingBranches).toHaveBeenCalledWith(false)
+          expect(mockBrowserState.setLoadingContents).toHaveBeenCalledWith(false)
+        })
+      })
+
+      test('error handling when refresh fails', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        mockClearBranchesCache.mockRejectedValue(new Error('Branch cache error'))
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          expect(mockBrowserState.setError).toHaveBeenCalledWith('Branch cache error')
+        })
+      })
+
+      test('error handling with non-Error object', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        mockClearBranchesCache.mockRejectedValue({ code: 'UNKNOWN' })
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        await waitFor(() => {
+          expect(mockBrowserState.setError).toHaveBeenCalledWith('Failed to refresh')
+        })
+      })
+
+      test('does nothing when selectedRepo is null', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = null
+        mockBrowserState.selectedBranch = 'main'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        // Directory view won't render without selectedRepo
+        expect(mockClearBranchesCache).not.toHaveBeenCalled()
+      })
+
+      test('does nothing when selectedBranch is null', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.selectedBranch = null
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-refresh'))
+
+        // Handler should return early without calling service
+        await waitFor(() => {
+          expect(mockClearBranchesCache).not.toHaveBeenCalled()
         })
       })
     })
