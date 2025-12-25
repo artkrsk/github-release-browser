@@ -30,7 +30,10 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
+    "test:integration": "wp-env run tests-cli --env-cwd=wp-content/plugins/github-release-browser vendor/bin/phpunit -c phpunit-integration.xml",
+    "test:integration:coverage": "wp-env run tests-cli --env-cwd=wp-content/plugins/github-release-browser vendor/bin/phpunit -c phpunit-integration.xml --coverage-html coverage/php-integration --coverage-text",
     "env:start": "wp-env start",
+    "env:start:xdebug": "wp-env start --xdebug=coverage",
     "env:stop": "wp-env stop",
     "env:destroy": "wp-env destroy",
     "env:cli": "wp-env run cli"
