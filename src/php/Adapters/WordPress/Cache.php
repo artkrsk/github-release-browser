@@ -9,7 +9,7 @@ use Arts\GH\ReleaseBrowser\Core\Interfaces\ICache;
  * Implements ICache using WordPress transients
  */
 class Cache implements ICache {
-	private $prefix;
+	private string $prefix;
 
 	/**
 	 * Constructor
@@ -55,19 +55,12 @@ class Cache implements ICache {
 	/**
 	 * Clear multiple cache keys
 	 *
-	 * @param array $keys Array of cache keys.
+	 * @param array<string> $keys Array of cache keys.
 	 * @return bool Success status.
 	 */
 	public function clear_keys( array $keys ): bool {
-		$prefixed_keys = array_map(
-			function ( $key ) {
-				return $this->prefix . $key;
-			},
-			$keys
-		);
-
-		foreach ( $prefixed_keys as $key ) {
-			(bool) delete_transient( $key );
+		foreach ( $keys as $key ) {
+			delete_transient( $this->prefix . $key );
 		}
 
 		return true;

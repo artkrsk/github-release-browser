@@ -3,24 +3,37 @@ namespace Arts\GH\ReleaseBrowser\Includes;
 
 /**
  * Frontend class for handling asset enqueuing
+ *
+ * @phpstan-type BrowserConfig array{
+ *   action_prefix?: string,
+ *   protocol?: string,
+ *   features?: array<string, mixed>,
+ *   upgrade_url?: string,
+ *   strings?: array<string, string>,
+ *   text_domain?: string,
+ *   settings_url?: string,
+ *   assets_url?: string
+ * }
  */
 class Frontend {
-	private $assets_url;
-	private $config;
+	private string $assets_url;
+	/** @var BrowserConfig */
+	private array $config;
 
 	/** Prevents duplicate enqueuing across multiple instances */
-	private static $enqueued = false;
+	private static bool $enqueued = false;
 
 	/**
 	 * Constructor
 	 *
-	 * @param array $config Configuration array.
+	 * @param array<string, mixed> $config Configuration array.
 	 */
 	public function __construct( array $config ) {
+		/** @var BrowserConfig $config */
 		$this->config = $config;
 
 		// Allow custom asset URL to be passed in config
-		if ( isset( $config['assets_url'] ) ) {
+		if ( isset( $config['assets_url'] ) && is_string( $config['assets_url'] ) ) {
 			$this->assets_url = $config['assets_url'];
 		} else {
 			// Default to plugins_url if used as a plugin
@@ -68,11 +81,15 @@ class Frontend {
 			'1.0.0'
 		);
 
+		$action_prefix = isset( $this->config['action_prefix'] ) && is_string( $this->config['action_prefix'] )
+			? $this->config['action_prefix']
+			: 'github_release_browser';
+
 		// Prepare config for JavaScript
 		$js_config = array(
 			'apiUrl'       => admin_url( 'admin-ajax.php' ),
-			'nonce'        => wp_create_nonce( $this->config['action_prefix'] . '_nonce' ),
-			'actionPrefix' => $this->config['action_prefix'] ?? 'github_release_browser',
+			'nonce'        => wp_create_nonce( $action_prefix . '_nonce' ),
+			'actionPrefix' => $action_prefix,
 			'protocol'     => $this->config['protocol'] ?? 'github-release://',
 			'features'     => $this->config['features'] ?? array(),
 			'upgradeUrl'   => $this->config['upgrade_url'] ?? '',

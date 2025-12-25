@@ -5,16 +5,17 @@ namespace Arts\GH\ReleaseBrowser\Core\Types;
  * HTTP Response wrapper
  */
 class Response {
-	public $status_code;
-	public $body;
-	public $headers;
+	public int $status_code;
+	public string $body;
+	/** @var array<string, string> */
+	public array $headers;
 
 	/**
 	 * Constructor
 	 *
-	 * @param int    $status_code HTTP status code.
-	 * @param string $body        Response body.
-	 * @param array  $headers     Response headers.
+	 * @param int                   $status_code HTTP status code.
+	 * @param string                $body        Response body.
+	 * @param array<string, string> $headers     Response headers.
 	 */
 	public function __construct( int $status_code, string $body, array $headers ) {
 		$this->status_code = $status_code;

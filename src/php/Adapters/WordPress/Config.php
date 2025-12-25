@@ -9,15 +9,17 @@ use Arts\GH\ReleaseBrowser\Core\Interfaces\IConfig;
  * Implements IConfig - simple array-based config
  */
 class Config implements IConfig {
-	private $config;
+	/** @var array<string, mixed> */
+	private array $config;
 
 	/**
 	 * Constructor
 	 *
-	 * @param array $config Configuration array.
+	 * @param array<string, mixed> $config Configuration array.
 	 */
 	public function __construct( array $config = array() ) {
-		$this->config = wp_parse_args(
+		/** @var array<string, mixed> $parsed */
+		$parsed       = wp_parse_args(
 			$config,
 			array(
 				'github_token' => '',
@@ -25,6 +27,7 @@ class Config implements IConfig {
 				'protocol'     => 'github-release://',
 			)
 		);
+		$this->config = $parsed;
 	}
 
 	/**

@@ -6,37 +6,42 @@ namespace Arts\GH\ReleaseBrowser\Core\Services;
  * Resolves GitHub release assets
  *
  * Finds assets by pattern matching, extracts download URLs, and formats file sizes.
+ *
+ * @phpstan-type AssetData array{name: string, browser_download_url: string, size: int, content_type: string}
+ * @phpstan-type ReleaseData array{assets?: array<AssetData>}
  */
 class AssetResolver {
 	/**
 	 * Find asset in release by name or pattern
 	 *
-	 * @param array       $release Release data.
-	 * @param string|null $identifier Asset name or shell-style pattern.
-	 * @return array|null Asset data or null.
+	 * @param array<string, mixed> $release    Release data.
+	 * @param string|null          $identifier Asset name or shell-style pattern.
+	 * @return array<string, mixed>|null Asset data or null.
 	 */
-	public function find_asset_in_release( array $release, string $identifier = null ): ?array {
+	public function find_asset_in_release( array $release, ?string $identifier = null ): ?array {
 		return $this->find_asset( $release, $identifier );
 	}
 
 	/**
 	 * Find asset in release by pattern
 	 *
-	 * @param array       $release Release data.
-	 * @param string|null $pattern Shell-style pattern (fnmatch) like "*.zip" or "plugin-*.tar.gz".
-	 * @return array|null Asset data or null.
+	 * @param array<string, mixed> $release Release data.
+	 * @param string|null          $pattern Shell-style pattern (fnmatch) like "*.zip" or "plugin-*.tar.gz".
+	 * @return array<string, mixed>|null Asset data or null.
 	 */
-	public function find_asset( array $release, string $pattern = null ): ?array {
+	public function find_asset( array $release, ?string $pattern = null ): ?array {
 		if ( ! isset( $release['assets'] ) || ! is_array( $release['assets'] ) ) {
 			return null;
 		}
 
 		if ( ! $pattern ) {
+			/** @var array<string, mixed>|null */
 			return $release['assets'][0] ?? null;
 		}
 
 		foreach ( $release['assets'] as $asset ) {
-			if ( fnmatch( $pattern, $asset['name'] ) ) {
+			if ( is_array( $asset ) && isset( $asset['name'] ) && is_string( $asset['name'] ) && fnmatch( $pattern, $asset['name'] ) ) {
+				/** @var array<string, mixed> */
 				return $asset;
 			}
 		}
@@ -47,11 +52,11 @@ class AssetResolver {
 	/**
 	 * Get download URL from asset
 	 *
-	 * @param array $asset Asset data.
+	 * @param array<string, mixed> $asset Asset data.
 	 * @return string Download URL.
 	 */
 	public function get_download_url( array $asset ): string {
-		return $asset['browser_download_url'] ?? '';
+		return isset( $asset['browser_download_url'] ) && is_string( $asset['browser_download_url'] ) ? $asset['browser_download_url'] : '';
 	}
 
 	/**
