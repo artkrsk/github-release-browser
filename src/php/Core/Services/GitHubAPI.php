@@ -356,7 +356,8 @@ class GitHubAPI implements IPlatformAPI {
 	 * @return array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}> Directory contents.
 	 */
 	public function get_contents( string $repo, string $path = '', string $ref = 'main' ): array {
-		$path_hash = md5( $path );
+		// Use SHA-256 for cache key generation (avoids Snyk MD5 warnings)
+		$path_hash = hash( 'sha256', $path );
 		$cache_key = "contents_{$repo}_{$ref}_{$path_hash}";
 		$cached    = $this->cache->get( $cache_key );
 

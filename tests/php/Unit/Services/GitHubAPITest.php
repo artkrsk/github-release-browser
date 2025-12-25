@@ -471,7 +471,7 @@ class GitHubAPITest extends TestCase {
 			array( 'name' => 'README.md', 'path' => 'README.md', 'type' => 'file' ),
 		);
 
-		$path_hash = md5( '' );
+		$path_hash = hash( 'sha256', '' );
 		$this->cache->shouldReceive( 'get' )
 			->once()
 			->with( "contents_owner/repo_main_{$path_hash}" )
@@ -487,7 +487,7 @@ class GitHubAPITest extends TestCase {
 			array( 'name' => 'file.txt', 'path' => 'file.txt', 'sha' => 'abc', 'size' => 100, 'type' => 'file', 'download_url' => 'https://...', 'html_url' => 'https://...' ),
 		);
 
-		$path_hash = md5( 'src' );
+		$path_hash = hash( 'sha256', 'src' );
 		$this->cache->shouldReceive( 'get' )
 			->with( "contents_owner/repo_develop_{$path_hash}" )
 			->andReturn( false );
@@ -513,7 +513,7 @@ class GitHubAPITest extends TestCase {
 	}
 
 	public function test_get_contents_returns_empty_on_non_200(): void {
-		$path_hash = md5( '' );
+		$path_hash = hash( 'sha256', '' );
 		$this->cache->shouldReceive( 'get' )
 			->with( "contents_owner/repo_main_{$path_hash}" )
 			->andReturn( false );
@@ -535,7 +535,7 @@ class GitHubAPITest extends TestCase {
 			'content' => 'base64content',
 		);
 
-		$path_hash = md5( 'README.md' );
+		$path_hash = hash( 'sha256', 'README.md' );
 		$this->cache->shouldReceive( 'get' )
 			->with( "contents_owner/repo_main_{$path_hash}" )
 			->andReturn( false );
@@ -550,7 +550,7 @@ class GitHubAPITest extends TestCase {
 	}
 
 	public function test_get_contents_encodes_path_in_url(): void {
-		$path_hash = md5( 'path with spaces' );
+		$path_hash = hash( 'sha256', 'path with spaces' );
 		$this->cache->shouldReceive( 'get' )
 			->with( "contents_owner/repo_main_{$path_hash}" )
 			->andReturn( false );
