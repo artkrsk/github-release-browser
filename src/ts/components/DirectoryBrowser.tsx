@@ -65,14 +65,16 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
         ))}
       </div>
 
-      {loading || contents.length === 0 && !loading ? (
+      {loading ? (
         <div className="github-release-browser-directory__loading">
           <Spinner />
         </div>
       ) : (
         <>
-          {/* Root folder option */}
-          <div className="github-release-browser-directory__list">
+          {folders.length === 0 ? (
+            <p className="github-release-browser-directory__empty">No folders in this directory</p>
+          ) : (
+            <div className="github-release-browser-directory__list">
             <Card
               className={`github-release-browser-directory__item github-release-browser-directory__root-option ${
                 selectedFolderPath === currentPath ? 'github-release-browser-directory__item_selected' : ''
@@ -129,11 +131,7 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
                 </Card>
               )
             })}
-
-          </div>
-
-          {folders.length === 0 && (
-            <p className="github-release-browser-directory__empty">No folders in this directory</p>
+            </div>
           )}
         </>
       )}
