@@ -15,6 +15,7 @@ export const AssetsView: React.FC<IAssetsViewProps> = ({
   repoReleases,
   onSelectAsset,
   onBack,
+  onRefresh,
   config
 }) => {
   const releases = selectedRelease === 'latest' ? repoReleases[selectedRepo] : null
@@ -37,6 +38,13 @@ export const AssetsView: React.FC<IAssetsViewProps> = ({
             className="github-release-browser-browser__back-button"
           />
           <h2>{heading}</h2>
+          <Button
+            variant="tertiary"
+            icon="update"
+            onClick={onRefresh}
+            label={config.strings?.refresh || getString('repositories.refresh')}
+            className="github-release-browser-browser__refresh-button"
+          />
         </div>
       </div>
       <AssetList

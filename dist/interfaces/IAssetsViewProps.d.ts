@@ -18,6 +18,8 @@ export interface IAssetsViewProps {
     onSelectAsset: (asset: IAsset | null) => void;
     /** Function to call when back is requested */
     onBack: () => void;
+    /** Function to call when refresh is requested */
+    onRefresh?: () => void;
     /** Browser app configuration */
     config: IBrowserConfig;
 }

@@ -19,6 +19,7 @@ export interface IDirectoryViewProps {
   onNavigate: (path: string) => void
   onSelectFolder: (path: string) => void
   onBack: () => void
+  onRefresh?: () => void
   defaultBranch?: string
 }
 
@@ -38,6 +39,7 @@ export const DirectoryView: React.FC<IDirectoryViewProps> = ({
   onNavigate,
   onSelectFolder,
   onBack,
+  onRefresh,
   defaultBranch
 }) => {
   return (
@@ -52,6 +54,15 @@ export const DirectoryView: React.FC<IDirectoryViewProps> = ({
             className="github-release-browser-browser__back-button"
           />
           <h2>{selectedRepo}</h2>
+          {onRefresh && (
+            <Button
+              variant="tertiary"
+              icon="update"
+              onClick={onRefresh}
+              label={getString('repositories.refresh')}
+              className="github-release-browser-browser__refresh-button"
+            />
+          )}
         </div>
       </div>
 

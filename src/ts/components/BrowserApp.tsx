@@ -183,6 +183,45 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
 
   const canConfirmDirectory = selectedRepo !== null && selectedBranch !== null && selectedFolderPath !== null
 
+  // Refresh handlers for cache busting
+  const handleRefreshAssets = async () => {
+    if (!selectedRepo) return
+
+    try {
+      await service.clearCache()
+      // Re-fetch releases for the repo
+      const releases = await service.getReleases(selectedRepo, 1)
+      if (isMountedRef.current) {
+        setRepoReleases((prev) => ({
+          ...prev,
+          [selectedRepo]: releases
+        }))
+      }
+    } catch (error) {
+      if (isMountedRef.current) {
+        setError(error instanceof Error ? error.message : 'Failed to refresh')
+      }
+    }
+  }
+
+  const handleRefreshDirectory = async () => {
+    if (!selectedRepo || !selectedBranch) return
+
+    try {
+      await service.clearCache()
+      // Re-fetch branches and contents
+      setDirectoryContents([])
+      fetchBranches(selectedRepo)
+      if (currentPath !== null) {
+        fetchContents(selectedRepo, currentPath, selectedBranch)
+      }
+    } catch (error) {
+      if (isMountedRef.current) {
+        setError(error instanceof Error ? error.message : 'Failed to refresh')
+      }
+    }
+  }
+
   useEffect(() => {
     isMountedRef.current = true
     fetchRepos()
@@ -246,6 +285,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
           onNavigate={handleNavigate}
           onSelectFolder={setSelectedFolderPath}
           onBack={handleBackToRepos}
+          onRefresh={handleRefreshDirectory}
         />
         <AppFooter
           primaryButton={
@@ -274,6 +314,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
           repoReleases={repoReleases}
           onSelectAsset={setSelectedAssetObj}
           onBack={handleBackToRepos}
+          onRefresh={handleRefreshAssets}
           config={config}
         />
         <AppFooter
