@@ -1,4 +1,4 @@
-import { IRelease, IRateLimit, IRepo } from '../interfaces'
+import { IRelease, IRateLimit, IRepo, IBranch, IContentItem, IRepoInfo } from '../interfaces'
 import { IApiResponse } from '../interfaces/IApiResponse'
 import { API_ACTIONS } from '../constants'
 import { getString } from '../utils/getString'
@@ -96,5 +96,25 @@ export class GitHubService {
 
   async clearCache(): Promise<void> {
     await this.makeRequest('clear_cache')
+  }
+
+  async getBranches(repo: string): Promise<IBranch[]> {
+    const result = await this.makeRequest(API_ACTIONS.GET_BRANCHES, { repo })
+    return (result.data.branches as IBranch[]) || []
+  }
+
+  async getContents(repo: string, path: string, ref: string): Promise<IContentItem[]> {
+    const result = await this.makeRequest(API_ACTIONS.GET_CONTENTS, { repo, path, ref })
+    return (result.data.contents as IContentItem[]) || []
+  }
+
+  async getArchiveUrl(repo: string, ref: string): Promise<string> {
+    const result = await this.makeRequest(API_ACTIONS.GET_ARCHIVE_URL, { repo, ref })
+    return result.data.archive_url as string
+  }
+
+  async getRepoInfo(repo: string): Promise<IRepoInfo> {
+    const result = await this.makeRequest(API_ACTIONS.GET_REPO_INFO, { repo })
+    return result.data.repo_info as IRepoInfo
   }
 }
