@@ -322,10 +322,11 @@ class Browser {
 
 		try {
 			$releases = $this->github_api->get_releases( $repo, $page );
-			wp_send_json_success( array( 'releases' => $releases ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'releases' => $releases ) );
 	}
 
 	/**
@@ -342,10 +343,11 @@ class Browser {
 
 		try {
 			$rate_limit = $this->github_api->get_rate_limit();
-			wp_send_json_success( array( 'rate_limit' => $rate_limit ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'rate_limit' => $rate_limit ) );
 	}
 
 	/**
@@ -370,10 +372,11 @@ class Browser {
 
 		try {
 			$parsed = $this->uri_parser->parse( $uri );
-			wp_send_json_success( array( 'parsed' => $parsed ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'parsed' => $parsed ) );
 	}
 
 	/**
@@ -412,14 +415,15 @@ class Browser {
 			// GitHub returns 302 redirect to S3
 			if ( $response->status_code === 302 && isset( $response->headers['location'] ) ) {
 				$download_url = $response->headers['location'];
-				wp_send_json_success( array( 'download_url' => $download_url ) );
 			} else {
 				// Fallback to the original URL if redirect fails
-				wp_send_json_success( array( 'download_url' => $asset_url ) );
+				$download_url = $asset_url;
 			}
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'download_url' => $download_url ) );
 	}
 
 	/**
@@ -436,10 +440,11 @@ class Browser {
 
 		try {
 			$repos = $this->github_api->get_user_repos();
-			wp_send_json_success( array( 'repos' => $repos ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'repos' => $repos ) );
 	}
 
 	/**
@@ -456,10 +461,11 @@ class Browser {
 
 		try {
 			$this->github_api->clear_cache();
-			wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared successfully', 'github-release-browser' ) ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared successfully', 'github-release-browser' ) ) );
 	}
 
 	/**
@@ -483,10 +489,11 @@ class Browser {
 
 		try {
 			$branches = $this->github_api->get_branches( $repo );
-			wp_send_json_success( array( 'branches' => $branches ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'branches' => $branches ) );
 	}
 
 	/**
@@ -515,10 +522,11 @@ class Browser {
 
 		try {
 			$contents = $this->github_api->get_contents( $repo, $path, $ref );
-			wp_send_json_success( array( 'contents' => $contents ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'contents' => $contents ) );
 	}
 
 	/**
@@ -545,10 +553,11 @@ class Browser {
 
 		try {
 			$archive_url = $this->github_api->get_archive_url( $repo, $ref );
-			wp_send_json_success( array( 'archive_url' => $archive_url ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'archive_url' => $archive_url ) );
 	}
 
 	/**
@@ -572,10 +581,11 @@ class Browser {
 
 		try {
 			$repo_info = $this->github_api->get_repo_info( $repo );
-			wp_send_json_success( array( 'repo_info' => $repo_info ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'repo_info' => $repo_info ) );
 	}
 
 	/**
@@ -599,10 +609,11 @@ class Browser {
 
 		try {
 			$this->github_api->clear_releases_cache( $repo );
-			wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared', 'github-release-browser' ) ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared', 'github-release-browser' ) ) );
 	}
 
 	/**
@@ -626,10 +637,11 @@ class Browser {
 
 		try {
 			$this->github_api->clear_branches_cache( $repo );
-			wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared', 'github-release-browser' ) ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
+
+		wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared', 'github-release-browser' ) ) );
 	}
 
 	/**
