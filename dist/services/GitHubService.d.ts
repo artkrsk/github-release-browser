@@ -1,4 +1,4 @@
-import { IRelease, IRateLimit, IRepo } from '../interfaces';
+import { IRelease, IRateLimit, IRepo, IBranch, IContentItem, IRepoInfo } from '../interfaces';
 export declare class GitHubService {
     private apiUrl;
     private nonce;
@@ -16,4 +16,8 @@ export declare class GitHubService {
     getDownloadUrl(assetUrl: string): Promise<string>;
     getUserRepos(): Promise<IRepo[]>;
     clearCache(): Promise<void>;
+    getBranches(repo: string): Promise<IBranch[]>;
+    getContents(repo: string, path: string, ref: string): Promise<IContentItem[]>;
+    getArchiveUrl(repo: string, ref: string): Promise<string>;
+    getRepoInfo(repo: string): Promise<IRepoInfo>;
 }

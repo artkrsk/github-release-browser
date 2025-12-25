@@ -3,6 +3,7 @@ import { IBrowserAppProps } from '../interfaces'
 import { GitHubService } from '../services/GitHubService'
 import { useBrowserState } from '../hooks/useBrowserState'
 import { useGitHubData } from '../hooks/useGitHubData'
+import { useDirectoryData } from '../hooks/useDirectoryData'
 import { useRepositoryActions } from '../hooks/useRepositoryActions'
 import { useAssetConfirmation } from '../hooks/useAssetConfirmation'
 import { LoadingState } from './LoadingState'
@@ -10,6 +11,8 @@ import { ErrorState } from './ErrorState'
 import { RepositorySearch } from './RepositorySearch'
 import { RepositoryList } from './RepositoryList'
 import { AssetsView } from './AssetsView'
+import { DirectoryView } from './DirectoryView'
+import { SourceModeToggle } from './SourceModeToggle'
 import { AppFooter } from './AppFooter'
 import { getString } from '../utils/getString'
 
@@ -42,6 +45,14 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     selectedRelease, setSelectedRelease,
     selectedAssetObj, setSelectedAssetObj,
     error, setError,
+    sourceMode, setSourceMode,
+    branches, setBranches,
+    selectedBranch, setSelectedBranch,
+    currentPath, setCurrentPath,
+    selectedFolderPath, setSelectedFolderPath,
+    directoryContents, setDirectoryContents,
+    loadingBranches, setLoadingBranches,
+    loadingContents, setLoadingContents,
     isMountedRef
   } = browserState
 
@@ -56,6 +67,18 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setReleaseErrors,
     setLoadingRepos,
     setLoadingRepo,
+    setError
+  )
+
+  // Directory data fetching via custom hook
+  const { fetchBranches, fetchContents, fetchRepoInfo } = useDirectoryData(
+    service,
+    isMountedRef,
+    setBranches,
+    setSelectedBranch,
+    setDirectoryContents,
+    setLoadingBranches,
+    setLoadingContents,
     setError
   )
 
@@ -76,6 +99,64 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     selectedAssetObj,
     config
   )
+
+  // Directory-specific handlers
+  const handleSelectRepoForDirectory = (repo: string) => {
+    setSelectedRepo(repo)
+    setView('directory')
+    fetchBranches(repo)
+    fetchRepoInfo(repo)
+  }
+
+  const handleBranchChange = (branch: string) => {
+    setSelectedBranch(branch)
+    setCurrentPath('')
+    setSelectedFolderPath(null)
+    if (selectedRepo) {
+      fetchContents(selectedRepo, '', branch)
+    }
+  }
+
+  const handleNavigate = (path: string) => {
+    setCurrentPath(path)
+    if (selectedRepo && selectedBranch) {
+      fetchContents(selectedRepo, path, selectedBranch)
+    }
+  }
+
+  const handleConfirmDirectory = async () => {
+    if (!selectedRepo || !selectedBranch || selectedFolderPath === null) {
+      return
+    }
+
+    try {
+      const archiveUrl = await service.getArchiveUrl(selectedRepo, selectedBranch)
+
+      // Create synthetic asset for directory
+      const directoryAsset = {
+        id: -999,
+        name: `${selectedRepo}/${selectedBranch}${selectedFolderPath ? `/${selectedFolderPath}` : ''}`,
+        content_type: 'application/zip',
+        size: 0,
+        download_count: 0,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        browser_download_url: archiveUrl,
+        synthetic: true
+      }
+
+      config.onSelectAsset({
+        repo: selectedRepo,
+        release: selectedBranch,
+        asset: directoryAsset,
+        downloadUrl: archiveUrl
+      })
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'Failed to get archive URL')
+    }
+  }
+
+  const canConfirmDirectory = selectedRepo !== null && selectedBranch !== null && selectedFolderPath !== null
 
   useEffect(() => {
     isMountedRef.current = true
@@ -123,6 +204,40 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     )
   }
 
+  // Render directory view
+  if (view === 'directory' && selectedRepo) {
+    return (
+      <>
+        <DirectoryView
+          selectedRepo={selectedRepo}
+          branches={branches}
+          selectedBranch={selectedBranch}
+          currentPath={currentPath}
+          selectedFolderPath={selectedFolderPath}
+          directoryContents={directoryContents}
+          loadingBranches={loadingBranches}
+          loadingContents={loadingContents}
+          onSelectBranch={handleBranchChange}
+          onNavigate={handleNavigate}
+          onSelectFolder={setSelectedFolderPath}
+          onBack={handleBackToRepos}
+        />
+        <AppFooter
+          primaryButton={
+            <Button
+              variant="primary"
+              onClick={handleConfirmDirectory}
+              disabled={!canConfirmDirectory}
+            >
+              {config.strings?.insertIntoDownload || getString('actions.insertIntoDownload')}
+            </Button>
+          }
+          config={config}
+        />
+      </>
+    )
+  }
+
   // Render assets view
   if (view === 'assets' && selectedRepo && selectedRelease) {
     return (
@@ -153,6 +268,8 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
   }
 
   // Render repositories view
+  const isDirectoriesEnabled = config.features?.directories === true
+
   return (
     <>
       <div className="github-release-browser-browser__main">
@@ -164,6 +281,14 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
           strings={config.strings}
         />
 
+        {isDirectoriesEnabled && (
+          <SourceModeToggle
+            mode={sourceMode}
+            onModeChange={setSourceMode}
+            disabled={loadingRepos}
+          />
+        )}
+
         <RepositoryList
           repos={repos}
           searchQuery={searchQuery}
@@ -174,7 +299,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
           loadingRepo={loadingRepo}
           selectedReleaseTag={selectedReleaseTag}
           onRepoToggle={handleRepoToggle}
-          onSelectRelease={handleSelectRelease}
+          onSelectRelease={sourceMode === 'releases' ? handleSelectRelease : handleSelectRepoForDirectory}
           fetchReleasesForRepo={fetchReleasesForRepo}
           config={config}
         />
