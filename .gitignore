@@ -19,6 +19,7 @@ Thumbs.db
 *.code-workspace
 
 # Build output
+/dist/github-release-browser
 
 # Dependencies
 /node_modules
@@ -77,6 +78,9 @@ next-env.d.ts
 # WordPress specific
 /src/php/libraries/*
 /src/wordpress-plugin/languages/*
+
+# wp-env
+.wp-env.override.json
 
 # Project specific
 /drafts
