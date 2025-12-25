@@ -98,6 +98,14 @@ export class GitHubService {
     await this.makeRequest('clear_cache')
   }
 
+  async clearReleasesCache(repo: string): Promise<void> {
+    await this.makeRequest('clear_releases_cache', { repo })
+  }
+
+  async clearBranchesCache(repo: string): Promise<void> {
+    await this.makeRequest('clear_branches_cache', { repo })
+  }
+
   async getBranches(repo: string): Promise<IBranch[]> {
     const result = await this.makeRequest(API_ACTIONS.GET_BRANCHES, { repo })
     return (result.data.branches as IBranch[]) || []

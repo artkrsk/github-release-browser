@@ -187,9 +187,21 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
   const handleRefreshAssets = async () => {
     if (!selectedRepo) return
 
+    setLoadingRepo(selectedRepo)
+    setError(null)
+
     try {
-      await service.clearCache()
-      // Re-fetch releases for the repo
+      // Clear specific releases cache for this repo
+      await service.clearReleasesCache(selectedRepo)
+
+      // Clear local state to force UI refresh
+      setRepoReleases((prev) => {
+        const updated = { ...prev }
+        delete updated[selectedRepo]
+        return updated
+      })
+
+      // Re-fetch releases (cache is now cleared on backend)
       const releases = await service.getReleases(selectedRepo, 1)
       if (isMountedRef.current) {
         setRepoReleases((prev) => ({
@@ -201,23 +213,43 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
       if (isMountedRef.current) {
         setError(error instanceof Error ? error.message : 'Failed to refresh')
       }
+    } finally {
+      if (isMountedRef.current) {
+        setLoadingRepo(null)
+      }
     }
   }
 
   const handleRefreshDirectory = async () => {
     if (!selectedRepo || !selectedBranch) return
 
+    setLoadingBranches(true)
+    setLoadingContents(true)
+    setError(null)
+
     try {
-      await service.clearCache()
-      // Re-fetch branches and contents
+      // Clear specific branches cache for this repo
+      await service.clearBranchesCache(selectedRepo)
+
+      // Clear local state
       setDirectoryContents([])
-      fetchBranches(selectedRepo)
-      if (currentPath !== null) {
-        fetchContents(selectedRepo, currentPath, selectedBranch)
+      setBranches([])
+
+      // Re-fetch branches and contents (cache is now cleared on backend)
+      await fetchBranches(selectedRepo)
+
+      // fetchBranches will auto-fetch contents, but if we have a current path, ensure it's refreshed
+      if (currentPath && selectedBranch) {
+        await fetchContents(selectedRepo, currentPath, selectedBranch)
       }
     } catch (error) {
       if (isMountedRef.current) {
         setError(error instanceof Error ? error.message : 'Failed to refresh')
+      }
+    } finally {
+      if (isMountedRef.current) {
+        setLoadingBranches(false)
+        setLoadingContents(false)
       }
     }
   }

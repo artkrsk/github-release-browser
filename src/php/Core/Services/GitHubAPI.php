@@ -283,6 +283,29 @@ class GitHubAPI implements IPlatformAPI {
 	}
 
 	/**
+	 * Clear releases cache for a specific repository
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 */
+	public function clear_releases_cache( string $repo ): void {
+		// Clear paginated releases (we only cache page 1)
+		$this->cache->delete( "releases_{$repo}_1" );
+
+		// Note: Individual release by tag caches remain until TTL
+		// They're cleared naturally or can be cleared via clear_cache($pattern)
+	}
+
+	/**
+	 * Clear branches cache for a specific repository
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 */
+	public function clear_branches_cache( string $repo ): void {
+		$this->cache->delete( "branches_{$repo}" );
+		$this->cache->delete( "repo_info_{$repo}" );
+	}
+
+	/**
 	 * Get repository branches
 	 *
 	 * @param string $repo Repository name (owner/repo format).

@@ -16,6 +16,8 @@ export declare class GitHubService {
     getDownloadUrl(assetUrl: string): Promise<string>;
     getUserRepos(): Promise<IRepo[]>;
     clearCache(): Promise<void>;
+    clearReleasesCache(repo: string): Promise<void>;
+    clearBranchesCache(repo: string): Promise<void>;
     getBranches(repo: string): Promise<IBranch[]>;
     getContents(repo: string, path: string, ref: string): Promise<IContentItem[]>;
     getArchiveUrl(repo: string, ref: string): Promise<string>;

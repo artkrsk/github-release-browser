@@ -103,4 +103,18 @@ interface IPlatformAPI {
 	 * @return RepoInfoData Repository metadata including default branch.
 	 */
 	public function get_repo_info( string $repo ): array;
+
+	/**
+	 * Clear releases cache for a specific repository
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 */
+	public function clear_releases_cache( string $repo ): void;
+
+	/**
+	 * Clear branches cache for a specific repository
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 */
+	public function clear_branches_cache( string $repo ): void;
 }
