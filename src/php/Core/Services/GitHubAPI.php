@@ -233,7 +233,7 @@ class GitHubAPI {
 		$response = $this->http_client->get( $url, $headers, array( 'redirection' => 0 ) );
 
 		// GitHub returns 302 redirect to S3
-		if ( $response->status_code === 302 && isset( $response->headers['location'] ) ) {
+		if ( $response->status_code === 302 && isset( $response->headers['location'] ) && is_string( $response->headers['location'] ) ) {
 			return $response->headers['location'];
 		}
 

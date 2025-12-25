@@ -220,7 +220,8 @@ class Browser {
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
-		$file_url = isset( $_POST['file_url'] ) && is_string( $_POST['file_url'] ) ? sanitize_text_field( wp_unslash( $_POST['file_url'] ) ) : '';
+		$raw_file_url = $_POST['file_url'] ?? '';
+		$file_url     = is_string( $raw_file_url ) ? sanitize_text_field( wp_unslash( $raw_file_url ) ) : '';
 
 		if ( empty( $file_url ) || ! $this->uri_parser->is_github_file( $file_url ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid GitHub file URL' ) );
@@ -282,8 +283,10 @@ class Browser {
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
-		$repo = isset( $_POST['repo'] ) && is_string( $_POST['repo'] ) ? sanitize_text_field( $_POST['repo'] ) : '';
-		$page = isset( $_POST['page'] ) && is_numeric( $_POST['page'] ) ? (int) $_POST['page'] : 1;
+		$raw_repo = $_POST['repo'] ?? '';
+		$raw_page = $_POST['page'] ?? 1;
+		$repo     = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+		$page     = is_numeric( $raw_page ) ? (int) $raw_page : 1;
 
 		if ( empty( $repo ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
@@ -330,7 +333,8 @@ class Browser {
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
-		$uri = isset( $_POST['uri'] ) && is_string( $_POST['uri'] ) ? sanitize_text_field( $_POST['uri'] ) : '';
+		$raw_uri = $_POST['uri'] ?? '';
+		$uri     = is_string( $raw_uri ) ? sanitize_text_field( $raw_uri ) : '';
 
 		if ( empty( $uri ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'URI is required', 'github-release-browser' ) ) );
@@ -357,7 +361,8 @@ class Browser {
 		}
 
 		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
-		$asset_url = isset( $_POST['asset_url'] ) && is_string( $_POST['asset_url'] ) ? sanitize_text_field( $_POST['asset_url'] ) : '';
+		$raw_asset_url = $_POST['asset_url'] ?? '';
+		$asset_url     = is_string( $raw_asset_url ) ? sanitize_text_field( $raw_asset_url ) : '';
 
 		if ( empty( $asset_url ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Asset URL is required', 'github-release-browser' ) ) );

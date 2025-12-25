@@ -33,7 +33,7 @@ class HttpClient implements IHttpClient {
 		if ( is_wp_error( $response ) ) {
 			return new Response(
 				500,
-				'WordPress HTTP Error: ' . wp_remote_retrieve_body( $response ),
+				$response->get_error_message(),
 				array()
 			);
 		}
