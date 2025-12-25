@@ -35,11 +35,16 @@ function initBrowser() {
 					// Build the GitHub release URI
 					const uri = `${config.protocol}${asset.repo}/${asset.release}/${asset.asset.name}`
 
-					// Try to set value in parent window input if exists
+					// Set value in parent window input if exists
 					if (window.parent && window.parent.document) {
 						const input = window.parent.document.getElementById('github-asset-uri')
 						if (input && 'value' in input) {
 							input.value = uri
+						}
+
+						// Close the thickbox modal (WordPress media modal)
+						if ('tb_remove' in window.parent && typeof window.parent.tb_remove === 'function') {
+							;(window.parent.tb_remove as () => void)()
 						}
 					}
 

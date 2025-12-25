@@ -47,7 +47,7 @@ export const AssetList = ({
                 <div className="github-release-browser-card__info">
                   <div className="github-release-browser-card__title">{asset.name}</div>
                   <div className="github-release-browser-card__meta">
-                    {formatFileSize(asset.size)} • {asset.content_type}
+                    {asset.synthetic ? asset.content_type : `${formatFileSize(asset.size)} • ${asset.content_type}`}
                   </div>
                 </div>
                 {isSelected && (

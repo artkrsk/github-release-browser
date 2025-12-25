@@ -5,7 +5,6 @@ namespace Arts\GH\ReleaseBrowser\Core\Services;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\IHttpClient;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\ICache;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\IConfig;
-use Arts\GH\ReleaseBrowser\Core\Types\Response;
 
 /**
  * GitHub API service
@@ -72,6 +71,10 @@ class GitHubAPI {
 
 		/** @var array<int, array<string, mixed>> $releases */
 		$releases = $decoded;
+
+		// Add source archives to releases with no uploaded assets
+		$releases = array_map( array( $this, 'add_source_archives' ), $releases );
+
 		$this->cache->set( $cache_key, $releases, 300 ); // 5 minutes - transients handle serialization
 
 		return $releases;
@@ -209,6 +212,10 @@ class GitHubAPI {
 
 		/** @var array<string, mixed> $release */
 		$release = $decoded;
+
+		// Add source archives if no uploaded assets
+		$release = $this->add_source_archives( $release );
+
 		$this->cache->set( $cache_key, $release, 300 ); // 5 minutes - transients handle serialization
 
 		return $release;
@@ -328,5 +335,54 @@ class GitHubAPI {
 		}
 
 		return "GitHub API error: {$status_code}";
+	}
+
+	/**
+	 * Add source archives as synthetic assets if no uploaded assets exist
+	 *
+	 * @param array<string, mixed> $release Release data.
+	 * @return array<string, mixed> Release with source archives.
+	 */
+	private function add_source_archives( array $release ): array {
+		// Only add source archives if no uploaded assets
+		if ( ! empty( $release['assets'] ) ) {
+			return $release;
+		}
+
+		$synthetic_assets = array();
+
+		// Add zipball (Source code zip)
+		if ( isset( $release['zipball_url'] ) && is_string( $release['zipball_url'] ) ) {
+			$synthetic_assets[] = array(
+				'name'                 => 'Source code (zip)',
+				'browser_download_url' => $release['zipball_url'],
+				'content_type'         => 'application/zip',
+				'size'                 => 0,
+				'download_count'       => 0,
+				'created_at'           => $release['created_at'] ?? '',
+				'updated_at'           => $release['published_at'] ?? '',
+				'id'                   => -1, // Unique negative ID for synthetic asset
+				'synthetic'            => true,
+			);
+		}
+
+		// Add tarball (Source code tar.gz)
+		if ( isset( $release['tarball_url'] ) && is_string( $release['tarball_url'] ) ) {
+			$synthetic_assets[] = array(
+				'name'                 => 'Source code (tar.gz)',
+				'browser_download_url' => $release['tarball_url'],
+				'content_type'         => 'application/gzip',
+				'size'                 => 0,
+				'download_count'       => 0,
+				'created_at'           => $release['created_at'] ?? '',
+				'updated_at'           => $release['published_at'] ?? '',
+				'id'                   => -2, // Unique negative ID for synthetic asset
+				'synthetic'            => true,
+			);
+		}
+
+		$release['assets'] = $synthetic_assets;
+
+		return $release;
 	}
 }
