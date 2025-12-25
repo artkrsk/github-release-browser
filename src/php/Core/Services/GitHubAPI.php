@@ -5,6 +5,7 @@ namespace Arts\GH\ReleaseBrowser\Core\Services;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\IHttpClient;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\ICache;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\IConfig;
+use Arts\GH\ReleaseBrowser\Core\Interfaces\IPlatformAPI;
 
 /**
  * GitHub API service
@@ -16,7 +17,7 @@ use Arts\GH\ReleaseBrowser\Core\Interfaces\IConfig;
  * @phpstan-type RepoData array<string, mixed>
  * @phpstan-type ErrorData array{error: true, error_code: string, status_code: int, message: string}
  */
-class GitHubAPI {
+class GitHubAPI implements IPlatformAPI {
 	private IHttpClient $http_client;
 	private ICache $cache;
 	private IConfig $config;
