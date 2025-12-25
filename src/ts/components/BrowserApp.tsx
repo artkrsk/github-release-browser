@@ -114,12 +114,9 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
   }
 
   const handleRepoClick = (repoFullName: string) => {
-    console.log('[DEBUG] handleRepoClick called:', { repoFullName, sourceMode })
     if (sourceMode === 'directory') {
-      console.log('[DEBUG] Navigating to directory view for:', repoFullName)
       handleSelectRepoForDirectory(repoFullName)
     } else {
-      console.log('[DEBUG] Toggling releases for:', repoFullName)
       handleRepoToggle(repoFullName)
     }
   }

@@ -372,9 +372,12 @@ class GitHubAPI implements IPlatformAPI {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
-		$encoded_path = rawurlencode( $path );
-		$url          = "https://api.github.com/repos/{$repo}/contents/{$encoded_path}?ref={$ref}";
-		$response     = $this->http_client->get( $url, $headers );
+		// Encode path segments individually to preserve slashes
+		$path_segments    = explode( '/', $path );
+		$encoded_segments = array_map( 'rawurlencode', $path_segments );
+		$encoded_path     = implode( '/', $encoded_segments );
+		$url              = "https://api.github.com/repos/{$repo}/contents/{$encoded_path}?ref={$ref}";
+		$response         = $this->http_client->get( $url, $headers );
 
 		if ( $response->status_code !== 200 ) {
 			return array();
