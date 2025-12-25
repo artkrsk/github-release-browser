@@ -1,3 +1,5 @@
+import { getString } from './getString'
+
 /**
  * Error handling utilities
  */
@@ -7,7 +9,7 @@
  */
 export const handleApiError = (
   error: any,
-  defaultMessage: string = 'An error occurred'
+  defaultMessage: string = getString('error.unknownError')
 ): string => {
   if (error?.message) {
     return error.message

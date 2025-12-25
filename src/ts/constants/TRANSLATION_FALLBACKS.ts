@@ -17,6 +17,7 @@ export const TRANSLATION_FALLBACKS: Record<string, string> = {
   'common.getPro': 'Get Pro',
   'common.upgradeToPro': 'Upgrade to Pro',
   'common.loading': 'Loading...',
+  'common.defaultBranch': 'main',
 
   // Actions
   'actions.insertIntoDownload': 'Insert into download',
@@ -33,6 +34,11 @@ export const TRANSLATION_FALLBACKS: Record<string, string> = {
   'error.goToSettings': 'Go to Settings',
   'error.archiveUrlFailed': 'Failed to get archive URL',
   'error.refreshFailed': 'Failed to refresh',
+  'error.unknownError': 'An error occurred',
+  'error.httpError': 'HTTP error! status: %s',
+  'error.networkError': 'Network error occurred',
+  'error.failedToFetchContents': 'Failed to fetch directory contents',
+  'error.failedToFetchBranches': 'Failed to fetch branches',
 
   // Time formatting for format utility
   'time.today': 'today',
@@ -41,6 +47,9 @@ export const TRANSLATION_FALLBACKS: Record<string, string> = {
   'time.weeksAgo': '%d weeks ago',
   'time.monthsAgo': '%d months ago',
   'time.yearsAgo': '%d years ago',
+
+  // Format utilities
+  'format.fileSizeZero': '0 B',
 
   // Assets
   'assets.backToRepos': 'Back to repositories',

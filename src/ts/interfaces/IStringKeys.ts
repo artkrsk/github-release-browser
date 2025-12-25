@@ -40,6 +40,7 @@ export interface IStringKeys {
   'common.retry': string;
   'common.getPro': string;
   'common.upgradeToPro': string;
+  'common.loading': string;
 
   // Time formatting
   'time.today': string;
@@ -72,6 +73,18 @@ export interface IStringKeys {
 
   // Error messages
   'error.failedToFetchReleases': string;
+  'error.archiveUrlFailed': string;
+  'error.refreshFailed': string;
+
+  // Directory browsing
+  'directory.branch': string;
+  'directory.branchDefault': string;
+  'directory.root': string;
+  'directory.noFolders': string;
+  'directory.useCurrentFolder': string;
+  'directory.contentMode': string;
+  'directory.modeReleases': string;
+  'directory.modeDirectory': string;
 }
 
 // Export type for use in components

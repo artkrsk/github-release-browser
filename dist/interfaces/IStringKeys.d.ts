@@ -27,6 +27,7 @@ export interface IStringKeys {
     'common.retry': string;
     'common.getPro': string;
     'common.upgradeToPro': string;
+    'common.loading': string;
     'time.today': string;
     'time.yesterday': string;
     'time.daysAgo': string;
@@ -49,5 +50,15 @@ export interface IStringKeys {
     'error.welcome.description': string;
     'error.goToSettings': string;
     'error.failedToFetchReleases': string;
+    'error.archiveUrlFailed': string;
+    'error.refreshFailed': string;
+    'directory.branch': string;
+    'directory.branchDefault': string;
+    'directory.root': string;
+    'directory.noFolders': string;
+    'directory.useCurrentFolder': string;
+    'directory.contentMode': string;
+    'directory.modeReleases': string;
+    'directory.modeDirectory': string;
 }
 export type StringKey = keyof IStringKeys;
