@@ -9,6 +9,7 @@ describe('useRepositoryActions', () => {
   let mockSetSelectedRepo: vi.Mock
   let mockSetSelectedRelease: vi.Mock
   let mockSetSelectedReleaseTag: vi.Mock
+  let mockSetSearchQuery: vi.Mock
   let mockFetchReleasesForRepo: vi.Mock
 
   beforeEach(() => {
@@ -19,6 +20,7 @@ describe('useRepositoryActions', () => {
     mockSetSelectedRepo = vi.fn()
     mockSetSelectedRelease = vi.fn()
     mockSetSelectedReleaseTag = vi.fn()
+    mockSetSearchQuery = vi.fn()
     mockFetchReleasesForRepo = vi.fn().mockResolvedValue(undefined)
   })
 
@@ -30,6 +32,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -53,6 +56,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -78,6 +82,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -103,6 +108,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -133,6 +139,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -155,6 +162,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -177,6 +185,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -196,6 +205,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -226,6 +236,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -254,6 +265,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -276,6 +288,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -291,6 +304,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )
@@ -310,6 +324,7 @@ describe('useRepositoryActions', () => {
         mockSetSelectedRepo,
         mockSetSelectedRelease,
         mockSetSelectedReleaseTag,
+        mockSetSearchQuery,
         mockFetchReleasesForRepo
       )
     )

@@ -1,5 +1,6 @@
-import { IRepo, IRelease, IAsset } from '../interfaces'
+import { IRepo, IRelease, IAsset, IBranch, IContentItem } from '../interfaces'
 import { TBrowserView } from './TBrowserView'
+import { TSourceMode } from './TSourceMode'
 
 /**
  * Return types for custom hooks
@@ -41,6 +42,24 @@ export type TUseBrowserStateReturn = {
   error: string | null
   setError: React.Dispatch<React.SetStateAction<string | null>>
 
+  // Directory state
+  sourceMode: TSourceMode
+  setSourceMode: React.Dispatch<React.SetStateAction<TSourceMode>>
+  branches: IBranch[]
+  setBranches: React.Dispatch<React.SetStateAction<IBranch[]>>
+  selectedBranch: string | null
+  setSelectedBranch: React.Dispatch<React.SetStateAction<string | null>>
+  currentPath: string
+  setCurrentPath: React.Dispatch<React.SetStateAction<string>>
+  selectedFolderPath: string | null
+  setSelectedFolderPath: React.Dispatch<React.SetStateAction<string | null>>
+  directoryContents: IContentItem[]
+  setDirectoryContents: React.Dispatch<React.SetStateAction<IContentItem[]>>
+  loadingBranches: boolean
+  setLoadingBranches: React.Dispatch<React.SetStateAction<boolean>>
+  loadingContents: boolean
+  setLoadingContents: React.Dispatch<React.SetStateAction<boolean>>
+
   // Refs
   isMountedRef: React.MutableRefObject<boolean>
 }
@@ -63,4 +82,11 @@ export type TUseRepositoryActionsReturn = {
 export type TUseAssetConfirmationReturn = {
   handleConfirmAsset: () => void
   canConfirmAsset: boolean
+}
+
+/** Return type for useDirectoryData hook */
+export type TUseDirectoryDataReturn = {
+  fetchBranches: (repo: string) => Promise<void>
+  fetchContents: (repo: string, path: string, ref: string) => Promise<void>
+  fetchRepoInfo: (repo: string) => Promise<void>
 }

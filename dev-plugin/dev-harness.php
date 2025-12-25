@@ -21,6 +21,7 @@ add_action(
 				'protocol'              => 'github-release://',
 				'action_prefix'         => 'github_release_browser',
 				'enable_latest_release' => true,
+				'enable_directories'    => true,
 			)
 		);
 

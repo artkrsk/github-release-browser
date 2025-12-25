@@ -383,4 +383,510 @@ class GitHubAPITest extends TestCase {
 
 		$this->api->clear_cache( 'release_owner/repo_v1.0.0' );
 	}
+
+	// ========================================
+	// get_branches tests
+	// ========================================
+
+	public function test_get_branches_returns_cached_data(): void {
+		$cached_branches = array(
+			array( 'name' => 'main', 'commit' => array( 'sha' => 'abc123' ), 'protected' => true ),
+			array( 'name' => 'develop', 'commit' => array( 'sha' => 'def456' ), 'protected' => false ),
+		);
+
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( 'branches_owner/repo' )
+			->andReturn( $cached_branches );
+
+		$result = $this->api->get_branches( 'owner/repo' );
+
+		$this->assertSame( $cached_branches, $result );
+	}
+
+	public function test_get_branches_fetches_from_api_when_not_cached(): void {
+		$api_branches = array(
+			array( 'name' => 'main', 'commit' => array( 'sha' => 'abc123', 'url' => 'https://...' ), 'protected' => true ),
+		);
+
+		$this->cache->shouldReceive( 'get' )
+			->with( 'branches_owner/repo' )
+			->andReturn( false );
+
+		$this->config->shouldReceive( 'get' )
+			->with( 'github_token' )
+			->andReturn( 'token' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with(
+				'https://api.github.com/repos/owner/repo/branches?per_page=100',
+				array( 'Authorization' => 'Bearer token' )
+			)
+			->andReturn( new Response( 200, json_encode( $api_branches ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )
+			->once()
+			->with( 'branches_owner/repo', $api_branches, 300 )
+			->andReturn( true );
+
+		$result = $this->api->get_branches( 'owner/repo' );
+
+		$this->assertSame( $api_branches, $result );
+	}
+
+	public function test_get_branches_returns_empty_array_on_non_200(): void {
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 404, 'Not Found', array() ) );
+
+		$result = $this->api->get_branches( 'owner/repo' );
+
+		$this->assertSame( array(), $result );
+	}
+
+	public function test_get_branches_omits_auth_header_when_no_token(): void {
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->with( 'github_token' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with( 'https://api.github.com/repos/owner/repo/branches?per_page=100', array() )
+			->andReturn( new Response( 200, json_encode( array() ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )->andReturn( true );
+
+		$this->api->get_branches( 'owner/repo' );
+	}
+
+	// ========================================
+	// get_contents tests
+	// ========================================
+
+	public function test_get_contents_returns_cached_data(): void {
+		$cached_contents = array(
+			array( 'name' => 'src', 'path' => 'src', 'type' => 'dir' ),
+			array( 'name' => 'README.md', 'path' => 'README.md', 'type' => 'file' ),
+		);
+
+		$path_hash = hash( 'sha256', '' );
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( $cached_contents );
+
+		$result = $this->api->get_contents( 'owner/repo', '', 'main' );
+
+		$this->assertSame( $cached_contents, $result );
+	}
+
+	public function test_get_contents_fetches_from_api_when_not_cached(): void {
+		$api_contents = array(
+			array( 'name' => 'file.txt', 'path' => 'file.txt', 'sha' => 'abc', 'size' => 100, 'type' => 'file', 'download_url' => 'https://...', 'html_url' => 'https://...' ),
+		);
+
+		$path_hash = hash( 'sha256', 'src' );
+		$this->cache->shouldReceive( 'get' )
+			->with( "contents_owner/repo_develop_{$path_hash}" )
+			->andReturn( false );
+
+		$this->config->shouldReceive( 'get' )->andReturn( 'token' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with(
+				'https://api.github.com/repos/owner/repo/contents/src?ref=develop',
+				array( 'Authorization' => 'Bearer token' )
+			)
+			->andReturn( new Response( 200, json_encode( $api_contents ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )
+			->once()
+			->with( "contents_owner/repo_develop_{$path_hash}", $api_contents, 300 )
+			->andReturn( true );
+
+		$result = $this->api->get_contents( 'owner/repo', 'src', 'develop' );
+
+		$this->assertSame( $api_contents, $result );
+	}
+
+	public function test_get_contents_returns_empty_on_non_200(): void {
+		$path_hash = hash( 'sha256', '' );
+		$this->cache->shouldReceive( 'get' )
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 404, 'Not Found', array() ) );
+
+		$result = $this->api->get_contents( 'owner/repo' );
+
+		$this->assertSame( array(), $result );
+	}
+
+	public function test_get_contents_returns_empty_for_single_file_response(): void {
+		// GitHub returns an object (not array) when path points to a single file
+		$single_file = array(
+			'type'    => 'file',
+			'name'    => 'README.md',
+			'content' => 'base64content',
+		);
+
+		$path_hash = hash( 'sha256', 'README.md' );
+		$this->cache->shouldReceive( 'get' )
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 200, json_encode( $single_file ), array() ) );
+
+		$result = $this->api->get_contents( 'owner/repo', 'README.md', 'main' );
+
+		$this->assertSame( array(), $result );
+	}
+
+	public function test_get_contents_encodes_path_in_url(): void {
+		$path_hash = hash( 'sha256', 'path with spaces' );
+		$this->cache->shouldReceive( 'get' )
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with(
+				'https://api.github.com/repos/owner/repo/contents/path%20with%20spaces?ref=main',
+				array()
+			)
+			->andReturn( new Response( 200, json_encode( array() ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )->andReturn( true );
+
+		$this->api->get_contents( 'owner/repo', 'path with spaces', 'main' );
+	}
+
+	public function test_get_contents_rejects_path_traversal_with_double_dots(): void {
+		$path_hash = hash( 'sha256', '../../etc/passwd' );
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+
+		$this->config->shouldReceive( 'get' )
+			->with( 'github_token' )
+			->andReturn( '' );
+
+		\Brain\Monkey\Functions\expect( 'validate_file' )
+			->once()
+			->with( '../../etc/passwd' )
+			->andReturn( 1 );
+
+		$result = $this->api->get_contents( 'owner/repo', '../../etc/passwd', 'main' );
+
+		$this->assertSame( array(), $result );
+	}
+
+	public function test_get_contents_rejects_path_with_dot_segments(): void {
+		$path_hash = hash( 'sha256', './hidden' );
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+
+		$this->config->shouldReceive( 'get' )
+			->with( 'github_token' )
+			->andReturn( '' );
+
+		\Brain\Monkey\Functions\expect( 'validate_file' )
+			->once()
+			->with( './hidden' )
+			->andReturn( 2 );
+
+		$result = $this->api->get_contents( 'owner/repo', './hidden', 'main' );
+
+		$this->assertSame( array(), $result );
+	}
+
+	// ========================================
+	// get_archive_url tests
+	// ========================================
+
+	public function test_get_archive_url_returns_redirect_location(): void {
+		$this->config->shouldReceive( 'get' )->andReturn( 'token' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with(
+				'https://api.github.com/repos/owner/repo/zipball/main',
+				array( 'Authorization' => 'Bearer token' ),
+				array( 'redirection' => 0 )
+			)
+			->andReturn( new Response(
+				302,
+				'',
+				array( 'location' => 'https://codeload.github.com/owner/repo/zip/main' )
+			) );
+
+		$result = $this->api->get_archive_url( 'owner/repo', 'main' );
+
+		$this->assertSame( 'https://codeload.github.com/owner/repo/zip/main', $result );
+	}
+
+	public function test_get_archive_url_returns_fallback_on_non_redirect(): void {
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 404, 'Not Found', array() ) );
+
+		$result = $this->api->get_archive_url( 'owner/repo', 'v1.0.0' );
+
+		$this->assertSame( 'https://api.github.com/repos/owner/repo/zipball/v1.0.0', $result );
+	}
+
+	public function test_get_archive_url_handles_missing_location_header(): void {
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 302, '', array() ) ); // 302 but no location
+
+		$result = $this->api->get_archive_url( 'owner/repo', 'main' );
+
+		$this->assertSame( 'https://api.github.com/repos/owner/repo/zipball/main', $result );
+	}
+
+	// ========================================
+	// get_repo_info tests
+	// ========================================
+
+	public function test_get_repo_info_returns_cached_data(): void {
+		$cached_info = array(
+			'default_branch' => 'main',
+			'full_name'      => 'owner/repo',
+			'private'        => false,
+		);
+
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( 'repo_info_owner/repo' )
+			->andReturn( $cached_info );
+
+		$result = $this->api->get_repo_info( 'owner/repo' );
+
+		$this->assertSame( $cached_info, $result );
+	}
+
+	public function test_get_repo_info_fetches_from_api(): void {
+		$api_response = array(
+			'default_branch' => 'develop',
+			'full_name'      => 'owner/repo',
+			'private'        => true,
+			'extra_field'    => 'ignored',
+		);
+
+		$this->cache->shouldReceive( 'get' )
+			->with( 'repo_info_owner/repo' )
+			->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( 'token' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with(
+				'https://api.github.com/repos/owner/repo',
+				array( 'Authorization' => 'Bearer token' )
+			)
+			->andReturn( new Response( 200, json_encode( $api_response ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )
+			->once()
+			->with( 'repo_info_owner/repo', Mockery::type( 'array' ), 3600 )
+			->andReturn( true );
+
+		$result = $this->api->get_repo_info( 'owner/repo' );
+
+		$this->assertSame( 'develop', $result['default_branch'] );
+		$this->assertSame( 'owner/repo', $result['full_name'] );
+		$this->assertTrue( $result['private'] );
+	}
+
+	public function test_get_repo_info_returns_defaults_on_non_200(): void {
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 404, 'Not Found', array() ) );
+
+		$result = $this->api->get_repo_info( 'owner/repo' );
+
+		$this->assertSame( 'main', $result['default_branch'] );
+		$this->assertSame( 'owner/repo', $result['full_name'] );
+		$this->assertFalse( $result['private'] );
+	}
+
+	public function test_get_repo_info_returns_defaults_on_malformed_json(): void {
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 200, 'not valid json', array() ) );
+
+		$result = $this->api->get_repo_info( 'owner/repo' );
+
+		$this->assertSame( 'main', $result['default_branch'] );
+	}
+
+	// ========================================
+	// clear_releases_cache tests
+	// ========================================
+
+	public function test_clear_releases_cache_deletes_correct_key(): void {
+		$this->cache->shouldReceive( 'delete' )
+			->once()
+			->with( 'releases_owner/repo_1' );
+
+		$this->api->clear_releases_cache( 'owner/repo' );
+	}
+
+	// ========================================
+	// clear_branches_cache tests
+	// ========================================
+
+	public function test_clear_branches_cache_deletes_both_keys(): void {
+		$this->cache->shouldReceive( 'delete' )
+			->once()
+			->with( 'branches_owner/repo' );
+
+		$this->cache->shouldReceive( 'delete' )
+			->once()
+			->with( 'repo_info_owner/repo' );
+
+		$this->api->clear_branches_cache( 'owner/repo' );
+	}
+
+	// ========================================
+	// add_source_archives tests (via get_releases)
+	// ========================================
+
+	public function test_get_releases_preserves_existing_assets(): void {
+		$api_releases = array(
+			array(
+				'tag_name'    => 'v1.0.0',
+				'assets'      => array(
+					array( 'name' => 'plugin.zip', 'id' => 123 ),
+				),
+				'zipball_url' => 'https://api.github.com/repos/owner/repo/zipball/v1.0.0',
+				'tarball_url' => 'https://api.github.com/repos/owner/repo/tarball/v1.0.0',
+			),
+		);
+
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 200, json_encode( $api_releases ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )->andReturn( true );
+
+		$result = $this->api->get_releases( 'owner/repo' );
+
+		// Should keep original assets, not add source archives
+		$this->assertCount( 1, $result[0]['assets'] );
+		$this->assertSame( 'plugin.zip', $result[0]['assets'][0]['name'] );
+		$this->assertSame( 123, $result[0]['assets'][0]['id'] );
+	}
+
+	public function test_get_releases_adds_source_archives_when_no_assets(): void {
+		$api_releases = array(
+			array(
+				'tag_name'     => 'v1.0.0',
+				'assets'       => array(), // No uploaded assets
+				'zipball_url'  => 'https://api.github.com/repos/owner/repo/zipball/v1.0.0',
+				'tarball_url'  => 'https://api.github.com/repos/owner/repo/tarball/v1.0.0',
+				'created_at'   => '2024-01-01T00:00:00Z',
+				'published_at' => '2024-01-01T00:00:00Z',
+			),
+		);
+
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 200, json_encode( $api_releases ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )->andReturn( true );
+
+		$result = $this->api->get_releases( 'owner/repo' );
+
+		// Should have 2 synthetic assets (zip and tar.gz)
+		$this->assertCount( 2, $result[0]['assets'] );
+		$this->assertSame( 'Source code (zip)', $result[0]['assets'][0]['name'] );
+		$this->assertSame( 'Source code (tar.gz)', $result[0]['assets'][1]['name'] );
+	}
+
+	public function test_get_releases_source_archives_have_correct_structure(): void {
+		$api_releases = array(
+			array(
+				'tag_name'     => 'v1.0.0',
+				'assets'       => array(),
+				'zipball_url'  => 'https://api.github.com/repos/owner/repo/zipball/v1.0.0',
+				'tarball_url'  => 'https://api.github.com/repos/owner/repo/tarball/v1.0.0',
+				'created_at'   => '2024-01-01T00:00:00Z',
+				'published_at' => '2024-01-02T00:00:00Z',
+			),
+		);
+
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 200, json_encode( $api_releases ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )->andReturn( true );
+
+		$result = $this->api->get_releases( 'owner/repo' );
+
+		$zip_asset = $result[0]['assets'][0];
+		$tar_asset = $result[0]['assets'][1];
+
+		// Verify zip asset structure
+		$this->assertSame( 'Source code (zip)', $zip_asset['name'] );
+		$this->assertSame( 'https://api.github.com/repos/owner/repo/zipball/v1.0.0', $zip_asset['browser_download_url'] );
+		$this->assertSame( 'application/zip', $zip_asset['content_type'] );
+		$this->assertSame( 0, $zip_asset['size'] );
+		$this->assertSame( -1, $zip_asset['id'] );
+		$this->assertTrue( $zip_asset['synthetic'] );
+
+		// Verify tar.gz asset structure
+		$this->assertSame( 'Source code (tar.gz)', $tar_asset['name'] );
+		$this->assertSame( 'https://api.github.com/repos/owner/repo/tarball/v1.0.0', $tar_asset['browser_download_url'] );
+		$this->assertSame( 'application/gzip', $tar_asset['content_type'] );
+		$this->assertSame( -2, $tar_asset['id'] );
+		$this->assertTrue( $tar_asset['synthetic'] );
+	}
+
+	public function test_get_release_by_tag_adds_source_archives_when_no_assets(): void {
+		$api_release = array(
+			'tag_name'    => 'v2.0.0',
+			'assets'      => array(),
+			'zipball_url' => 'https://api.github.com/repos/owner/repo/zipball/v2.0.0',
+			'tarball_url' => 'https://api.github.com/repos/owner/repo/tarball/v2.0.0',
+		);
+
+		$this->cache->shouldReceive( 'get' )->andReturn( false );
+		$this->config->shouldReceive( 'get' )->andReturn( '' );
+
+		$this->http_client->shouldReceive( 'get' )
+			->andReturn( new Response( 200, json_encode( $api_release ), array() ) );
+
+		$this->cache->shouldReceive( 'set' )->andReturn( true );
+
+		$result = $this->api->get_release_by_tag( 'owner/repo', 'v2.0.0' );
+
+		$this->assertCount( 2, $result['assets'] );
+		$this->assertSame( 'Source code (zip)', $result['assets'][0]['name'] );
+		$this->assertSame( 'Source code (tar.gz)', $result['assets'][1]['name'] );
+	}
 }

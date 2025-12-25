@@ -40,6 +40,8 @@ export interface IStringKeys {
   'common.retry': string;
   'common.getPro': string;
   'common.upgradeToPro': string;
+  'common.loading': string;
+  'common.defaultBranch': string;
 
   // Time formatting
   'time.today': string;
@@ -48,6 +50,9 @@ export interface IStringKeys {
   'time.weeksAgo': string;
   'time.monthsAgo': string;
   'time.yearsAgo': string;
+
+  // Format utilities
+  'format.fileSizeZero': string;
 
   // Error titles
   'error.title.invalidToken': string;
@@ -72,6 +77,23 @@ export interface IStringKeys {
 
   // Error messages
   'error.failedToFetchReleases': string;
+  'error.archiveUrlFailed': string;
+  'error.refreshFailed': string;
+  'error.unknownError': string;
+  'error.httpError': string;
+  'error.networkError': string;
+  'error.failedToFetchContents': string;
+  'error.failedToFetchBranches': string;
+
+  // Directory browsing
+  'directory.branch': string;
+  'directory.branchDefault': string;
+  'directory.root': string;
+  'directory.noFolders': string;
+  'directory.useCurrentFolder': string;
+  'directory.contentMode': string;
+  'directory.modeReleases': string;
+  'directory.modeDirectory': string;
 }
 
 // Export type for use in components

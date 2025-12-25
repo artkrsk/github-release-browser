@@ -93,6 +93,41 @@ global.wp = {
         className: `wp-search-control ${className || ''}`,
         'data-testid': 'search-control',
         ...props
-      })
+      }),
+    SelectControl: ({ value, onChange, label, options, disabled, className, ...props }: any) =>
+      React.createElement('div', {
+        className: `wp-select-control ${className || ''}`,
+        'data-testid': 'select-control'
+      }, [
+        label && React.createElement('label', { key: 'label' }, label),
+        React.createElement('select', {
+          key: 'select',
+          value: value || '',
+          onChange: (e: any) => onChange && onChange(e.target.value),
+          disabled,
+          ...props
+        }, options?.map((opt: any) =>
+          React.createElement('option', { key: opt.value, value: opt.value }, opt.label)
+        ))
+      ]),
+    __experimentalToggleGroupControl: ({ value, onChange, children, className, disabled, ...props }: any) =>
+      React.createElement('div', {
+        'data-testid': 'toggle-group-control',
+        'data-value': value,
+        className: `wp-toggle-group-control ${className || ''}`,
+        disabled,
+        ...props
+      }, children),
+    __experimentalToggleGroupControlOption: ({ value, label, ...props }: any) =>
+      React.createElement('button', {
+        'data-testid': `toggle-option-${value}`,
+        'data-value': value,
+        onClick: (e: any) => {
+          const parent = e.target.closest('[data-testid="toggle-group-control"]')
+          const onChange = parent?.getAttribute('onChange')
+          // In real component, clicking triggers onChange on parent
+        },
+        ...props
+      }, label)
   }
 }

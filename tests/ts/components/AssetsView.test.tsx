@@ -39,6 +39,7 @@ vi.mock('@/components/AssetList', () => ({
 describe('AssetsView', () => {
   const mockOnSelectAsset = vi.fn()
   const mockOnBack = vi.fn()
+  const mockOnRefresh = vi.fn()
 
   const mockConfig = createMockBrowserConfig()
   const mockRepo = 'owner/test-repo'
@@ -56,6 +57,7 @@ describe('AssetsView', () => {
     repoReleases: { [mockRepo]: [mockRelease] },
     onSelectAsset: mockOnSelectAsset,
     onBack: mockOnBack,
+    onRefresh: mockOnRefresh,
     config: mockConfig
   }
 
@@ -68,13 +70,14 @@ describe('AssetsView', () => {
       render(<AssetsView {...defaultProps} />)
 
       expect(screen.getByTestId('asset-list')).toBeInTheDocument()
-      expect(screen.getByTestId('button-tertiary')).toBeInTheDocument()
+      const tertiaryButtons = screen.getAllByTestId('button-tertiary')
+      expect(tertiaryButtons).toHaveLength(2) // Back + Refresh buttons
     })
 
     test('renders back button with correct variant and class', () => {
       render(<AssetsView {...defaultProps} />)
 
-      const backButton = screen.getByTestId('button-tertiary')
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
       expect(backButton).toBeInTheDocument()
       expect(backButton).toHaveClass('github-release-browser-browser__back-button')
     })
@@ -88,7 +91,9 @@ describe('AssetsView', () => {
         />
       )
 
-      expect(screen.getByText('Back to repositories')).toBeInTheDocument()
+      // Back button uses aria-label, not text content
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(backButton).toHaveAttribute('aria-label', 'Back to repositories')
     })
 
     test('renders custom back button text from config', () => {
@@ -102,14 +107,17 @@ describe('AssetsView', () => {
         />
       )
 
-      expect(screen.getByText('Custom Back Text')).toBeInTheDocument()
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(backButton).toHaveAttribute('aria-label', 'Custom Back Text')
     })
 
     test('renders back icon', () => {
       render(<AssetsView {...defaultProps} />)
 
-      const backIcon = document.querySelector('.github-release-browser-icon_back')
-      expect(backIcon).toBeInTheDocument()
+      // Back button uses WordPress icon prop (consumed by component, not DOM attribute)
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(backButton).toBeInTheDocument()
+      expect(backButton).toHaveClass('github-release-browser-browser__back-button')
     })
   })
 
@@ -260,7 +268,7 @@ describe('AssetsView', () => {
       const user = userEvent.setup()
       render(<AssetsView {...defaultProps} />)
 
-      const backButton = screen.getByTestId('button-tertiary')
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
       await user.click(backButton)
 
       expect(mockOnBack).toHaveBeenCalledTimes(1)
@@ -307,7 +315,8 @@ describe('AssetsView', () => {
       )
 
       expect(screen.getByTestId('asset-list')).toBeInTheDocument()
-      expect(screen.getByText('Back to repositories')).toBeInTheDocument()
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(backButton).toHaveAttribute('aria-label', 'Back to repositories')
     })
 
     test('handles config with empty strings object', () => {
@@ -320,7 +329,8 @@ describe('AssetsView', () => {
         />
       )
 
-      expect(screen.getByText('Back to repositories')).toBeInTheDocument()
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(backButton).toHaveAttribute('aria-label', 'Back to repositories')
     })
   })
 
@@ -335,7 +345,7 @@ describe('AssetsView', () => {
     test('back button has correct CSS classes', () => {
       render(<AssetsView {...defaultProps} />)
 
-      const backButton = screen.getByTestId('button-tertiary')
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
       expect(backButton).toHaveClass('github-release-browser-browser__back-button')
       expect(backButton).toHaveClass('wp-button')
       expect(backButton).toHaveClass('wp-button-tertiary')
@@ -464,7 +474,8 @@ describe('AssetsView', () => {
     test('updates when config changes', () => {
       const { rerender } = render(<AssetsView {...defaultProps} />)
 
-      expect(screen.getByText('Back to repositories')).toBeInTheDocument()
+      const backButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(backButton).toHaveAttribute('aria-label', 'Back to repositories')
 
       const newConfig = createMockBrowserConfig({
         strings: { back: 'Updated Back Text' }
@@ -476,7 +487,8 @@ describe('AssetsView', () => {
         />
       )
 
-      expect(screen.getByText('Updated Back Text')).toBeInTheDocument()
+      const updatedBackButton = screen.getAllByTestId('button-tertiary')[0]
+      expect(updatedBackButton).toHaveAttribute('aria-label', 'Updated Back Text')
     })
   })
 

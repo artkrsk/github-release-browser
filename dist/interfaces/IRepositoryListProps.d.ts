@@ -1,5 +1,6 @@
 import { IRepo, IRelease } from '../interfaces';
 import { IBrowserConfig } from './IBrowserConfig';
+import { TSourceMode } from '../types';
 /**
  * Props for RepositoryList component
  */
@@ -32,4 +33,6 @@ export interface IRepositoryListProps {
     fetchReleasesForRepo: (repoFullName: string) => void;
     /** Browser app configuration */
     config: IBrowserConfig;
+    /** Source mode (releases or directory) */
+    sourceMode?: TSourceMode;
 }

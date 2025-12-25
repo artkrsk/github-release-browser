@@ -12,6 +12,7 @@ export const useRepositoryActions = (
   setSelectedRepo: (repo: string | null) => void,
   setSelectedRelease: (release: IRelease | 'latest' | null) => void,
   setSelectedReleaseTag: (tag: string | null) => void,
+  setSearchQuery: (query: string) => void,
   fetchReleasesForRepo: (repoFullName: string) => Promise<void>
 ) => {
   const handleRepoToggle = useCallback((repoFullName: string) => {
@@ -39,7 +40,8 @@ export const useRepositoryActions = (
 
   const handleBackToRepos = useCallback(() => {
     setView('repos')
-  }, [setView])
+    setSearchQuery('')  // Clear search when returning to repos
+  }, [setView, setSearchQuery])
 
   return {
     handleRepoToggle,

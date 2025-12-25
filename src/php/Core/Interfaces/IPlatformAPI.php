@@ -8,6 +8,9 @@ namespace Arts\GH\ReleaseBrowser\Core\Interfaces;
  * Defines the contract for Git platform integrations (GitHub, GitLab, Bitbucket, etc.)
  *
  * @phpstan-type RateLimitData array{remaining: int, limit: int}
+ * @phpstan-type BranchData array{name: string, commit: array{sha: string, url: string}, protected: bool}
+ * @phpstan-type ContentItemData array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}
+ * @phpstan-type RepoInfoData array{default_branch: string, full_name: string, private: bool}
  */
 interface IPlatformAPI {
 	/**
@@ -65,4 +68,53 @@ interface IPlatformAPI {
 	 * @param string $pattern Specific cache key to clear, or empty for common keys.
 	 */
 	public function clear_cache( string $pattern = '' ): void;
+
+	/**
+	 * Get repository branches
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @return array<int, BranchData> Branch data.
+	 */
+	public function get_branches( string $repo ): array;
+
+	/**
+	 * Get directory contents at path
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @param string $path Directory path (empty for root).
+	 * @param string $ref  Branch or commit reference.
+	 * @return array<int, ContentItemData> Directory contents.
+	 */
+	public function get_contents( string $repo, string $path = '', string $ref = 'main' ): array;
+
+	/**
+	 * Get archive download URL
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @param string $ref  Branch or commit reference.
+	 * @return string Archive download URL.
+	 */
+	public function get_archive_url( string $repo, string $ref ): string;
+
+	/**
+	 * Get repository info
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @return RepoInfoData Repository metadata including default branch.
+	 */
+	public function get_repo_info( string $repo ): array;
+
+	/**
+	 * Clear releases cache for a specific repository
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 */
+	public function clear_releases_cache( string $repo ): void;
+
+	/**
+	 * Clear branches cache for a specific repository
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 */
+	public function clear_branches_cache( string $repo ): void;
 }

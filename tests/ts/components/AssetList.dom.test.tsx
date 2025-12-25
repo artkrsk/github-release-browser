@@ -46,18 +46,6 @@ describe('AssetList - DOM Testing', () => {
   })
 
   describe('Basic Rendering', () => {
-    test('renders asset list heading', () => {
-      render(<AssetList {...defaultProps} />)
-
-      expect(screen.getByText('Assets in owner/repo (v1.0.0)')).toBeInTheDocument()
-    })
-
-    test('renders asset list heading for latest release', () => {
-      render(<AssetList {...defaultProps} isLatest={true} releaseTag="latest" />)
-
-      expect(screen.getByText('Assets in owner/repo (latest)')).toBeInTheDocument()
-    })
-
     test('renders all assets', () => {
       render(<AssetList {...defaultProps} />)
 
@@ -89,26 +77,6 @@ describe('AssetList - DOM Testing', () => {
       render(<AssetList {...defaultProps} assets={[]} strings={customStrings} />)
 
       expect(screen.getByText('No files available')).toBeInTheDocument()
-    })
-  })
-
-  describe('Custom Strings', () => {
-    test('uses custom assets in string', () => {
-      const customStrings = {
-        assetsIn: 'Files in'
-      }
-      render(<AssetList {...defaultProps} strings={customStrings} />)
-
-      expect(screen.getByText('Files in owner/repo (v1.0.0)')).toBeInTheDocument()
-    })
-
-    test('uses custom latest string', () => {
-      const customStrings = {
-        latest: 'most recent'
-      }
-      render(<AssetList {...defaultProps} isLatest={true} strings={customStrings} />)
-
-      expect(screen.getByText('Assets in owner/repo (most recent)')).toBeInTheDocument()
     })
   })
 
@@ -213,41 +181,7 @@ describe('AssetList - DOM Testing', () => {
     })
   })
 
-  describe('Different Repository Names', () => {
-    test('handles complex repository names', () => {
-      const repositories = [
-        'user/repo',
-        'organization-name/repository-name',
-        'complex_user-name/complex-repo-name-123'
-      ]
-
-      repositories.forEach(repo => {
-        const { unmount } = render(<AssetList {...defaultProps} repository={repo} />)
-
-        expect(screen.getByText(new RegExp(`Assets in ${repo}`))).toBeInTheDocument()
-        unmount()
-      })
-    })
-  })
-
-  describe('Different Release Tags', () => {
-    test('handles various release tag formats', () => {
-      const releaseTags = [
-        'v1.0.0',
-        'v2.1.0-beta',
-        'release-2024',
-        '1.0.0-alpha.1',
-        'latest'
-      ]
-
-      releaseTags.forEach(tag => {
-        const { unmount } = render(<AssetList {...defaultProps} releaseTag={tag} />)
-
-        expect(screen.getByText(new RegExp(`Assets in owner/repo \\(${tag}\\)`))).toBeInTheDocument()
-        unmount()
-      })
-    })
-  })
+  // Repository and release tag heading tests removed - heading now in AssetsView
 
   describe('Event Handling', () => {
     test('calls onSelectAsset with correct asset data', async () => {
@@ -306,7 +240,7 @@ describe('AssetList - DOM Testing', () => {
     test('renders with correct CSS classes', () => {
       render(<AssetList {...defaultProps} />)
 
-      const container = screen.getByText('Assets in owner/repo (v1.0.0)').closest('.github-release-browser-asset-list')
+      const container = document.querySelector('.github-release-browser-asset-list')
       expect(container).toBeInTheDocument()
 
       const assetCards = screen.getAllByRole('button')

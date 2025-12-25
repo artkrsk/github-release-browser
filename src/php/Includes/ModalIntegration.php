@@ -60,13 +60,23 @@ class ModalIntegration {
 			? $this->config['action_prefix']
 			: 'github_release_browser';
 
+		// Build features array for JavaScript
+		$features = $this->config['features'] ?? array();
+		if ( isset( $this->config['enable_directories'] ) ) {
+			$features['directories'] = (bool) $this->config['enable_directories'];
+		}
+		if ( isset( $this->config['enable_latest_release'] ) ) {
+			$features['useLatestRelease'] = (bool) $this->config['enable_latest_release'];
+		}
+
 		// Prepare config for JavaScript
 		$js_config = array(
 			'apiUrl'       => admin_url( 'admin-ajax.php' ),
 			'nonce'        => wp_create_nonce( $action_prefix . '_nonce' ),
 			'actionPrefix' => $action_prefix,
 			'protocol'     => $this->config['protocol'] ?? 'github-release://',
-			'features'     => $this->config['features'] ?? array(),
+			'dirProtocol'  => $this->config['dir_protocol'] ?? 'github-dir://',
+			'features'     => $features,
 			'upgradeUrl'   => $this->config['upgrade_url'] ?? '',
 			'strings'      => $this->config['strings'] ?? array(),
 			'textDomain'   => $this->config['text_domain'] ?? 'github-release-browser',

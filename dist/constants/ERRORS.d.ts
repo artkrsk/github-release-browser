@@ -57,6 +57,18 @@ export declare const UI_STRING_KEYS: {
     readonly BACK_TO_REPOSITORIES: "assets.backToRepos";
     readonly INSERT_INTO_DOWNLOAD: "actions.insertIntoDownload";
     readonly UPGRADE_TO_PRO: "common.upgradeToPro";
+    readonly DIRECTORY_ROOT: "directory.root";
+    readonly DIRECTORY_NO_FOLDERS: "directory.noFolders";
+    readonly DIRECTORY_USE_CURRENT: "directory.useCurrentFolder";
+    readonly DIRECTORY_BRANCH_LABEL: "directory.branch";
+    readonly DIRECTORY_BRANCH_DEFAULT: "directory.branchDefault";
+    readonly DIRECTORY_CONTENT_MODE: "directory.contentMode";
+    readonly DIRECTORY_MODE_RELEASES: "directory.modeReleases";
+    readonly DIRECTORY_MODE_DIRECTORY: "directory.modeDirectory";
+    readonly COMMON_LOADING: "common.loading";
+    readonly ERROR_GO_TO_SETTINGS: "error.goToSettings";
+    readonly ERROR_ARCHIVE_URL_FAILED: "error.archiveUrlFailed";
+    readonly ERROR_REFRESH_FAILED: "error.refreshFailed";
 };
 /** Legacy constants for backward compatibility - @deprecated Use UI_STRING_KEYS instead */
 export declare const UI_STRINGS: {

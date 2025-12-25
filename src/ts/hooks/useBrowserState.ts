@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react'
-import { IRepo, IRelease, IAsset } from '../interfaces'
-import { TBrowserView, TUseBrowserStateReturn } from '../types'
+import { IRepo, IRelease, IAsset, IBranch, IContentItem } from '../interfaces'
+import { TBrowserView, TSourceMode, TUseBrowserStateReturn } from '../types'
 
 /**
  * Hook to manage all browser state
@@ -27,6 +27,16 @@ export const useBrowserState = (): TUseBrowserStateReturn => {
 
   // Error state
   const [error, setError] = useState<string | null>(null)
+
+  // Directory state
+  const [sourceMode, setSourceMode] = useState<TSourceMode>('releases')
+  const [branches, setBranches] = useState<IBranch[]>([])
+  const [selectedBranch, setSelectedBranch] = useState<string | null>(null)
+  const [currentPath, setCurrentPath] = useState<string>('')
+  const [selectedFolderPath, setSelectedFolderPath] = useState<string | null>(null)
+  const [directoryContents, setDirectoryContents] = useState<IContentItem[]>([])
+  const [loadingBranches, setLoadingBranches] = useState(false)
+  const [loadingContents, setLoadingContents] = useState(false)
 
   // Ref for component mount status
   const isMountedRef = useRef(true)
@@ -65,6 +75,24 @@ export const useBrowserState = (): TUseBrowserStateReturn => {
     // Error state
     error,
     setError,
+
+    // Directory state
+    sourceMode,
+    setSourceMode,
+    branches,
+    setBranches,
+    selectedBranch,
+    setSelectedBranch,
+    currentPath,
+    setCurrentPath,
+    selectedFolderPath,
+    setSelectedFolderPath,
+    directoryContents,
+    setDirectoryContents,
+    loadingBranches,
+    setLoadingBranches,
+    loadingContents,
+    setLoadingContents,
 
     // Refs
     isMountedRef

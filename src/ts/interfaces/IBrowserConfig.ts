@@ -6,7 +6,8 @@ export interface IBrowserConfig {
   actionPrefix: string
   protocol?: string
   onSelectAsset: (asset: ISelectedAsset) => void
-  features?: { useLatestRelease?: boolean; [key: string]: any }
+  features?: { useLatestRelease?: boolean; directories?: boolean; [key: string]: any }
+  dirProtocol?: string
   upgradeUrl?: string
   strings?: { [key: string]: string }
   textDomain?: string

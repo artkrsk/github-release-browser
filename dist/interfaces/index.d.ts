@@ -16,3 +16,7 @@ export * from './IAssetsViewProps';
 export * from './IAppFooterProps';
 export * from './IStringKeys';
 export * from './IApiResponse';
+export * from './IBranch';
+export * from './IContentItem';
+export * from './IDirectorySelection';
+export * from './IRepoInfo';

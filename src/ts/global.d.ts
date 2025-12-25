@@ -15,6 +15,7 @@ declare global {
       nonce: string
       actionPrefix: string
       protocol: string
+      dirProtocol?: string
       features: Record<string, any>
       upgradeUrl: string
       strings?: Record<string, string>

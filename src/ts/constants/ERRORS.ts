@@ -61,7 +61,25 @@ export const UI_STRING_KEYS = {
   REFRESH_REPOSITORIES: 'repositories.refresh',
   BACK_TO_REPOSITORIES: 'assets.backToRepos',
   INSERT_INTO_DOWNLOAD: 'actions.insertIntoDownload',
-  UPGRADE_TO_PRO: 'common.upgradeToPro'
+  UPGRADE_TO_PRO: 'common.upgradeToPro',
+
+  // Directory browsing
+  DIRECTORY_ROOT: 'directory.root',
+  DIRECTORY_NO_FOLDERS: 'directory.noFolders',
+  DIRECTORY_USE_CURRENT: 'directory.useCurrentFolder',
+  DIRECTORY_BRANCH_LABEL: 'directory.branch',
+  DIRECTORY_BRANCH_DEFAULT: 'directory.branchDefault',
+  DIRECTORY_CONTENT_MODE: 'directory.contentMode',
+  DIRECTORY_MODE_RELEASES: 'directory.modeReleases',
+  DIRECTORY_MODE_DIRECTORY: 'directory.modeDirectory',
+
+  // Common additions
+  COMMON_LOADING: 'common.loading',
+
+  // Error additions
+  ERROR_GO_TO_SETTINGS: 'error.goToSettings',
+  ERROR_ARCHIVE_URL_FAILED: 'error.archiveUrlFailed',
+  ERROR_REFRESH_FAILED: 'error.refreshFailed'
 } as const
 
 /** Legacy constants for backward compatibility - @deprecated Use UI_STRING_KEYS instead */

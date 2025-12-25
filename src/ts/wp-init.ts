@@ -31,9 +31,17 @@ function initBrowser() {
 				nonce: config.nonce,
 				actionPrefix: config.actionPrefix,
 				protocol: config.protocol,
+				dirProtocol: config.dirProtocol,
 				onSelectAsset: (asset) => {
-					// Build the GitHub release URI
-					const uri = `${config.protocol}${asset.repo}/${asset.release}/${asset.asset.name}`
+					// Build URI based on selection type
+					let uri: string
+					if (asset.asset.isDirectory) {
+						// Directory selection - asset.name already contains full github-dir:// URI
+						uri = asset.asset.name
+					} else {
+						// Release asset - build github-release:// URI
+						uri = `${config.protocol}${asset.repo}/${asset.release}/${asset.asset.name}`
+					}
 
 					// Set value in parent window input if exists
 					if (window.parent && window.parent.document) {

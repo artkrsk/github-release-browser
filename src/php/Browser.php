@@ -19,7 +19,9 @@ use Arts\GH\ReleaseBrowser\Includes\ModalIntegration;
  *   cache_prefix: string,
  *   github_token: string,
  *   protocol: string,
+ *   dir_protocol: string,
  *   enable_latest_release: bool,
+ *   enable_directories: bool,
  *   settings_url: string,
  *   strings: array<string, string>,
  *   action_prefix?: string,
@@ -52,7 +54,9 @@ class Browser {
 				'cache_prefix'          => 'gh_browser_',
 				'github_token'          => '',
 				'protocol'              => 'github-release://',
+				'dir_protocol'          => 'github-dir://',
 				'enable_latest_release' => false, // Set to false for lite version
+				'enable_directories'    => false, // Set to true to enable directory browsing
 				'settings_url'          => admin_url( 'options-general.php?page=edd-settings&tab=extensions' ),
 				'strings'               => array(
 					'actions.insertIntoDownload'     => esc_html__( 'Insert into download', 'github-release-browser' ),
@@ -120,7 +124,7 @@ class Browser {
 			new Config( array( 'github_token' => $this->config['github_token'] ) )
 		);
 
-		$this->uri_parser     = new URIParser( $this->config['protocol'] );
+		$this->uri_parser     = new URIParser( $this->config['protocol'], $this->config['dir_protocol'] );
 		$this->asset_resolver = new AssetResolver();
 
 		// Register AJAX handlers
@@ -208,6 +212,28 @@ class Browser {
 		// Test file
 		add_action( "wp_ajax_{$action_prefix}_test_file", array( $this, 'ajax_test_file' ) );
 		add_action( "wp_ajax_nopriv_{$action_prefix}_test_file", array( $this, 'ajax_test_file' ) );
+
+		// Cache refresh handlers (always available for manual refresh)
+		add_action( "wp_ajax_{$action_prefix}_clear_releases_cache", array( $this, 'ajax_clear_releases_cache' ) );
+		add_action( "wp_ajax_nopriv_{$action_prefix}_clear_releases_cache", array( $this, 'ajax_clear_releases_cache' ) );
+
+		// Directory browsing handlers (only registered when feature is enabled)
+		if ( $this->config['enable_directories'] ) {
+			add_action( "wp_ajax_{$action_prefix}_get_branches", array( $this, 'ajax_get_branches' ) );
+			add_action( "wp_ajax_nopriv_{$action_prefix}_get_branches", array( $this, 'ajax_get_branches' ) );
+
+			add_action( "wp_ajax_{$action_prefix}_get_contents", array( $this, 'ajax_get_contents' ) );
+			add_action( "wp_ajax_nopriv_{$action_prefix}_get_contents", array( $this, 'ajax_get_contents' ) );
+
+			add_action( "wp_ajax_{$action_prefix}_get_archive_url", array( $this, 'ajax_get_archive_url' ) );
+			add_action( "wp_ajax_nopriv_{$action_prefix}_get_archive_url", array( $this, 'ajax_get_archive_url' ) );
+
+			add_action( "wp_ajax_{$action_prefix}_get_repo_info", array( $this, 'ajax_get_repo_info' ) );
+			add_action( "wp_ajax_nopriv_{$action_prefix}_get_repo_info", array( $this, 'ajax_get_repo_info' ) );
+
+			add_action( "wp_ajax_{$action_prefix}_clear_branches_cache", array( $this, 'ajax_clear_branches_cache' ) );
+			add_action( "wp_ajax_nopriv_{$action_prefix}_clear_branches_cache", array( $this, 'ajax_clear_branches_cache' ) );
+		}
 	}
 
 	/**
@@ -431,6 +457,176 @@ class Browser {
 		try {
 			$this->github_api->clear_cache();
 			wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared successfully', 'github-release-browser' ) ) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for getting repository branches
+	 */
+	public function ajax_get_branches(): void {
+		$action_prefix = $this->get_action_prefix();
+		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$raw_repo = $_POST['repo'] ?? '';
+		$repo     = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+
+		if ( empty( $repo ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
+		}
+
+		try {
+			$branches = $this->github_api->get_branches( $repo );
+			wp_send_json_success( array( 'branches' => $branches ) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for getting directory contents
+	 */
+	public function ajax_get_contents(): void {
+		$action_prefix = $this->get_action_prefix();
+		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$raw_repo = $_POST['repo'] ?? '';
+		$raw_path = $_POST['path'] ?? '';
+		$raw_ref  = $_POST['ref'] ?? 'main';
+
+		$repo = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+		$path = is_string( $raw_path ) ? sanitize_text_field( $raw_path ) : '';
+		$ref  = is_string( $raw_ref ) ? sanitize_text_field( $raw_ref ) : 'main';
+
+		if ( empty( $repo ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
+		}
+
+		try {
+			$contents = $this->github_api->get_contents( $repo, $path, $ref );
+			wp_send_json_success( array( 'contents' => $contents ) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for getting archive download URL
+	 */
+	public function ajax_get_archive_url(): void {
+		$action_prefix = $this->get_action_prefix();
+		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$raw_repo = $_POST['repo'] ?? '';
+		$raw_ref  = $_POST['ref'] ?? 'main';
+
+		$repo = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+		$ref  = is_string( $raw_ref ) ? sanitize_text_field( $raw_ref ) : 'main';
+
+		if ( empty( $repo ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
+		}
+
+		try {
+			$archive_url = $this->github_api->get_archive_url( $repo, $ref );
+			wp_send_json_success( array( 'archive_url' => $archive_url ) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for getting repository info
+	 */
+	public function ajax_get_repo_info(): void {
+		$action_prefix = $this->get_action_prefix();
+		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$raw_repo = $_POST['repo'] ?? '';
+		$repo     = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+
+		if ( empty( $repo ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
+		}
+
+		try {
+			$repo_info = $this->github_api->get_repo_info( $repo );
+			wp_send_json_success( array( 'repo_info' => $repo_info ) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for clearing releases cache for a specific repository
+	 */
+	public function ajax_clear_releases_cache(): void {
+		$action_prefix = $this->get_action_prefix();
+		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$raw_repo = $_POST['repo'] ?? '';
+		$repo     = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+
+		if ( empty( $repo ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
+		}
+
+		try {
+			$this->github_api->clear_releases_cache( $repo );
+			wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared', 'github-release-browser' ) ) );
+		} catch ( \Exception $e ) {
+			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+	}
+
+	/**
+	 * AJAX handler for clearing branches cache for a specific repository
+	 */
+	public function ajax_clear_branches_cache(): void {
+		$action_prefix = $this->get_action_prefix();
+		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
+
+		if ( ! current_user_can( 'read' ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
+		}
+
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$raw_repo = $_POST['repo'] ?? '';
+		$repo     = is_string( $raw_repo ) ? sanitize_text_field( $raw_repo ) : '';
+
+		if ( empty( $repo ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
+		}
+
+		try {
+			$this->github_api->clear_branches_cache( $repo );
+			wp_send_json_success( array( 'message' => esc_html__( 'Cache cleared', 'github-release-browser' ) ) );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}

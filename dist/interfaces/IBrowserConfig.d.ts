@@ -7,8 +7,10 @@ export interface IBrowserConfig {
     onSelectAsset: (asset: ISelectedAsset) => void;
     features?: {
         useLatestRelease?: boolean;
+        directories?: boolean;
         [key: string]: any;
     };
+    dirProtocol?: string;
     upgradeUrl?: string;
     strings?: {
         [key: string]: string;
