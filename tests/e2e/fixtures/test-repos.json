@@ -1,0 +1,42 @@
+{
+	"publicRepo": {
+		"owner": "facebook",
+		"name": "react",
+		"fullName": "facebook/react",
+		"description": "Popular public repository with many releases",
+		"hasReleases": true,
+		"hasManyReleases": true
+	},
+	"testRepo": {
+		"owner": "artkrsk",
+		"name": "test-repo",
+		"fullName": "artkrsk/test-repo",
+		"description": "Private test repository (requires token with private repo access)",
+		"hasReleases": true,
+		"hasManyReleases": false
+	},
+	"repoWithManyReleases": {
+		"owner": "nodejs",
+		"name": "node",
+		"fullName": "nodejs/node",
+		"description": "Repository with extensive release history",
+		"hasReleases": true,
+		"hasManyReleases": true
+	},
+	"repoWithNoReleases": {
+		"owner": "test",
+		"name": "no-releases",
+		"fullName": "test/no-releases",
+		"description": "Repository with no releases (for edge case testing)",
+		"hasReleases": false,
+		"hasManyReleases": false
+	},
+	"repoWithDirectories": {
+		"owner": "wordpress",
+		"name": "gutenberg",
+		"fullName": "wordpress/gutenberg",
+		"description": "Repository with complex directory structure",
+		"hasReleases": true,
+		"hasDirectories": true
+	}
+}
