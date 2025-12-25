@@ -283,6 +283,184 @@ class GitHubAPI implements IPlatformAPI {
 	}
 
 	/**
+	 * Get repository branches
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @return array<int, array{name: string, commit: array{sha: string, url: string}, protected: bool}> Branch data.
+	 */
+	public function get_branches( string $repo ): array {
+		$cache_key = "branches_{$repo}";
+		$cached    = $this->cache->get( $cache_key );
+
+		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array<int, array{name: string, commit: array{sha: string, url: string}, protected: bool}> */
+			return $cached;
+		}
+
+		$token   = $this->get_token();
+		$headers = array();
+
+		if ( $token !== '' ) {
+			$headers['Authorization'] = "Bearer {$token}";
+		}
+
+		$url      = "https://api.github.com/repos/{$repo}/branches?per_page=100";
+		$response = $this->http_client->get( $url, $headers );
+
+		if ( $response->status_code !== 200 ) {
+			return array();
+		}
+
+		$decoded = json_decode( $response->body, true );
+		if ( ! is_array( $decoded ) ) {
+			return array();
+		}
+
+		/** @var array<int, array{name: string, commit: array{sha: string, url: string}, protected: bool}> $branches */
+		$branches = $decoded;
+
+		$this->cache->set( $cache_key, $branches, 300 ); // 5 minutes
+
+		return $branches;
+	}
+
+	/**
+	 * Get directory contents at path
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @param string $path Directory path (empty for root).
+	 * @param string $ref  Branch or commit reference.
+	 * @return array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}> Directory contents.
+	 */
+	public function get_contents( string $repo, string $path = '', string $ref = 'main' ): array {
+		$path_hash = md5( $path );
+		$cache_key = "contents_{$repo}_{$ref}_{$path_hash}";
+		$cached    = $this->cache->get( $cache_key );
+
+		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}> */
+			return $cached;
+		}
+
+		$token   = $this->get_token();
+		$headers = array();
+
+		if ( $token !== '' ) {
+			$headers['Authorization'] = "Bearer {$token}";
+		}
+
+		$encoded_path = rawurlencode( $path );
+		$url          = "https://api.github.com/repos/{$repo}/contents/{$encoded_path}?ref={$ref}";
+		$response     = $this->http_client->get( $url, $headers );
+
+		if ( $response->status_code !== 200 ) {
+			return array();
+		}
+
+		$decoded = json_decode( $response->body, true );
+		if ( ! is_array( $decoded ) ) {
+			return array();
+		}
+
+		// GitHub returns object for single file, array for directory
+		// We only handle directory listings
+		if ( isset( $decoded['type'] ) ) {
+			// Single file response, return empty (we only support directories)
+			return array();
+		}
+
+		/** @var array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}> $contents */
+		$contents = $decoded;
+
+		$this->cache->set( $cache_key, $contents, 300 ); // 5 minutes
+
+		return $contents;
+	}
+
+	/**
+	 * Get archive download URL
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @param string $ref  Branch or commit reference.
+	 * @return string Archive download URL (follows redirect to actual download).
+	 */
+	public function get_archive_url( string $repo, string $ref ): string {
+		$token   = $this->get_token();
+		$headers = array();
+
+		if ( $token !== '' ) {
+			$headers['Authorization'] = "Bearer {$token}";
+		}
+
+		// Request zipball - GitHub will redirect to actual archive
+		$url      = "https://api.github.com/repos/{$repo}/zipball/{$ref}";
+		$response = $this->http_client->get( $url, $headers, array( 'redirection' => 0 ) );
+
+		// GitHub returns 302 redirect to actual archive URL
+		if ( $response->status_code === 302 && isset( $response->headers['location'] ) && is_string( $response->headers['location'] ) ) {
+			return $response->headers['location'];
+		}
+
+		// Fallback to direct URL (will require auth)
+		return $url;
+	}
+
+	/**
+	 * Get repository info
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @return array{default_branch: string, full_name: string, private: bool} Repository metadata.
+	 */
+	public function get_repo_info( string $repo ): array {
+		$cache_key = "repo_info_{$repo}";
+		$cached    = $this->cache->get( $cache_key );
+
+		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array{default_branch: string, full_name: string, private: bool} */
+			return $cached;
+		}
+
+		$token   = $this->get_token();
+		$headers = array();
+
+		if ( $token !== '' ) {
+			$headers['Authorization'] = "Bearer {$token}";
+		}
+
+		$url      = "https://api.github.com/repos/{$repo}";
+		$response = $this->http_client->get( $url, $headers );
+
+		if ( $response->status_code !== 200 ) {
+			// Return sensible defaults on error
+			return array(
+				'default_branch' => 'main',
+				'full_name'      => $repo,
+				'private'        => false,
+			);
+		}
+
+		$decoded = json_decode( $response->body, true );
+		if ( ! is_array( $decoded ) ) {
+			return array(
+				'default_branch' => 'main',
+				'full_name'      => $repo,
+				'private'        => false,
+			);
+		}
+
+		/** @var array{default_branch: string, full_name: string, private: bool} $repo_info */
+		$repo_info = array(
+			'default_branch' => isset( $decoded['default_branch'] ) && is_string( $decoded['default_branch'] ) ? $decoded['default_branch'] : 'main',
+			'full_name'      => isset( $decoded['full_name'] ) && is_string( $decoded['full_name'] ) ? $decoded['full_name'] : $repo,
+			'private'        => isset( $decoded['private'] ) && is_bool( $decoded['private'] ) ? $decoded['private'] : false,
+		);
+
+		$this->cache->set( $cache_key, $repo_info, 3600 ); // 1 hour
+
+		return $repo_info;
+	}
+
+	/**
 	 * Get configured GitHub token
 	 *
 	 * @return string Token or empty string if not configured.
