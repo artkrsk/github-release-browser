@@ -1,5 +1,6 @@
 import type React from 'react'
 import { TSourceMode } from '../types'
+import { getString } from '../utils/getString'
 
 const { __experimentalToggleGroupControl: ToggleGroupControl, __experimentalToggleGroupControlOption: ToggleGroupControlOption } = wp.components
 
@@ -23,14 +24,14 @@ export const SourceModeToggle: React.FC<ISourceModeToggleProps> = ({
         value={mode}
         onChange={(value) => onModeChange(value as TSourceMode)}
         isBlock
-        label="Content Mode"
+        label={getString('directory.contentMode')}
         hideLabelFromVision
         __next40pxDefaultSize
         __nextHasNoMarginBottom
         className="github-release-browser-source-toggle__control"
       >
-        <ToggleGroupControlOption value="releases" label="Releases" />
-        <ToggleGroupControlOption value="directory" label="Directory" />
+        <ToggleGroupControlOption value="releases" label={getString('directory.modeReleases')} />
+        <ToggleGroupControlOption value="directory" label={getString('directory.modeDirectory')} />
       </ToggleGroupControl>
     </div>
   )

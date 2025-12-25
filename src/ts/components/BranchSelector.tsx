@@ -1,5 +1,6 @@
 import type React from 'react'
 import { IBranch } from '../interfaces'
+import { getString } from '../utils/getString'
 
 const { SelectControl, Spinner } = wp.components
 
@@ -23,15 +24,15 @@ export const BranchSelector: React.FC<IBranchSelectorProps> = ({
 }) => {
   const options = branches.length > 0
     ? branches.map((branch) => ({
-        label: branch.name === defaultBranch ? `${branch.name} (default)` : branch.name,
+        label: branch.name === defaultBranch ? `${branch.name} (${getString('directory.branchDefault')})` : branch.name,
         value: branch.name
       }))
-    : [{ label: 'Loading...', value: '' }]
+    : [{ label: getString('common.loading'), value: '' }]
 
   return (
     <div className="github-release-browser-branch-selector">
       <SelectControl
-        label="Branch"
+        label={getString('directory.branch')}
         value={selectedBranch || ''}
         options={options}
         onChange={onSelectBranch}

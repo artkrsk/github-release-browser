@@ -16,6 +16,7 @@ export const TRANSLATION_FALLBACKS: Record<string, string> = {
   'common.retry': 'Retry →',
   'common.getPro': 'Get Pro',
   'common.upgradeToPro': 'Upgrade to Pro',
+  'common.loading': 'Loading...',
 
   // Actions
   'actions.insertIntoDownload': 'Insert into download',
@@ -29,6 +30,9 @@ export const TRANSLATION_FALLBACKS: Record<string, string> = {
   'error.title.invalidToken': 'Invalid GitHub Token',
   'error.desc.invalidToken': 'Your GitHub Personal Access Token is invalid or has been revoked. Please update your token in the settings.',
   'error.failedToFetchReleases': 'Failed to fetch releases.',
+  'error.goToSettings': 'Go to Settings',
+  'error.archiveUrlFailed': 'Failed to get archive URL',
+  'error.refreshFailed': 'Failed to refresh',
 
   // Time formatting for format utility
   'time.today': 'today',
@@ -51,5 +55,15 @@ export const TRANSLATION_FALLBACKS: Record<string, string> = {
   'releases.createOne': 'Create one →',
   'releases.useLatest': 'Use Latest Release',
   'releases.latestDescription': 'Automatically serve the latest published release',
-  'releases.title': 'Releases'
+  'releases.title': 'Releases',
+
+  // Directory browsing
+  'directory.root': 'Root',
+  'directory.noFolders': 'No folders in this directory',
+  'directory.useCurrentFolder': 'Use current folder',
+  'directory.branch': 'Branch',
+  'directory.branchDefault': 'default',
+  'directory.contentMode': 'Content Mode',
+  'directory.modeReleases': 'Releases',
+  'directory.modeDirectory': 'Directory'
 };

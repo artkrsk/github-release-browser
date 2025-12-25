@@ -1,5 +1,6 @@
 import type React from 'react'
 import { IContentItem } from '../interfaces'
+import { getString } from '../utils/getString'
 
 const { Card, CardBody, Spinner } = wp.components
 
@@ -27,11 +28,11 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
 }) => {
   const getBreadcrumbs = () => {
     if (!currentPath) {
-      return [{ name: repositoryName || 'root', path: '' }]
+      return [{ name: repositoryName || getString('directory.root'), path: '' }]
     }
 
     const parts = currentPath.split('/').filter(Boolean)
-    const breadcrumbs = [{ name: repositoryName || 'root', path: '' }]
+    const breadcrumbs = [{ name: repositoryName || getString('directory.root'), path: '' }]
 
     let accumulatedPath = ''
     for (const part of parts) {
@@ -72,7 +73,7 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
       ) : (
         <>
           {folders.length === 0 ? (
-            <p className="github-release-browser-directory__empty">No folders in this directory</p>
+            <p className="github-release-browser-directory__empty">{getString('directory.noFolders')}</p>
           ) : (
             <div className="github-release-browser-directory__list">
             <Card
@@ -91,7 +92,7 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
                   />
                   <span className="dashicons dashicons-portfolio github-release-browser-directory__icon"></span>
                   <span className="github-release-browser-directory__name">
-                    Use current folder
+                    {getString('directory.useCurrentFolder')}
                   </span>
                 </div>
               </CardBody>

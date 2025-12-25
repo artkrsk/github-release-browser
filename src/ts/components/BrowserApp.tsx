@@ -177,7 +177,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
         downloadUrl: archiveUrl
       })
     } catch (error) {
-      setError(error instanceof Error ? error.message : 'Failed to get archive URL')
+      setError(error instanceof Error ? error.message : getString('error.archiveUrlFailed'))
     }
   }
 
@@ -211,7 +211,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
       }
     } catch (error) {
       if (isMountedRef.current) {
-        setError(error instanceof Error ? error.message : 'Failed to refresh')
+        setError(error instanceof Error ? error.message : getString('error.refreshFailed'))
       }
     } finally {
       if (isMountedRef.current) {
@@ -244,7 +244,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
       }
     } catch (error) {
       if (isMountedRef.current) {
-        setError(error instanceof Error ? error.message : 'Failed to refresh')
+        setError(error instanceof Error ? error.message : getString('error.refreshFailed'))
       }
     } finally {
       if (isMountedRef.current) {
