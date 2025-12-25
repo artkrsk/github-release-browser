@@ -98,3 +98,7 @@ node_modules/
 
 
 # Build artifacts should be regenerated, not committed
+
+# Test coverage
+coverage/
+.phpunit.cache/
