@@ -1,0 +1,11 @@
+{
+	"core": null,
+	"config": {
+		"WP_DEBUG": true,
+		"SCRIPT_DEBUG": true
+	},
+	"mappings": {
+		"wp-content/plugins/github-release-browser": ".",
+		"wp-content/mu-plugins": "./dev-plugin"
+	}
+}
