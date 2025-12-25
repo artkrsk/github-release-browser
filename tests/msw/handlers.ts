@@ -23,29 +23,34 @@ export const handlers = [
 		const formData = await request.formData()
 		const action = formData.get('action')
 
-		if (action === 'github_release_browser_get_user_repos') {
-			/** Default: Return list of repositories */
+		/** Match any prefix + action suffix pattern */
+		if (action && action.toString().endsWith('_get_user_repos')) {
+			/** Default: Return list of repositories in WordPress AJAX format */
 			const repos = [
 				createMockRepo({ name: 'test-repo-1', full_name: 'owner/test-repo-1' }),
 				createMockRepo({ name: 'test-repo-2', full_name: 'owner/test-repo-2' }),
 				createMockRepo({ name: 'react', full_name: 'facebook/react', stargazers_count: 200000 })
 			]
 
-			return HttpResponse.json(createGitHubApiResponse(repos))
+			/** Note: GitHubService expects data.repos, not data directly */
+			return HttpResponse.json({
+				success: true,
+				data: { repos }
+			})
 		}
 
 		/** Get Releases */
-		if (action === 'github_release_browser_get_releases') {
-			const repository = formData.get('repository') as string
+		if (action && action.toString().endsWith('_get_releases')) {
+			const repo = formData.get('repo') as string
 
-			if (!repository) {
+			if (!repo) {
 				return HttpResponse.json({
 					success: false,
 					data: { message: 'Repository parameter is required' }
 				}, { status: 400 })
 			}
 
-			/** Default: Return list of releases */
+			/** Default: Return list of releases in WordPress AJAX format */
 			const releases = [
 				createMockRelease({
 					id: 1,
@@ -64,14 +69,18 @@ export const handlers = [
 				})
 			]
 
-			return HttpResponse.json(createGitHubApiResponse(releases))
+			/** Note: GitHubService expects data.releases, not data directly */
+			return HttpResponse.json({
+				success: true,
+				data: { releases }
+			})
 		}
 
 		/** Get Branches */
-		if (action === 'github_release_browser_get_branches') {
-			const repository = formData.get('repository') as string
+		if (action && action.toString().endsWith('_get_branches')) {
+			const repo = formData.get('repo') as string
 
-			if (!repository) {
+			if (!repo) {
 				return HttpResponse.json({
 					success: false,
 					data: { message: 'Repository parameter is required' }
@@ -89,12 +98,12 @@ export const handlers = [
 		}
 
 		/** Get Directory Contents */
-		if (action === 'github_release_browser_get_contents') {
-			const repository = formData.get('repository') as string
+		if (action && action.toString().endsWith('_get_contents')) {
+			const repo = formData.get('repo') as string
 			const path = formData.get('path') as string
 			const ref = formData.get('ref') as string
 
-			if (!repository) {
+			if (!repo) {
 				return HttpResponse.json({
 					success: false,
 					data: { message: 'Repository parameter is required' }
@@ -153,7 +162,7 @@ export const invalidTokenHandler = http.post('*/wp-admin/admin-ajax.php', async 
 	const formData = await request.formData()
 	const action = formData.get('action')
 
-	if (action?.toString().startsWith('github_release_browser_')) {
+	if (action?.toString().includes('github') || action?.toString().includes('release')) {
 		return HttpResponse.json(createInvalidTokenResponse(), { status: 401 })
 	}
 })
@@ -163,7 +172,7 @@ export const rateLimitHandler = http.post('*/wp-admin/admin-ajax.php', async ({ 
 	const formData = await request.formData()
 	const action = formData.get('action')
 
-	if (action?.toString().startsWith('github_release_browser_')) {
+	if (action?.toString().includes('github') || action?.toString().includes('release')) {
 		return HttpResponse.json(createRateLimitResponse(0), { status: 403 })
 	}
 })
@@ -173,7 +182,7 @@ export const networkErrorHandler = http.post('*/wp-admin/admin-ajax.php', async 
 	const formData = await request.formData()
 	const action = formData.get('action')
 
-	if (action?.toString().startsWith('github_release_browser_')) {
+	if (action?.toString().includes('github') || action?.toString().includes('release')) {
 		return HttpResponse.json(createNetworkErrorResponse(), { status: 500 })
 	}
 })
@@ -183,9 +192,9 @@ export const notFoundHandler = http.post('*/wp-admin/admin-ajax.php', async ({ r
 	const formData = await request.formData()
 	const action = formData.get('action')
 
-	if (action === 'github_release_browser_get_releases' ||
-		action === 'github_release_browser_get_branches' ||
-		action === 'github_release_browser_get_contents') {
+	if (action?.toString().endsWith('_get_releases') ||
+		action?.toString().endsWith('_get_branches') ||
+		action?.toString().endsWith('_get_contents')) {
 		return HttpResponse.json({
 			success: false,
 			data: {
@@ -201,19 +210,28 @@ export const emptyResultsHandler = http.post('*/wp-admin/admin-ajax.php', async 
 	const formData = await request.formData()
 	const action = formData.get('action')
 
-	if (action === 'github_release_browser_get_user_repos') {
+	if (action?.toString().endsWith('_get_user_repos')) {
+		return HttpResponse.json({
+			success: true,
+			data: { repos: [] }
+		})
+	}
+
+	if (action?.toString().endsWith('_get_releases')) {
+		return HttpResponse.json({
+			success: true,
+			data: { releases: [] }
+		})
+	}
+
+	if (action?.toString().endsWith('_get_branches')) {
 		return HttpResponse.json(createGitHubApiResponse([]))
 	}
 
-	if (action === 'github_release_browser_get_releases') {
+	if (action?.toString().endsWith('_get_contents')) {
 		return HttpResponse.json(createGitHubApiResponse([]))
 	}
 
-	if (action === 'github_release_browser_get_branches') {
-		return HttpResponse.json(createGitHubApiResponse([]))
-	}
-
-	if (action === 'github_release_browser_get_contents') {
-		return HttpResponse.json(createGitHubApiResponse([]))
-	}
+	/** Fallback */
+	return HttpResponse.json(createGitHubApiResponse([]))
 })

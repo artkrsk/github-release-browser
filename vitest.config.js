@@ -11,6 +11,19 @@ export default defineConfig({
     setupFiles: ['tests/setup.ts'],
     globals: true,
 
+    /** Include only TypeScript unit tests */
+    include: ['tests/ts/**/*.test.{ts,tsx}'],
+
+    /** Exclude MSW integration tests and E2E tests */
+    exclude: [
+      'node_modules/**',
+      'dist/**',
+      '__build__/**',
+      '**/*.msw.test.{ts,tsx}',
+      'tests/e2e/**',
+      'tests/msw/**'
+    ],
+
     // Coverage configuration
     coverage: {
       include: ['src/ts/**/*.{ts,tsx}'],
