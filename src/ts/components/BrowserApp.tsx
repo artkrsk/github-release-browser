@@ -101,11 +101,21 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
   )
 
   // Directory-specific handlers
-  const handleSelectRepoForDirectory = (repo: string) => {
-    setSelectedRepo(repo)
+  const handleSelectRepoForDirectory = (repoFullName: string) => {
+    setSelectedRepo(repoFullName)
     setView('directory')
-    fetchBranches(repo)
-    fetchRepoInfo(repo)
+    setCurrentPath('')
+    setSelectedFolderPath(null)
+    fetchBranches(repoFullName)
+    fetchRepoInfo(repoFullName)
+  }
+
+  const handleRepoClick = (repoFullName: string) => {
+    if (sourceMode === 'directory') {
+      handleSelectRepoForDirectory(repoFullName)
+    } else {
+      handleRepoToggle(repoFullName)
+    }
   }
 
   const handleBranchChange = (branch: string) => {
@@ -292,14 +302,14 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
         <RepositoryList
           repos={repos}
           searchQuery={searchQuery}
-          expandedRepo={expandedRepo}
+          expandedRepo={sourceMode === 'releases' ? expandedRepo : null}
           selectedRepo={selectedRepo}
           repoReleases={repoReleases}
           releaseErrors={releaseErrors}
           loadingRepo={loadingRepo}
           selectedReleaseTag={selectedReleaseTag}
-          onRepoToggle={handleRepoToggle}
-          onSelectRelease={sourceMode === 'releases' ? handleSelectRelease : handleSelectRepoForDirectory}
+          onRepoToggle={handleRepoClick}
+          onSelectRelease={handleSelectRelease}
           fetchReleasesForRepo={fetchReleasesForRepo}
           config={config}
         />
