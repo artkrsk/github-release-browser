@@ -8,7 +8,7 @@ namespace Arts\GH\ReleaseBrowser\Core\Services;
  * Parses and builds URIs like: github-release://owner/repo/v1.0.0/asset.zip
  */
 class URIParser {
-	private $protocol;
+	private string $protocol;
 
 	/**
 	 * Constructor
@@ -33,9 +33,9 @@ class URIParser {
 	 * Parse URI into components
 	 *
 	 * @param string $uri URI to parse.
-	 * @return array|\WP_Error Parsed components or WP_Error on failure.
+	 * @return array{valid: bool, repo?: string, release?: string, asset?: string|null}|\WP_Error Parsed components or WP_Error on failure.
 	 */
-	public function parse( string $uri ) {
+	public function parse( string $uri ): array|\WP_Error {
 		if ( strpos( $uri, $this->protocol ) !== 0 ) {
 			if ( function_exists( 'is_wp_error' ) ) {
 				return new \WP_Error( 'invalid_protocol', 'Invalid GitHub file URI protocol' );
@@ -68,7 +68,7 @@ class URIParser {
 	/**
 	 * Build URI from components
 	 *
-	 * @param array $parts URI components.
+	 * @param array{repo: string, release?: string, asset?: string} $parts URI components.
 	 * @return string Built URI.
 	 */
 	public function build( array $parts ): string {

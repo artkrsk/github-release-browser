@@ -32,7 +32,7 @@ interface ICache {
 	/**
 	 * Clear multiple cache keys
 	 *
-	 * @param array $keys Array of cache keys.
+	 * @param array<string> $keys Array of cache keys.
 	 * @return bool Success status.
 	 */
 	public function clear_keys( array $keys ): bool;

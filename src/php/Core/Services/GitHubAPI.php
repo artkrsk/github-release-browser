@@ -11,11 +11,16 @@ use Arts\GH\ReleaseBrowser\Core\Types\Response;
  * GitHub API service
  *
  * Handles GitHub API requests with automatic caching (5 min for releases, 1 hour for repos).
+ *
+ * @phpstan-type RateLimitData array{remaining: int, limit: int}
+ * @phpstan-type ReleaseData array<string, mixed>
+ * @phpstan-type RepoData array<string, mixed>
+ * @phpstan-type ErrorData array{error: true, error_code: string, status_code: int, message: string}
  */
 class GitHubAPI {
-	private $http_client;
-	private $cache;
-	private $config;
+	private IHttpClient $http_client;
+	private ICache $cache;
+	private IConfig $config;
 
 	/**
 	 * Constructor
@@ -35,20 +40,21 @@ class GitHubAPI {
 	 *
 	 * @param string $repo Repository name.
 	 * @param int    $page Page number.
-	 * @return array Release data.
+	 * @return array<int, array<string, mixed>> Release data.
 	 */
 	public function get_releases( string $repo, int $page = 1 ): array {
 		$cache_key = "releases_{$repo}_{$page}";
 		$cached    = $this->cache->get( $cache_key );
 
 		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array<int, array<string, mixed>> */
 			return $cached;
 		}
 
-		$token   = $this->config->get( 'github_token' );
+		$token   = $this->get_token();
 		$headers = array();
 
-		if ( $token ) {
+		if ( $token !== '' ) {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
@@ -59,11 +65,13 @@ class GitHubAPI {
 			return array();
 		}
 
-		$releases = json_decode( $response->body, true );
-		if ( ! is_array( $releases ) ) {
+		$decoded = json_decode( $response->body, true );
+		if ( ! is_array( $decoded ) ) {
 			return array();
 		}
 
+		/** @var array<int, array<string, mixed>> $releases */
+		$releases = $decoded;
 		$this->cache->set( $cache_key, $releases, 300 ); // 5 minutes - transients handle serialization
 
 		return $releases;
@@ -72,20 +80,21 @@ class GitHubAPI {
 	/**
 	 * Get GitHub API rate limit
 	 *
-	 * @return array Rate limit data.
+	 * @return array{remaining: int, limit: int} Rate limit data.
 	 */
 	public function get_rate_limit(): array {
 		$cache_key = 'rate_limit';
 		$cached    = $this->cache->get( $cache_key );
 
 		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array{remaining: int, limit: int} */
 			return $cached;
 		}
 
-		$token   = $this->config->get( 'github_token' );
+		$token   = $this->get_token();
 		$headers = array();
 
-		if ( $token ) {
+		if ( $token !== '' ) {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
@@ -98,10 +107,18 @@ class GitHubAPI {
 			);
 		}
 
-		$data       = json_decode( $response->body, true );
-		$rate_limit = $data['resources']['core'] ?? array(
-			'remaining' => 0,
-			'limit'     => 5000,
+		$data = json_decode( $response->body, true );
+		if ( ! is_array( $data ) || ! isset( $data['resources'] ) || ! is_array( $data['resources'] ) || ! isset( $data['resources']['core'] ) || ! is_array( $data['resources']['core'] ) ) {
+			return array(
+				'remaining' => 0,
+				'limit'     => 5000,
+			);
+		}
+
+		/** @var array{remaining: int, limit: int} $rate_limit */
+		$rate_limit = array(
+			'remaining' => isset( $data['resources']['core']['remaining'] ) && is_int( $data['resources']['core']['remaining'] ) ? $data['resources']['core']['remaining'] : 0,
+			'limit'     => isset( $data['resources']['core']['limit'] ) && is_int( $data['resources']['core']['limit'] ) ? $data['resources']['core']['limit'] : 5000,
 		);
 
 		$this->cache->set( $cache_key, $rate_limit, 60 ); // 1 minute - transients handle serialization
@@ -112,20 +129,21 @@ class GitHubAPI {
 	/**
 	 * Get user repositories
 	 *
-	 * @return array Repository data or error information.
+	 * @return array<string, mixed> Repository data or error information.
 	 */
 	public function get_user_repos(): array {
 		$cache_key = 'user_repos';
 		$cached    = $this->cache->get( $cache_key );
 
 		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array<string, mixed> */
 			return $cached;
 		}
 
-		$token   = $this->config->get( 'github_token' );
+		$token   = $this->get_token();
 		$headers = array();
 
-		if ( $token ) {
+		if ( $token !== '' ) {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
@@ -142,11 +160,13 @@ class GitHubAPI {
 			);
 		}
 
-		$repos = json_decode( $response->body, true );
-		if ( ! is_array( $repos ) ) {
+		$decoded = json_decode( $response->body, true );
+		if ( ! is_array( $decoded ) ) {
 			return array();
 		}
 
+		/** @var array<string, mixed> $repos */
+		$repos = $decoded;
 		$this->cache->set( $cache_key, $repos, 3600 ); // 1 hour - transients handle serialization
 
 		return $repos;
@@ -157,20 +177,21 @@ class GitHubAPI {
 	 *
 	 * @param string $repo Repository name.
 	 * @param string $tag Release tag.
-	 * @return array Release data.
+	 * @return array<string, mixed> Release data.
 	 */
 	public function get_release_by_tag( string $repo, string $tag ): array {
 		$cache_key = "release_{$repo}_{$tag}";
 		$cached    = $this->cache->get( $cache_key );
 
 		if ( $cached !== false && is_array( $cached ) ) {
+			/** @var array<string, mixed> */
 			return $cached;
 		}
 
-		$token   = $this->config->get( 'github_token' );
+		$token   = $this->get_token();
 		$headers = array();
 
-		if ( $token ) {
+		if ( $token !== '' ) {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
@@ -181,11 +202,13 @@ class GitHubAPI {
 			return array();
 		}
 
-		$release = json_decode( $response->body, true );
-		if ( ! is_array( $release ) ) {
+		$decoded = json_decode( $response->body, true );
+		if ( ! is_array( $decoded ) ) {
 			return array();
 		}
 
+		/** @var array<string, mixed> $release */
+		$release = $decoded;
 		$this->cache->set( $cache_key, $release, 300 ); // 5 minutes - transients handle serialization
 
 		return $release;
@@ -199,10 +222,10 @@ class GitHubAPI {
 	 * @return string Download URL or empty string on error.
 	 */
 	public function get_download_url( string $repo, int $asset_id ): string {
-		$token   = $this->config->get( 'github_token' );
+		$token   = $this->get_token();
 		$headers = array( 'Accept' => 'application/octet-stream' );
 
-		if ( $token ) {
+		if ( $token !== '' ) {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
@@ -224,10 +247,10 @@ class GitHubAPI {
 	 * @return bool True if connection is successful.
 	 */
 	public function test_connection( string $token = '' ): bool {
-		$test_token = $token ? $token : $this->config->get( 'github_token' );
+		$test_token = $token !== '' ? $token : $this->get_token();
 		$headers    = array();
 
-		if ( $test_token ) {
+		if ( $test_token !== '' ) {
 			$headers['Authorization'] = "Bearer {$test_token}";
 		}
 
@@ -249,6 +272,16 @@ class GitHubAPI {
 		} else {
 			$this->cache->delete( $pattern );
 		}
+	}
+
+	/**
+	 * Get configured GitHub token
+	 *
+	 * @return string Token or empty string if not configured.
+	 */
+	private function get_token(): string {
+		$token = $this->config->get( 'github_token' );
+		return is_string( $token ) ? $token : '';
 	}
 
 	/**

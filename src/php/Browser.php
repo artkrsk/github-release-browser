@@ -13,22 +13,38 @@ use Arts\GH\ReleaseBrowser\Includes\ModalIntegration;
 /**
  * Main Browser class for GitHub Release Browser
  * Coordinates all services and provides access to core functionality
+ *
+ * @phpstan-type BrowserConfig array{
+ *   cache_prefix: string,
+ *   github_token: string,
+ *   protocol: string,
+ *   enable_latest_release: bool,
+ *   settings_url: string,
+ *   strings: array<string, string>,
+ *   action_prefix?: string,
+ *   features?: array<string, mixed>,
+ *   upgrade_url?: string,
+ *   text_domain?: string,
+ *   assets_url?: string
+ * }
  */
 class Browser {
-	private $config;
-	private $github_api;
-	private $uri_parser;
-	private $asset_resolver;
-	private $frontend = null;
-	private $modal    = null;
+	/** @var BrowserConfig */
+	private array $config;
+	private GitHubAPI $github_api;
+	private URIParser $uri_parser;
+	private AssetResolver $asset_resolver;
+	private ?Frontend $frontend      = null;
+	private ?ModalIntegration $modal = null;
 
 	/**
 	 * Constructor
 	 *
-	 * @param array $config Configuration array.
+	 * @param array<string, mixed> $config Configuration array.
 	 */
 	public function __construct( array $config ) {
-		$this->config = wp_parse_args(
+		/** @var BrowserConfig $parsed_config */
+		$parsed_config = wp_parse_args(
 			$config,
 			array(
 				'cache_prefix'          => 'gh_browser_',
@@ -93,6 +109,7 @@ class Browser {
 				),
 			)
 		);
+		$this->config  = $parsed_config;
 
 		// Initialize core services
 		$this->github_api = new GitHubAPI(
@@ -150,10 +167,17 @@ class Browser {
 	}
 
 	/**
+	 * Get action prefix from config
+	 */
+	private function get_action_prefix(): string {
+		return $this->config['action_prefix'] ?? 'github_release_browser';
+	}
+
+	/**
 	 * Register AJAX handlers for GitHub API calls
 	 */
 	private function register_ajax_handlers(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 
 		// Get releases
 		add_action( "wp_ajax_{$action_prefix}_get_releases", array( $this, 'ajax_get_releases' ) );
@@ -184,15 +208,19 @@ class Browser {
 		add_action( "wp_ajax_nopriv_{$action_prefix}_test_file", array( $this, 'ajax_test_file' ) );
 	}
 
-	public function ajax_test_file() {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+	/**
+	 * AJAX handler for testing file availability
+	 */
+	public function ajax_test_file(): void {
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		if ( ! current_user_can( 'edit_products' ) ) {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
 		}
 
-		$file_url = isset( $_POST['file_url'] ) ? sanitize_text_field( wp_unslash( $_POST['file_url'] ) ) : '';
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$file_url = isset( $_POST['file_url'] ) && is_string( $_POST['file_url'] ) ? sanitize_text_field( wp_unslash( $_POST['file_url'] ) ) : '';
 
 		if ( empty( $file_url ) || ! $this->uri_parser->is_github_file( $file_url ) ) {
 			wp_send_json_error( array( 'message' => 'Invalid GitHub file URL' ) );
@@ -204,8 +232,12 @@ class Browser {
 			wp_send_json_error( array( 'message' => $parsed->get_error_message() ) );
 		}
 
+		$repo    = $parsed['repo'] ?? '';
+		$tag     = $parsed['release'] ?? 'latest';
+		$pattern = isset( $parsed['asset'] ) && is_string( $parsed['asset'] ) ? $parsed['asset'] : null;
+
 		// Clear cache to force fresh API request for token validation
-		$this->github_api->clear_cache( "release_{$parsed['repo']}_{$parsed['release']}" );
+		$this->github_api->clear_cache( "release_{$repo}_{$tag}" );
 
 		// Try to resolve the release
 		$release = $this->resolve_release( $parsed );
@@ -219,23 +251,20 @@ class Browser {
 			);
 		}
 
-		if ( ! $release ) {
-			wp_send_json_error( array( 'message' => 'Release not found' ) );
-		}
-
 		// Find asset in release
-		$asset = $this->asset_resolver->find_asset_in_release( $release, $parsed['asset'] );
+		$asset = $this->asset_resolver->find_asset_in_release( $release, $pattern );
 
 		if ( ! $asset ) {
-			wp_send_json_error( array( 'message' => "Asset {$parsed['asset']} not found in release" ) );
+			$asset_name = $pattern ?? 'default';
+			wp_send_json_error( array( 'message' => "Asset {$asset_name} not found in release" ) );
 		}
 
 		wp_send_json_success(
 			array(
 				'status' => 'ready',
-				'size'   => $asset['size'],
-				'type'   => $asset['content_type'],
-				'name'   => $asset['name'],
+				'size'   => $asset['size'] ?? 0,
+				'type'   => $asset['content_type'] ?? '',
+				'name'   => $asset['name'] ?? '',
 			)
 		);
 	}
@@ -244,7 +273,7 @@ class Browser {
 	 * AJAX handler for getting releases
 	 */
 	public function ajax_get_releases(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
@@ -252,8 +281,9 @@ class Browser {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
-		$repo = sanitize_text_field( $_POST['repo'] ?? '' );
-		$page = intval( $_POST['page'] ?? 1 );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$repo = isset( $_POST['repo'] ) && is_string( $_POST['repo'] ) ? sanitize_text_field( $_POST['repo'] ) : '';
+		$page = isset( $_POST['page'] ) && is_numeric( $_POST['page'] ) ? (int) $_POST['page'] : 1;
 
 		if ( empty( $repo ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Repository name is required', 'github-release-browser' ) ) );
@@ -271,7 +301,7 @@ class Browser {
 	 * AJAX handler for getting rate limit
 	 */
 	public function ajax_get_rate_limit(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
@@ -291,7 +321,7 @@ class Browser {
 	 * AJAX handler for parsing URI
 	 */
 	public function ajax_parse_uri(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
@@ -299,7 +329,8 @@ class Browser {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
-		$uri = sanitize_text_field( $_POST['uri'] ?? '' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$uri = isset( $_POST['uri'] ) && is_string( $_POST['uri'] ) ? sanitize_text_field( $_POST['uri'] ) : '';
 
 		if ( empty( $uri ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'URI is required', 'github-release-browser' ) ) );
@@ -317,7 +348,7 @@ class Browser {
 	 * AJAX handler for getting download URL
 	 */
 	public function ajax_get_download_url(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
@@ -325,7 +356,8 @@ class Browser {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
-		$asset_url = sanitize_text_field( $_POST['asset_url'] ?? '' );
+		// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized below
+		$asset_url = isset( $_POST['asset_url'] ) && is_string( $_POST['asset_url'] ) ? sanitize_text_field( $_POST['asset_url'] ) : '';
 
 		if ( empty( $asset_url ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Asset URL is required', 'github-release-browser' ) ) );
@@ -333,10 +365,10 @@ class Browser {
 
 		try {
 			// Make a request to the GitHub asset URL to follow the redirect to S3
-			$token   = $this->config['github_token'] ?? '';
+			$token   = $this->config['github_token'];
 			$headers = array( 'Accept' => 'application/octet-stream' );
 
-			if ( $token ) {
+			if ( $token !== '' ) {
 				$headers['Authorization'] = "Bearer {$token}";
 			}
 
@@ -361,7 +393,7 @@ class Browser {
 	 * AJAX handler for getting user repositories
 	 */
 	public function ajax_get_user_repos(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
@@ -381,7 +413,7 @@ class Browser {
 	 * AJAX handler for clearing cache
 	 */
 	public function ajax_clear_cache(): void {
-		$action_prefix = $this->config['action_prefix'] ?? 'github_release_browser';
+		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
@@ -400,14 +432,17 @@ class Browser {
 	/**
 	 * Resolve a release from parsed URI data
 	 *
-	 * @param array $parsed Parsed URI data containing 'repo', 'release', and 'asset'.
-	 * @return array|\WP_Error Release data or error.
+	 * @param array{valid: bool, repo?: string, release?: string, asset?: string|null} $parsed Parsed URI data.
+	 * @return array<string, mixed>|\WP_Error Release data or error.
 	 */
-	private function resolve_release( $parsed ) {
+	private function resolve_release( array $parsed ): array|\WP_Error {
+		$repo = $parsed['repo'] ?? '';
+		$tag  = $parsed['release'] ?? 'latest';
+
 		// Handle "latest" keyword
-		if ( $parsed['release'] === 'latest' ) {
+		if ( $tag === 'latest' ) {
 			// Check if latest release feature is enabled
-			if ( empty( $this->config['enable_latest_release'] ) ) {
+			if ( ! $this->config['enable_latest_release'] ) {
 				return new \WP_Error(
 					'pro_feature',
 					esc_html__( 'Latest release feature requires pro version', 'github-release-browser' )
@@ -415,11 +450,7 @@ class Browser {
 			}
 
 			// Fetch the most recent release
-			$releases = $this->github_api->get_releases( $parsed['repo'], 1 );
-
-			if ( is_wp_error( $releases ) ) {
-				return $releases;
-			}
+			$releases = $this->github_api->get_releases( $repo, 1 );
 
 			if ( ! empty( $releases ) && isset( $releases[0] ) ) {
 				return $releases[0];
@@ -432,7 +463,7 @@ class Browser {
 		}
 
 		// Handle specific release tags
-		$release = $this->github_api->get_release_by_tag( $parsed['repo'], $parsed['release'] );
+		$release = $this->github_api->get_release_by_tag( $repo, $tag );
 
 		if ( empty( $release ) ) {
 			return new \WP_Error(
@@ -440,8 +471,8 @@ class Browser {
 				sprintf(
 					/* translators: 1: release tag, 2: repository name */
 					esc_html__( 'Release "%1$s" not found in repository "%2$s"', 'github-release-browser' ),
-					$parsed['release'],
-					$parsed['repo']
+					$tag,
+					$repo
 				)
 			);
 		}
