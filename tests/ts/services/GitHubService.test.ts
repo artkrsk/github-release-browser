@@ -2,11 +2,14 @@ import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { GitHubService } from '@/services/GitHubService'
 
 // Mock FormData
-const mockFormData = {
-  append: vi.fn()
+const mockFormDataAppend = vi.fn()
+
+class MockFormData {
+  append = mockFormDataAppend
 }
 
-global.FormData = vi.fn(() => mockFormData) as any
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+global.FormData = MockFormData as any
 
 describe('GitHubService', () => {
   let service: GitHubService
@@ -72,7 +75,7 @@ describe('GitHubService', () => {
         'https://example.com/wp-admin/admin-ajax.php',
         expect.objectContaining({
           method: 'POST',
-          body: mockFormData,
+          body: expect.any(MockFormData),
           credentials: 'same-origin'
         })
       )
@@ -243,7 +246,9 @@ describe('GitHubService', () => {
         })
       })
 
-      const result = await service.getDownloadUrl('https://api.github.com/repos/owner/repo/releases/assets/123')
+      const result = await service.getDownloadUrl(
+        'https://api.github.com/repos/owner/repo/releases/assets/123'
+      )
 
       expect(result).toBe(mockDownloadUrl)
     })
@@ -285,7 +290,7 @@ describe('GitHubService', () => {
         json: async () => ({
           success: true,
           data: {
-            repos: mockRepos  // Changed from 'releases' to 'repos' to match API
+            repos: mockRepos // Changed from 'releases' to 'repos' to match API
           }
         })
       })
@@ -434,7 +439,7 @@ describe('GitHubService', () => {
         'https://example.com/wp-admin/admin-ajax.php',
         expect.objectContaining({
           method: 'POST',
-          body: mockFormData,
+          body: expect.any(MockFormData),
           credentials: 'same-origin'
         })
       )
@@ -494,14 +499,11 @@ describe('GitHubService', () => {
 
       await service.getReleases('owner/repo')
 
-      expect(mockFetch).toHaveBeenCalledWith(
-        'https://example.com/wp-admin/admin-ajax.php',
-        {
-          method: 'POST',
-          body: mockFormData,
-          credentials: 'same-origin'
-        }
-      )
+      expect(mockFetch).toHaveBeenCalledWith('https://example.com/wp-admin/admin-ajax.php', {
+        method: 'POST',
+        body: expect.any(MockFormData),
+        credentials: 'same-origin'
+      })
     })
 
     test('handles unknown error in API response', async () => {

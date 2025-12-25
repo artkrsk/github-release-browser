@@ -1,13 +1,5 @@
 {
-  "*.php": [
-    "vendor/bin/phpcbf --standard=.phpstan/phpcs.xml"
-  ],
-  "*.{ts,tsx}": [
-    "prettier --write",
-    "eslint --fix",
-    "tsc --noEmit --skipLibCheck"
-  ],
-  "*.{json,md,yml,yaml}": [
-    "prettier --write"
-  ]
+  "*.php": ["vendor/bin/phpcbf --standard=.phpstan/phpcs.xml"],
+  "*.{ts,tsx}": ["prettier --write", "eslint --fix"],
+  "*.{json,md,yml,yaml}": ["prettier --write"]
 }
