@@ -372,16 +372,14 @@ class GitHubAPI implements IPlatformAPI {
 			$headers['Authorization'] = "Bearer {$token}";
 		}
 
-		// Validate and encode path segments to prevent traversal attacks
-		$path_segments = explode( '/', $path );
-
-		// Reject paths with .. or . segments
-		foreach ( $path_segments as $segment ) {
-			if ( $segment === '..' || $segment === '.' ) {
-				return array();
-			}
+		// Validate path to prevent directory traversal attacks
+		if ( ! empty( $path ) && function_exists( 'validate_file' ) && validate_file( $path ) > 0 ) {
+			// Path contains .. or other invalid sequences
+			return array();
 		}
 
+		// Encode path segments individually to preserve slashes
+		$path_segments    = explode( '/', $path );
 		$encoded_segments = array_map( 'rawurlencode', $path_segments );
 		$encoded_path     = implode( '/', $encoded_segments );
 		$url              = "https://api.github.com/repos/{$repo}/contents/{$encoded_path}?ref={$ref}";
