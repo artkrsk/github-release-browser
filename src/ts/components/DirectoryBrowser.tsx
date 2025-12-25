@@ -65,7 +65,7 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
         ))}
       </div>
 
-      {loading ? (
+      {loading || contents.length === 0 && !loading ? (
         <div className="github-release-browser-directory__loading">
           <Spinner />
         </div>

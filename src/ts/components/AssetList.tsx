@@ -23,12 +23,6 @@ export const AssetList = ({
 
   return (
     <div className="github-release-browser-asset-list">
-      <h3 className="github-release-browser-asset-list__heading">
-        {isLatest
-          ? `${strings.assetsIn || getString('assets.assetsIn')} ${repository} (${strings.latest || getString('assets.latest')})`
-          : `${strings.assetsIn || getString('assets.assetsIn')} ${repository} (${releaseTag})`}
-      </h3>
-
       {assets.length === 0 && (
         <p className="github-release-browser-asset-list__empty">{strings.noAssetsInRelease || getString('assets.noAssets')}</p>
       )}

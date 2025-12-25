@@ -20,7 +20,8 @@ export const RepositoryList: React.FC<IRepositoryListProps> = ({
   onRepoToggle,
   onSelectRelease,
   fetchReleasesForRepo,
-  config
+  config,
+  sourceMode = 'releases'
 }) => {
   const filteredRepos = repos.filter((repo) =>
     repo.full_name?.toLowerCase().includes(searchQuery?.toLowerCase() || '')
@@ -37,7 +38,7 @@ export const RepositoryList: React.FC<IRepositoryListProps> = ({
   }
 
   return (
-    <Panel>
+    <Panel className={sourceMode === 'directory' ? 'github-release-browser-panel_directory-mode' : ''}>
       {filteredRepos.map((repo) => {
         const isSelected = selectedRepo === repo.full_name
         const selectedPrefix = isSelected ? '✓ ' : ''

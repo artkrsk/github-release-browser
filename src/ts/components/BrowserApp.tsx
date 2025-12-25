@@ -89,6 +89,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setSelectedRepo,
     setSelectedRelease,
     setSelectedReleaseTag,
+    setSearchQuery,
     fetchReleasesForRepo
   )
 
@@ -106,6 +107,8 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setView('directory')
     setCurrentPath('')
     setSelectedFolderPath(null)
+    setDirectoryContents([])  // Clear old contents to prevent flash of previous repo
+    setBranches([])           // Clear old branches
     fetchBranches(repoFullName)
     fetchRepoInfo(repoFullName)
   }
@@ -125,6 +128,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setSelectedBranch(branch)
     setCurrentPath('')
     setSelectedFolderPath(null)
+    setDirectoryContents([])  // Clear old contents before fetching new branch
     if (selectedRepo) {
       fetchContents(selectedRepo, '', branch)
     }
@@ -132,6 +136,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
 
   const handleNavigate = (path: string) => {
     setCurrentPath(path)
+    setDirectoryContents([])  // Clear old contents before navigating
     if (selectedRepo && selectedBranch) {
       fetchContents(selectedRepo, path, selectedBranch)
     }
@@ -322,6 +327,7 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
           onSelectRelease={handleSelectRelease}
           fetchReleasesForRepo={fetchReleasesForRepo}
           config={config}
+          sourceMode={sourceMode}
         />
       </div>
 

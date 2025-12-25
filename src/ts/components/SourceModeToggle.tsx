@@ -25,6 +25,8 @@ export const SourceModeToggle: React.FC<ISourceModeToggleProps> = ({
         isBlock
         label="Content Mode"
         hideLabelFromVision
+        __next40pxDefaultSize
+        __nextHasNoMarginBottom
         className="github-release-browser-source-toggle__control"
       >
         <ToggleGroupControlOption value="releases" label="Releases" />

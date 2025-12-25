@@ -21,18 +21,12 @@ export const BranchSelector: React.FC<IBranchSelectorProps> = ({
   loading = false,
   defaultBranch
 }) => {
-  if (loading) {
-    return (
-      <div className="github-release-browser-branch-selector">
-        <Spinner />
-      </div>
-    )
-  }
-
-  const options = branches.map((branch) => ({
-    label: branch.name === defaultBranch ? `${branch.name} (default)` : branch.name,
-    value: branch.name
-  }))
+  const options = branches.length > 0
+    ? branches.map((branch) => ({
+        label: branch.name === defaultBranch ? `${branch.name} (default)` : branch.name,
+        value: branch.name
+      }))
+    : [{ label: 'Loading...', value: '' }]
 
   return (
     <div className="github-release-browser-branch-selector">
@@ -41,6 +35,9 @@ export const BranchSelector: React.FC<IBranchSelectorProps> = ({
         value={selectedBranch || ''}
         options={options}
         onChange={onSelectBranch}
+        disabled={loading || branches.length === 0}
+        __next40pxDefaultSize
+        __nextHasNoMarginBottom
         className="github-release-browser-branch-selector__dropdown"
       />
     </div>
