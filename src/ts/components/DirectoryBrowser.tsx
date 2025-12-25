@@ -44,9 +44,8 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
 
   const breadcrumbs = getBreadcrumbs()
 
-  // Separate folders and files
+  // Only show folders (files are hidden in directory browsing mode)
   const folders = contents.filter(item => item.type === 'dir')
-  const files = contents.filter(item => item.type === 'file')
 
   return (
     <div className="github-release-browser-directory">
@@ -131,24 +130,10 @@ export const DirectoryBrowser: React.FC<IDirectoryBrowserProps> = ({
               )
             })}
 
-            {/* Files (not selectable, grayed out) */}
-            {files.map((item) => (
-              <Card
-                key={item.sha}
-                className="github-release-browser-directory__item github-release-browser-directory__item_file"
-              >
-                <CardBody>
-                  <div className="github-release-browser-directory__item-content">
-                    <span className="dashicons dashicons-media-default github-release-browser-directory__icon"></span>
-                    <span className="github-release-browser-directory__name">{item.name}</span>
-                  </div>
-                </CardBody>
-              </Card>
-            ))}
           </div>
 
-          {folders.length === 0 && files.length === 0 && (
-            <p className="github-release-browser-directory__empty">This directory is empty</p>
+          {folders.length === 0 && (
+            <p className="github-release-browser-directory__empty">No folders in this directory</p>
           )}
         </>
       )}

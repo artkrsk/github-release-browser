@@ -14,4 +14,5 @@ export interface IAsset {
   updated_at: string
   browser_download_url: string
   synthetic?: boolean
+  isDirectory?: boolean
 }

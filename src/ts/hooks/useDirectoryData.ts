@@ -26,22 +26,33 @@ export const useDirectoryData = (
       if (isMountedRef.current) {
         setBranches(branches)
 
-        // Auto-select default branch if available
+        // Auto-select default branch and fetch its contents
+        let defaultBranch = 'main'
         if (branches.length > 0 && !branches.find(b => b.name === 'main')) {
           // If no 'main', try to get repo info for default branch
           try {
             const repoInfo = await service.getRepoInfo(repo)
-            if (isMountedRef.current) {
-              setSelectedBranch(repoInfo.default_branch)
-            }
+            defaultBranch = repoInfo.default_branch
           } catch {
             // Fallback to first branch
+            defaultBranch = branches[0].name
+          }
+        }
+
+        if (isMountedRef.current) {
+          setSelectedBranch(defaultBranch)
+
+          // Fetch initial directory contents for the default branch
+          try {
+            const contents = await service.getContents(repo, '', defaultBranch)
             if (isMountedRef.current) {
-              setSelectedBranch(branches[0].name)
+              setDirectoryContents(contents)
+            }
+          } catch (error) {
+            if (isMountedRef.current) {
+              setError(error instanceof Error ? error.message : 'Failed to fetch directory contents')
             }
           }
-        } else {
-          setSelectedBranch('main')
         }
       }
     } catch (error) {
@@ -53,7 +64,7 @@ export const useDirectoryData = (
         setLoadingBranches(false)
       }
     }
-  }, [service, isMountedRef, setBranches, setSelectedBranch, setLoadingBranches, setError])
+  }, [service, isMountedRef, setBranches, setSelectedBranch, setDirectoryContents, setLoadingBranches, setError])
 
   const fetchContents = useCallback(async (repo: string, path: string, ref: string) => {
     setLoadingContents(true)

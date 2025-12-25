@@ -145,17 +145,24 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     try {
       const archiveUrl = await service.getArchiveUrl(selectedRepo, selectedBranch)
 
+      // Build complete github-dir:// URI
+      const dirProtocol = config.dirProtocol || 'github-dir://'
+      const folderPath = selectedFolderPath || ''
+      const directoryUri = `${dirProtocol}${selectedRepo}/${selectedBranch}${folderPath ? `/${folderPath}` : ''}`
+
       // Create synthetic asset for directory
+      // asset.name contains the full github-dir:// URI for easy consumer usage
       const directoryAsset = {
         id: -999,
-        name: `${selectedRepo}/${selectedBranch}${selectedFolderPath ? `/${selectedFolderPath}` : ''}`,
+        name: directoryUri,
         content_type: 'application/zip',
         size: 0,
         download_count: 0,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString(),
         browser_download_url: archiveUrl,
-        synthetic: true
+        synthetic: true,
+        isDirectory: true
       }
 
       config.onSelectAsset({
