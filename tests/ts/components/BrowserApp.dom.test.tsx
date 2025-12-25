@@ -95,9 +95,47 @@ vi.mock('@/components/AppFooter', () => ({
   )
 }))
 
+vi.mock('@/components/SourceModeToggle', () => ({
+  SourceModeToggle: ({ mode, onModeChange, disabled }: any) => (
+    <div data-testid="source-mode-toggle">
+      <button
+        data-testid="toggle-releases"
+        onClick={() => onModeChange('releases')}
+        disabled={disabled}
+        data-active={mode === 'releases'}
+      >
+        Releases
+      </button>
+      <button
+        data-testid="toggle-directory"
+        onClick={() => onModeChange('directory')}
+        disabled={disabled}
+        data-active={mode === 'directory'}
+      >
+        Directory
+      </button>
+    </div>
+  )
+}))
+
+vi.mock('@/components/DirectoryView', () => ({
+  DirectoryView: ({ selectedRepo, selectedBranch, currentPath, onBack, onSelectBranch, onNavigate, onRefresh }: any) => (
+    <div data-testid="directory-view">
+      <div data-testid="directory-selected-repo">{selectedRepo}</div>
+      <div data-testid="directory-selected-branch">{selectedBranch}</div>
+      <div data-testid="directory-current-path">{currentPath}</div>
+      <button onClick={onBack} data-testid="directory-back-button">Back</button>
+      <button onClick={() => onSelectBranch('develop')} data-testid="directory-change-branch">Change Branch</button>
+      <button onClick={() => onNavigate('src/components')} data-testid="directory-navigate">Navigate</button>
+      {onRefresh && <button onClick={onRefresh} data-testid="directory-refresh">Refresh</button>}
+    </div>
+  )
+}))
+
 // Mock hooks with default return values
 let mockBrowserState: any = {}
 let mockGitHubData: any = {}
+let mockDirectoryData: any = {}
 let mockRepositoryActions: any = {}
 let mockAssetConfirmation: any = {}
 
@@ -107,6 +145,10 @@ vi.mock('@/hooks/useBrowserState', () => ({
 
 vi.mock('@/hooks/useGitHubData', () => ({
   useGitHubData: () => mockGitHubData
+}))
+
+vi.mock('@/hooks/useDirectoryData', () => ({
+  useDirectoryData: () => mockDirectoryData
 }))
 
 vi.mock('@/hooks/useRepositoryActions', () => ({
@@ -130,12 +172,22 @@ describe('BrowserApp - DOM Testing', () => {
     expandedRepo: null,
     selectedRepo: null,
     repoReleases: {},
+    releaseErrors: {},
     loadingRepos: false,
     loadingRepo: null,
     selectedReleaseTag: null,
     selectedRelease: null,
     selectedAssetObj: null,
     error: null,
+    // Directory state
+    sourceMode: 'releases' as 'releases' | 'directory',
+    branches: [],
+    selectedBranch: null,
+    currentPath: '',
+    selectedFolderPath: null,
+    directoryContents: [],
+    loadingBranches: false,
+    loadingContents: false,
     isMountedRef: { current: true },
     setView: vi.fn(),
     setRepos: vi.fn(),
@@ -143,12 +195,22 @@ describe('BrowserApp - DOM Testing', () => {
     setExpandedRepo: vi.fn(),
     setSelectedRepo: vi.fn(),
     setRepoReleases: vi.fn(),
+    setReleaseErrors: vi.fn(),
     setLoadingRepos: vi.fn(),
     setLoadingRepo: vi.fn(),
     setSelectedReleaseTag: vi.fn(),
     setSelectedRelease: vi.fn(),
     setSelectedAssetObj: vi.fn(),
-    setError: vi.fn()
+    setError: vi.fn(),
+    // Directory setters
+    setSourceMode: vi.fn(),
+    setBranches: vi.fn(),
+    setSelectedBranch: vi.fn(),
+    setCurrentPath: vi.fn(),
+    setSelectedFolderPath: vi.fn(),
+    setDirectoryContents: vi.fn(),
+    setLoadingBranches: vi.fn(),
+    setLoadingContents: vi.fn()
   })
 
   const createDefaultMockGitHubData = () => ({
@@ -168,11 +230,18 @@ describe('BrowserApp - DOM Testing', () => {
     canConfirmAsset: false
   })
 
+  const createDefaultMockDirectoryData = () => ({
+    fetchBranches: vi.fn(),
+    fetchContents: vi.fn(),
+    fetchRepoInfo: vi.fn()
+  })
+
   beforeEach(() => {
     setupTestEnvironment()
     vi.clearAllMocks()
     mockBrowserState = createDefaultMockState()
     mockGitHubData = createDefaultMockGitHubData()
+    mockDirectoryData = createDefaultMockDirectoryData()
     mockRepositoryActions = createDefaultMockRepositoryActions()
     mockAssetConfirmation = createDefaultMockAssetConfirmation()
   })
@@ -615,6 +684,344 @@ describe('BrowserApp - DOM Testing', () => {
 
       // Cleanup function (isMountedRef.current = false) should be called
       // This test covers the useEffect cleanup function on lines 79-81
+    })
+  })
+
+  describe('Directory Mode', () => {
+    describe('Directory Mode Rendering', () => {
+      test('shows SourceModeToggle when features.directories is true', async () => {
+        const configWithDirectories = {
+          ...mockConfig,
+          features: { directories: true }
+        }
+        mockBrowserState.repos = mockRepos
+
+        render(<BrowserApp config={configWithDirectories} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('source-mode-toggle')).toBeInTheDocument()
+        })
+      })
+
+      test('hides SourceModeToggle when features.directories is false', async () => {
+        const configWithoutDirectories = {
+          ...mockConfig,
+          features: { directories: false }
+        }
+        mockBrowserState.repos = mockRepos
+
+        render(<BrowserApp config={configWithoutDirectories} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('repository-search')).toBeInTheDocument()
+        })
+        expect(screen.queryByTestId('source-mode-toggle')).not.toBeInTheDocument()
+      })
+
+      test('hides SourceModeToggle when features.directories is undefined', async () => {
+        const configWithoutFeatures = {
+          ...mockConfig,
+          features: undefined
+        }
+        mockBrowserState.repos = mockRepos
+
+        render(<BrowserApp config={configWithoutFeatures} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('repository-search')).toBeInTheDocument()
+        })
+        expect(screen.queryByTestId('source-mode-toggle')).not.toBeInTheDocument()
+      })
+
+      test('renders DirectoryView when view is directory', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+          expect(screen.getByTestId('directory-selected-repo')).toHaveTextContent('owner/test-repo')
+        })
+      })
+
+      test('passes sourceMode to RepositoryList in repos view', async () => {
+        const configWithDirectories = {
+          ...mockConfig,
+          features: { directories: true }
+        }
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.sourceMode = 'directory'
+
+        render(<BrowserApp config={configWithDirectories} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('repository-list')).toBeInTheDocument()
+        })
+      })
+
+      test('does not expand panel in directory mode', async () => {
+        const configWithDirectories = {
+          ...mockConfig,
+          features: { directories: true }
+        }
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.sourceMode = 'directory'
+        mockBrowserState.expandedRepo = 'owner/test-repo'
+
+        render(<BrowserApp config={configWithDirectories} />)
+
+        // In directory mode, expandedRepo should be passed as null to RepositoryList
+        await waitFor(() => {
+          expect(screen.getByTestId('repository-list')).toBeInTheDocument()
+        })
+      })
+    })
+
+    describe('Directory Navigation', () => {
+      test('clicking repo in directory mode calls handleSelectRepoForDirectory', async () => {
+        const configWithDirectories = {
+          ...mockConfig,
+          features: { directories: true }
+        }
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.sourceMode = 'directory'
+
+        render(<BrowserApp config={configWithDirectories} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('repo-1')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('repo-1'))
+
+        // Should set selectedRepo
+        expect(mockBrowserState.setSelectedRepo).toHaveBeenCalledWith('owner/test-repo')
+        // Should set view to directory
+        expect(mockBrowserState.setView).toHaveBeenCalledWith('directory')
+        // Should clear current path
+        expect(mockBrowserState.setCurrentPath).toHaveBeenCalledWith('')
+        // Should clear selected folder path
+        expect(mockBrowserState.setSelectedFolderPath).toHaveBeenCalledWith(null)
+        // Should clear old contents
+        expect(mockBrowserState.setDirectoryContents).toHaveBeenCalledWith([])
+        // Should clear old branches
+        expect(mockBrowserState.setBranches).toHaveBeenCalledWith([])
+        // Should fetch branches
+        expect(mockDirectoryData.fetchBranches).toHaveBeenCalledWith('owner/test-repo')
+        // Should fetch repo info
+        expect(mockDirectoryData.fetchRepoInfo).toHaveBeenCalledWith('owner/test-repo')
+      })
+
+      test('clicking repo in releases mode toggles panel expansion', async () => {
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.sourceMode = 'releases'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('repo-1')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('repo-1'))
+
+        // Should call handleRepoToggle for releases mode
+        expect(mockRepositoryActions.handleRepoToggle).toHaveBeenCalledWith('owner/test-repo')
+      })
+    })
+
+    describe('Directory Handlers', () => {
+      test('handleBranchChange clears contents and fetches new branch', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [
+          { name: 'main', commit: { sha: 'abc123' }, protected: false },
+          { name: 'develop', commit: { sha: 'def456' }, protected: false }
+        ]
+        mockBrowserState.selectedBranch = 'main'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+        })
+
+        // Click to change branch
+        await userEvent.click(screen.getByTestId('directory-change-branch'))
+
+        // Should set new branch
+        expect(mockBrowserState.setSelectedBranch).toHaveBeenCalledWith('develop')
+        // Should clear current path
+        expect(mockBrowserState.setCurrentPath).toHaveBeenCalledWith('')
+        // Should clear selected folder
+        expect(mockBrowserState.setSelectedFolderPath).toHaveBeenCalledWith(null)
+        // Should clear old contents
+        expect(mockBrowserState.setDirectoryContents).toHaveBeenCalledWith([])
+        // Should fetch new contents
+        expect(mockDirectoryData.fetchContents).toHaveBeenCalledWith('owner/test-repo', '', 'develop')
+      })
+
+      test('handleNavigate clears contents and fetches new path', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+        mockBrowserState.currentPath = ''
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+        })
+
+        // Click to navigate
+        await userEvent.click(screen.getByTestId('directory-navigate'))
+
+        // Should set new path
+        expect(mockBrowserState.setCurrentPath).toHaveBeenCalledWith('src/components')
+        // Should clear old contents
+        expect(mockBrowserState.setDirectoryContents).toHaveBeenCalledWith([])
+        // Should fetch new contents
+        expect(mockDirectoryData.fetchContents).toHaveBeenCalledWith('owner/test-repo', 'src/components', 'main')
+      })
+
+      test('handleBackToRepos navigates back from directory view', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('directory-back-button'))
+
+        expect(mockRepositoryActions.handleBackToRepos).toHaveBeenCalledTimes(1)
+      })
+
+      test('renders footer with disabled button when no folder selected', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+        mockBrowserState.selectedFolderPath = null
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+        })
+
+        const primaryButton = screen.getByTestId('button-primary')
+        expect(primaryButton).toBeDisabled()
+      })
+
+      test('renders footer with enabled button when folder is selected', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+        mockBrowserState.selectedFolderPath = 'src/components'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+        })
+
+        const primaryButton = screen.getByTestId('button-primary')
+        expect(primaryButton).not.toBeDisabled()
+      })
+    })
+
+    describe('Directory View State Display', () => {
+      test('displays selected branch in directory view', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-selected-branch')).toHaveTextContent('main')
+        })
+      })
+
+      test('displays current path in directory view', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+        mockBrowserState.currentPath = 'src/components'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-current-path')).toHaveTextContent('src/components')
+        })
+      })
+    })
+
+    describe('Source Mode Switching', () => {
+      test('switches to directory mode when toggle is clicked', async () => {
+        const configWithDirectories = {
+          ...mockConfig,
+          features: { directories: true }
+        }
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.sourceMode = 'releases'
+
+        render(<BrowserApp config={configWithDirectories} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('source-mode-toggle')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('toggle-directory'))
+
+        expect(mockBrowserState.setSourceMode).toHaveBeenCalledWith('directory')
+      })
+
+      test('switches to releases mode when toggle is clicked', async () => {
+        const configWithDirectories = {
+          ...mockConfig,
+          features: { directories: true }
+        }
+        mockBrowserState.repos = mockRepos
+        mockBrowserState.sourceMode = 'directory'
+
+        render(<BrowserApp config={configWithDirectories} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('source-mode-toggle')).toBeInTheDocument()
+        })
+
+        await userEvent.click(screen.getByTestId('toggle-releases'))
+
+        expect(mockBrowserState.setSourceMode).toHaveBeenCalledWith('releases')
+      })
+    })
+
+    describe('Directory Refresh Handler', () => {
+      test('directory view has refresh button', async () => {
+        mockBrowserState.view = 'directory'
+        mockBrowserState.selectedRepo = 'owner/test-repo'
+        mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+        mockBrowserState.selectedBranch = 'main'
+
+        render(<BrowserApp config={mockConfig} />)
+
+        await waitFor(() => {
+          expect(screen.getByTestId('directory-refresh')).toBeInTheDocument()
+        })
+      })
     })
   })
 })

@@ -19,6 +19,7 @@ export default defineConfig({
         'src/ts/**/types/*.ts',
         'src/ts/**/constants/*.ts',
         'src/ts/index.ts',
+        'src/ts/wp-init.ts',
         'node_modules/',
         '**/*.d.ts'
       ]
