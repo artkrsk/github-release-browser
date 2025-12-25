@@ -58,13 +58,53 @@ add_action(
 						   class="button button-primary thickbox">
 							Browse GitHub Releases
 						</a>
+						<button type="button" id="test-uri-btn" class="button">Test URI</button>
 					</p>
+					<div id="uri-test-result" style="margin-top: 20px; padding: 15px; background: #f0f0f1; border-left: 4px solid #2271b1; display: none;">
+						<h3 style="margin-top: 0;">URI Test Result</h3>
+						<pre id="uri-test-output" style="background: white; padding: 10px; overflow-x: auto;"></pre>
+					</div>
 				</div>
 				<script>
 				jQuery(document).ready(function($) {
 					$('.thickbox').on('click', function(e) {
 						e.preventDefault();
 						tb_show('GitHub Releases', $(this).attr('href'));
+					});
+
+					$('#test-uri-btn').on('click', function() {
+						const uri = $('#github-asset-uri').val();
+						if (!uri) {
+							alert('Please select an asset first');
+							return;
+						}
+
+						$('#uri-test-result').show();
+						$('#uri-test-output').text('Testing URI...');
+
+						// Test the URI via AJAX
+						$.post(ajaxurl, {
+							action: 'github_release_browser_test_file',
+							nonce: '<?php echo esc_js( wp_create_nonce( 'github_release_browser_nonce' ) ); ?>',
+							file_url: uri
+						}, function(response) {
+							if (response.success) {
+								$('#uri-test-output').text(
+									'✓ URI is valid and resolvable\n\n' +
+									'Status: ' + response.data.status + '\n' +
+									'Name: ' + response.data.name + '\n' +
+									'Type: ' + response.data.type + '\n' +
+									'Size: ' + response.data.size + ' bytes'
+								);
+							} else {
+								$('#uri-test-output').text(
+									'✗ URI test failed\n\n' +
+									'Error: ' + (response.data?.message || 'Unknown error')
+								);
+							}
+						}).fail(function(xhr) {
+							$('#uri-test-output').text('✗ Request failed: ' + xhr.statusText);
+						});
 					});
 				});
 				</script>

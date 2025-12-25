@@ -23,6 +23,7 @@ export default {
   },
 
   build: {
+    createDistFolder: true,
     formats: ['iife'],
     target: 'es2018',
     sourcemap: false,
