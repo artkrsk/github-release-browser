@@ -1,14 +1,12 @@
 includes:
 	- vendor/szepeviktor/phpstan-wordpress/extension.neon
+
 parameters:
-	level: 5
+	level: max
+	phpVersion: 80000
+
 	paths:
 		- src/php
-	excludePaths:
-		- src/php/libraries/*
-	bootstrapFiles:
-		- .phpstan/phpstan-bootstrap.php
-	# Treat PHP 7.4 as baseline (your minimum version)
-	phpVersion: 70400
-	# Allow PHPStan to parse files with higher PHP version syntax (for stubs)
+
 	treatPhpDocTypesAsCertain: false
+
