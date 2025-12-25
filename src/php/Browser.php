@@ -215,7 +215,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'edit_products' ) ) {
+		if ( ! current_user_can( 'read' ) ) {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
 		}
 
