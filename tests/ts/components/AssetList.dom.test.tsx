@@ -80,10 +80,6 @@ describe('AssetList - DOM Testing', () => {
     })
   })
 
-  describe('Custom Strings', () => {
-    // Heading tests removed - heading now in AssetsView, not AssetList
-  })
-
   describe('Asset Selection', () => {
     test('selects asset when clicked', async () => {
       const mockOnSelectAsset = vi.fn()
