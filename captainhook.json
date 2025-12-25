@@ -15,6 +15,9 @@
       },
       {
         "action": "composer check"
+      },
+      {
+        "action": "pnpm test:integration"
       }
     ]
   }
