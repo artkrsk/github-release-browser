@@ -5,7 +5,9 @@ import { getString } from './getString'
  * Format file size in human-readable format
  */
 export const formatFileSize = (bytes: number): string => {
-  if (bytes === 0) return '0 B'
+  if (bytes === 0) {
+    return getString('format.fileSizeZero')
+  }
 
   const units = [...SIZE_UNITS]
   let size = bytes

@@ -2,6 +2,7 @@ import { useCallback } from 'react'
 import { GitHubService } from '../services/GitHubService'
 import { IBranch, IContentItem } from '../interfaces'
 import { TUseDirectoryDataReturn } from '../types'
+import { getString } from '../utils/getString'
 
 /**
  * Hook to handle directory data fetching operations
@@ -27,9 +28,10 @@ export const useDirectoryData = (
         setBranches(branches)
 
         // Auto-select default branch and fetch its contents
-        let defaultBranch = 'main'
-        if (branches.length > 0 && !branches.find(b => b.name === 'main')) {
-          // If no 'main', try to get repo info for default branch
+        const defaultBranchName = getString('common.defaultBranch')
+        let defaultBranch = defaultBranchName
+        if (branches.length > 0 && !branches.find(b => b.name === defaultBranchName)) {
+          // If no default branch, try to get repo info for default branch
           try {
             const repoInfo = await service.getRepoInfo(repo)
             defaultBranch = repoInfo.default_branch
@@ -50,14 +52,14 @@ export const useDirectoryData = (
             }
           } catch (error) {
             if (isMountedRef.current) {
-              setError(error instanceof Error ? error.message : 'Failed to fetch directory contents')
+              setError(error instanceof Error ? error.message : getString('error.failedToFetchContents'))
             }
           }
         }
       }
     } catch (error) {
       if (isMountedRef.current) {
-        setError(error instanceof Error ? error.message : 'Failed to fetch branches')
+        setError(error instanceof Error ? error.message : getString('error.failedToFetchBranches'))
       }
     } finally {
       if (isMountedRef.current) {
@@ -78,7 +80,7 @@ export const useDirectoryData = (
     } catch (error) {
       if (isMountedRef.current) {
         setDirectoryContents([])
-        setError(error instanceof Error ? error.message : 'Failed to fetch directory contents')
+        setError(error instanceof Error ? error.message : getString('error.failedToFetchContents'))
       }
     } finally {
       if (isMountedRef.current) {
@@ -96,7 +98,7 @@ export const useDirectoryData = (
       }
     } catch (error) {
       if (isMountedRef.current) {
-        setSelectedBranch('main')
+        setSelectedBranch(getString('common.defaultBranch'))
       }
     }
   }, [service, isMountedRef, setSelectedBranch])

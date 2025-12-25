@@ -28,12 +28,14 @@ export interface IStringKeys {
     'common.getPro': string;
     'common.upgradeToPro': string;
     'common.loading': string;
+    'common.defaultBranch': string;
     'time.today': string;
     'time.yesterday': string;
     'time.daysAgo': string;
     'time.weeksAgo': string;
     'time.monthsAgo': string;
     'time.yearsAgo': string;
+    'format.fileSizeZero': string;
     'error.title.invalidToken': string;
     'error.title.networkError': string;
     'error.title.rateLimit': string;
@@ -52,6 +54,11 @@ export interface IStringKeys {
     'error.failedToFetchReleases': string;
     'error.archiveUrlFailed': string;
     'error.refreshFailed': string;
+    'error.unknownError': string;
+    'error.httpError': string;
+    'error.networkError': string;
+    'error.failedToFetchContents': string;
+    'error.failedToFetchBranches': string;
     'directory.branch': string;
     'directory.branchDefault': string;
     'directory.root': string;

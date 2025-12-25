@@ -35,7 +35,7 @@ export const useGitHubData = (
         setError(
           error instanceof Error
             ? error.message
-            : 'Network error occurred'
+            : getString('error.networkError')
         )
       }
     } finally {

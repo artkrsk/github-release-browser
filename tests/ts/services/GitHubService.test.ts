@@ -1,5 +1,11 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import { GitHubService } from '@/services/GitHubService'
+import { TRANSLATION_FALLBACKS } from '@/constants/TRANSLATION_FALLBACKS'
+
+// Mock getString to return fallback values
+vi.mock('@/utils/getString', () => ({
+  getString: (key: string) => TRANSLATION_FALLBACKS[key] || key
+}))
 
 // Mock FormData
 const mockFormDataAppend = vi.fn()
@@ -147,7 +153,7 @@ describe('GitHubService', () => {
         status: 500
       })
 
-      await expect(service.getReleases('owner/repo')).rejects.toThrow('HTTP error! status: 500')
+      await expect(service.getReleases('owner/repo')).rejects.toThrow(/HTTP error! status: 500/)
     })
 
     test('handles network error', async () => {
@@ -329,16 +335,6 @@ describe('GitHubService', () => {
     })
 
     test('throws custom error for token missing error code', async () => {
-      // Mock getString to return specific messages
-      vi.mock('@/utils/getString', () => ({
-        getString: vi.fn()
-      }))
-
-      const { getString } = await import('@/utils/getString')
-      vi.mocked(getString)
-        .mockReturnValueOnce('Welcome to Release Browser')
-        .mockReturnValueOnce('Invalid GitHub Token')
-
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -353,21 +349,10 @@ describe('GitHubService', () => {
         })
       })
 
-      await expect(service.getUserRepos()).rejects.toThrow('Welcome to Release Browser')
-      expect(getString).toHaveBeenCalledWith('error.welcome.description')
+      await expect(service.getUserRepos()).rejects.toThrow(/To browse and insert files from your GitHub releases/)
     })
 
     test('throws custom error for token invalid error code', async () => {
-      // Mock getString to return specific messages
-      vi.mock('@/utils/getString', () => ({
-        getString: vi.fn()
-      }))
-
-      const { getString } = await import('@/utils/getString')
-      vi.mocked(getString)
-        .mockReturnValueOnce('Welcome to Release Browser')
-        .mockReturnValueOnce('Invalid GitHub Token')
-
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
@@ -382,8 +367,7 @@ describe('GitHubService', () => {
         })
       })
 
-      await expect(service.getUserRepos()).rejects.toThrow('Invalid GitHub Token')
-      expect(getString).toHaveBeenCalledWith('error.desc.invalidToken')
+      await expect(service.getUserRepos()).rejects.toThrow(/Your GitHub Personal Access Token is invalid/)
     })
 
     test('throws error message from backend for unknown error codes', async () => {
@@ -419,7 +403,7 @@ describe('GitHubService', () => {
         })
       })
 
-      await expect(service.getUserRepos()).rejects.toThrow('Unknown error occurred')
+      await expect(service.getUserRepos()).rejects.toThrow(/An error occurred/)
     })
   })
 
@@ -515,7 +499,7 @@ describe('GitHubService', () => {
         })
       })
 
-      await expect(service.getReleases('owner/repo')).rejects.toThrow('Unknown error occurred')
+      await expect(service.getReleases('owner/repo')).rejects.toThrow(/An error occurred/)
     })
   })
 
@@ -540,7 +524,7 @@ describe('GitHubService', () => {
         })
       })
 
-      await expect(service.getReleases('owner/repo')).rejects.toThrow('Unknown error occurred')
+      await expect(service.getReleases('owner/repo')).rejects.toThrow(/An error occurred/)
     })
 
     test('handles timeout errors', async () => {

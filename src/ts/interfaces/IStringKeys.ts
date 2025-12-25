@@ -41,6 +41,7 @@ export interface IStringKeys {
   'common.getPro': string;
   'common.upgradeToPro': string;
   'common.loading': string;
+  'common.defaultBranch': string;
 
   // Time formatting
   'time.today': string;
@@ -49,6 +50,9 @@ export interface IStringKeys {
   'time.weeksAgo': string;
   'time.monthsAgo': string;
   'time.yearsAgo': string;
+
+  // Format utilities
+  'format.fileSizeZero': string;
 
   // Error titles
   'error.title.invalidToken': string;
@@ -75,6 +79,11 @@ export interface IStringKeys {
   'error.failedToFetchReleases': string;
   'error.archiveUrlFailed': string;
   'error.refreshFailed': string;
+  'error.unknownError': string;
+  'error.httpError': string;
+  'error.networkError': string;
+  'error.failedToFetchContents': string;
+  'error.failedToFetchBranches': string;
 
   // Directory browsing
   'directory.branch': string;

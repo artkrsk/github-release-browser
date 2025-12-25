@@ -41,13 +41,13 @@ export class GitHubService {
     })
 
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
+      throw new Error(getString('error.httpError').replace('%s', response.status.toString()))
     }
 
     const result = await response.json()
 
     if (!result.success) {
-      throw new Error(result.data?.message || 'Unknown error occurred')
+      throw new Error(result.data?.message || getString('error.unknownError'))
     }
 
     return result as IApiResponse
@@ -79,7 +79,7 @@ export class GitHubService {
     // Check if backend returned an error structure
     if (result.data.repos && 'error' in result.data.repos) {
       const error = result.data.repos as any
-      let errorMessage = error.message || 'Unknown error occurred'
+      let errorMessage = error.message || getString('error.unknownError')
 
       // Use more user-friendly messages for specific error codes
       if (error.error_code === 'token_missing') {
