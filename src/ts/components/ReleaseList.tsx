@@ -121,8 +121,11 @@ export const ReleaseList: React.FC<IReleaseListProps> = ({
                     )}
                   </div>
                   <div className="github-release-browser-card__meta">
-                    {formatDate(release.published_at)} • {release.assets.length}{' '}
-                    {release.assets.length === 1 ? strings.asset || getString('assets.asset') : strings.assets || getString('assets.assets')}
+                    {formatDate(release.published_at)} •{' '}
+                    {release.assets.length === 0
+                      ? (strings['assets.noAssets'] || getString('assets.noAssets'))
+                      : `${release.assets.length} ${release.assets.length === 1 ? (strings.asset || getString('assets.asset')) : (strings.assets || getString('assets.assets'))}`
+                    }
                   </div>
                 </div>
                 <span className="github-release-browser-card__dots">
