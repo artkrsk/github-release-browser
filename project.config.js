@@ -1,6 +1,6 @@
 export default {
   name: 'github-release-browser',
-  entry: './src/ts/index.ts',
+  entry: './src/ts/wp-init.ts',
   author: 'Artem Semkin',
   license: 'GPL-3.0-or-later',
 
@@ -118,10 +118,7 @@ export default {
     enabled: false,
     port: 3000,
     host: 'localhost',
-    https: {
-      key: '',
-      cert: ''
-    },
+    https: false,
     injectChanges: true,
     reloadDebounce: 500,
     reloadThrottle: 1000,
@@ -158,6 +155,11 @@ export default {
   },
 
   watch: {
-    ignored: ['node_modules/**', 'dist/**']
+    ignored: [
+      'node_modules/**',
+      'dist/**',
+      '**/*.map',
+      '**/libraries/**'
+    ]
   }
 }
