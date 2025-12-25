@@ -70,24 +70,18 @@ class URIParserTest extends TestCase {
 	}
 
 	public function test_parse_returns_wp_error_for_invalid_protocol(): void {
-		Functions\when( 'is_wp_error' )->returnArg();
-
 		$result = $this->parser->parse( 'https://github.com/owner/repo' );
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	public function test_parse_returns_wp_error_for_insufficient_parts(): void {
-		Functions\when( 'is_wp_error' )->returnArg();
-
 		$result = $this->parser->parse( 'github-release://owner' );
 
 		$this->assertInstanceOf( \WP_Error::class, $result );
 	}
 
 	public function test_parse_with_invalid_protocol_structure(): void {
-		Functions\when( 'is_wp_error' )->returnArg();
-
 		$result = $this->parser->parse( 'not-github://something' );
 
 		$this->assertInstanceOf( \WP_Error::class, $result );

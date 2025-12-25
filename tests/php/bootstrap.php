@@ -35,8 +35,3 @@ if ( ! class_exists( 'WP_Error' ) ) {
 		}
 	}
 }
-
-// Register Brain Monkey tearDown to run after each test
-register_shutdown_function(function () {
-    Brain\Monkey\tearDown();
-});
