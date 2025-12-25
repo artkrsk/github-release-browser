@@ -32,6 +32,7 @@ export const RepositorySearch: React.FC<IRepositorySearchProps> = ({
         onChange={onSearchChange}
         placeholder={strings.search || getString('repositories.searchPlaceholder')}
         className="github-release-browser-browser__search"
+        __nextHasNoMarginBottom={true}
       />
     </div>
   )
