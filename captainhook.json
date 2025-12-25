@@ -11,6 +11,9 @@
     "enabled": true,
     "actions": [
       {
+        "action": "pnpm test"
+      },
+      {
         "action": "composer check"
       }
     ]

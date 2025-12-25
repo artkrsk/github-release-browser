@@ -23,6 +23,8 @@ __e2e__ export-ignore
 tests export-ignore
 docs export-ignore
 coverage export-ignore
+phpunit.xml export-ignore
+.phpunit.cache export-ignore
 
 # Development config files - safe to ignore
 /*.yml export-ignore
@@ -45,9 +47,9 @@ project.*.js export-ignore
 .husky export-ignore
 .phpstan export-ignore
 .taskmaster export-ignore
-.lintstagedrc.json
-.phpstan.neon
-.eslint.config.mjs
+.lintstagedrc.json export-ignore
+phpstan.neon export-ignore
+.eslint.config.mjs export-ignore
 
 # IMPORTANT: These files are needed for npm packages and should NOT be ignored:
 # - package.json (needed for npm to understand the package)
