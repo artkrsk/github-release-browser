@@ -14,18 +14,20 @@ export default function (baseConfig) {
   config.build.sourcemap = false
   config.build.minify = false
 
-  // Configure Sass for development
+  // Configure Sass for development (no sourcemap to avoid triggering PHP watcher)
   config.sass.options.sourceMap = false
   config.sass.options.outputStyle = 'expanded'
 
+  // Disable TS sourcemaps too (avoid triggering watchers)
+  config.build.sourcemap = false
+
   // Configure live reload for development
+  config.liveReload.enabled = true
   config.liveReload.logLevel = 'debug'
   config.liveReload.reloadOnRestart = true
 
-  config.wordpress.targets = [
-    '/Users/art/Projects/Release Deploy for EDD/Release Deploy for EDD Lite/vendor/arts/github-release-browser/src/php',
-    '/Users/art/Projects/Release Deploy for EDD/Release Deploy for EDD Pro/vendor/arts/github-release-browser/src/php'
-  ]
+  // Disable PHP syncing for wp-env development (re-enable when working on EDD projects)
+  config.wordpress.targets = []
 
   // Configure WordPress plugin target
   config.wordpressPlugin.target = null
