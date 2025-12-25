@@ -4,6 +4,7 @@ namespace Arts\GH\ReleaseBrowser;
 use Arts\GH\ReleaseBrowser\Core\Services\GitHubAPI;
 use Arts\GH\ReleaseBrowser\Core\Services\URIParser;
 use Arts\GH\ReleaseBrowser\Core\Services\AssetResolver;
+use Arts\GH\ReleaseBrowser\Core\Interfaces\IPlatformAPI;
 use Arts\GH\ReleaseBrowser\Adapters\WordPress\HttpClient;
 use Arts\GH\ReleaseBrowser\Adapters\WordPress\Cache;
 use Arts\GH\ReleaseBrowser\Adapters\WordPress\Config;
@@ -31,7 +32,7 @@ use Arts\GH\ReleaseBrowser\Includes\ModalIntegration;
 class Browser {
 	/** @var BrowserConfig */
 	private array $config;
-	private GitHubAPI $github_api;
+	private IPlatformAPI $github_api;
 	private URIParser $uri_parser;
 	private AssetResolver $asset_resolver;
 	private ?Frontend $frontend      = null;
@@ -41,8 +42,9 @@ class Browser {
 	 * Constructor
 	 *
 	 * @param array<string, mixed> $config Configuration array.
+	 * @param IPlatformAPI|null    $platform_adapter Optional platform adapter (defaults to GitHubAPI).
 	 */
-	public function __construct( array $config ) {
+	public function __construct( array $config, ?IPlatformAPI $platform_adapter = null ) {
 		/** @var BrowserConfig $parsed_config */
 		$parsed_config = wp_parse_args(
 			$config,
@@ -111,8 +113,8 @@ class Browser {
 		);
 		$this->config  = $parsed_config;
 
-		// Initialize core services
-		$this->github_api = new GitHubAPI(
+		// Initialize platform adapter (defaults to GitHub if not provided)
+		$this->github_api = $platform_adapter ?? new GitHubAPI(
 			new HttpClient(),
 			new Cache( $this->config['cache_prefix'] ),
 			new Config( array( 'github_token' => $this->config['github_token'] ) )
@@ -130,11 +132,11 @@ class Browser {
 	}
 
 	/**
-	 * Get GitHub API service
+	 * Get platform API service
 	 *
-	 * @return GitHubAPI GitHub API instance.
+	 * @return IPlatformAPI Platform API instance (defaults to GitHubAPI).
 	 */
-	public function get_github_api(): GitHubAPI {
+	public function get_github_api(): IPlatformAPI {
 		return $this->github_api;
 	}
 
