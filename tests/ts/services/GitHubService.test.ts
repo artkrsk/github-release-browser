@@ -549,4 +549,138 @@ describe('GitHubService', () => {
       await expect(service.getReleases('owner/repo')).rejects.toThrow('Request timeout')
     })
   })
+
+  describe('Directory Browsing Methods', () => {
+    describe('getBranches', () => {
+      test('successfully retrieves branches for a repository', async () => {
+        const mockBranches = [
+          { name: 'main', commit: { sha: 'abc123', url: 'https://...' }, protected: false },
+          { name: 'develop', commit: { sha: 'def456', url: 'https://...' }, protected: false }
+        ]
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { branches: mockBranches }
+          })
+        })
+
+        const result = await service.getBranches('owner/repo')
+
+        expect(result).toEqual(mockBranches)
+        expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+      })
+
+      test('returns empty array when no branches found', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {}
+          })
+        })
+
+        const result = await service.getBranches('owner/repo')
+        expect(result).toEqual([])
+      })
+    })
+
+    describe('getContents', () => {
+      test('successfully retrieves directory contents', async () => {
+        const mockContents = [
+          { name: 'src', type: 'dir', path: 'src', sha: '111', size: 0 },
+          { name: 'README.md', type: 'file', path: 'README.md', sha: '222', size: 100 }
+        ]
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { contents: mockContents }
+          })
+        })
+
+        const result = await service.getContents('owner/repo', 'src', 'main')
+
+        expect(result).toEqual(mockContents)
+        expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+        expect(mockFormDataAppend).toHaveBeenCalledWith('path', 'src')
+        expect(mockFormDataAppend).toHaveBeenCalledWith('ref', 'main')
+      })
+    })
+
+    describe('getArchiveUrl', () => {
+      test('successfully retrieves archive URL', async () => {
+        const mockUrl = 'https://codeload.github.com/owner/repo/zip/main'
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { archive_url: mockUrl }
+          })
+        })
+
+        const result = await service.getArchiveUrl('owner/repo', 'main')
+
+        expect(result).toEqual(mockUrl)
+        expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+        expect(mockFormDataAppend).toHaveBeenCalledWith('ref', 'main')
+      })
+    })
+
+    describe('getRepoInfo', () => {
+      test('successfully retrieves repository info', async () => {
+        const mockRepoInfo = {
+          default_branch: 'main',
+          full_name: 'owner/repo',
+          private: false
+        }
+
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { repo_info: mockRepoInfo }
+          })
+        })
+
+        const result = await service.getRepoInfo('owner/repo')
+
+        expect(result).toEqual(mockRepoInfo)
+        expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+      })
+    })
+
+    describe('clearReleasesCache', () => {
+      test('successfully clears releases cache for repo', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { message: 'Cache cleared' }
+          })
+        })
+
+        await expect(service.clearReleasesCache('owner/repo')).resolves.not.toThrow()
+        expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+      })
+    })
+
+    describe('clearBranchesCache', () => {
+      test('successfully clears branches cache for repo', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: { message: 'Cache cleared' }
+          })
+        })
+
+        await expect(service.clearBranchesCache('owner/repo')).resolves.not.toThrow()
+        expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+      })
+    })
+  })
 })
