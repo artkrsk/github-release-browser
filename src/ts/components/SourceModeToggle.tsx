@@ -1,7 +1,7 @@
 import type React from 'react'
 import { TSourceMode } from '../types'
 
-const { Button, ButtonGroup } = wp.components
+const { __experimentalToggleGroupControl: ToggleGroupControl, __experimentalToggleGroupControlOption: ToggleGroupControlOption } = wp.components
 
 export interface ISourceModeToggleProps {
   mode: TSourceMode
@@ -19,24 +19,17 @@ export const SourceModeToggle: React.FC<ISourceModeToggleProps> = ({
 }) => {
   return (
     <div className="github-release-browser-source-toggle">
-      <ButtonGroup>
-        <Button
-          variant={mode === 'releases' ? 'primary' : 'secondary'}
-          onClick={() => onModeChange('releases')}
-          disabled={disabled}
-          className="github-release-browser-source-toggle__tab"
-        >
-          Releases
-        </Button>
-        <Button
-          variant={mode === 'directory' ? 'primary' : 'secondary'}
-          onClick={() => onModeChange('directory')}
-          disabled={disabled}
-          className="github-release-browser-source-toggle__tab"
-        >
-          Directory
-        </Button>
-      </ButtonGroup>
+      <ToggleGroupControl
+        value={mode}
+        onChange={(value) => onModeChange(value as TSourceMode)}
+        isBlock
+        label="Content Mode"
+        hideLabelFromVision
+        className="github-release-browser-source-toggle__control"
+      >
+        <ToggleGroupControlOption value="releases" label="Releases" />
+        <ToggleGroupControlOption value="directory" label="Directory" />
+      </ToggleGroupControl>
     </div>
   )
 }
