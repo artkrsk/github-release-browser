@@ -569,6 +569,48 @@ class GitHubAPITest extends TestCase {
 		$this->api->get_contents( 'owner/repo', 'path with spaces', 'main' );
 	}
 
+	public function test_get_contents_rejects_path_traversal_with_double_dots(): void {
+		$path_hash = hash( 'sha256', '../../etc/passwd' );
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+
+		$this->config->shouldReceive( 'get' )
+			->with( 'github_token' )
+			->andReturn( '' );
+
+		\Brain\Monkey\Functions\expect( 'validate_file' )
+			->once()
+			->with( '../../etc/passwd' )
+			->andReturn( 1 );
+
+		$result = $this->api->get_contents( 'owner/repo', '../../etc/passwd', 'main' );
+
+		$this->assertSame( array(), $result );
+	}
+
+	public function test_get_contents_rejects_path_with_dot_segments(): void {
+		$path_hash = hash( 'sha256', './hidden' );
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( "contents_owner/repo_main_{$path_hash}" )
+			->andReturn( false );
+
+		$this->config->shouldReceive( 'get' )
+			->with( 'github_token' )
+			->andReturn( '' );
+
+		\Brain\Monkey\Functions\expect( 'validate_file' )
+			->once()
+			->with( './hidden' )
+			->andReturn( 2 );
+
+		$result = $this->api->get_contents( 'owner/repo', './hidden', 'main' );
+
+		$this->assertSame( array(), $result );
+	}
+
 	// ========================================
 	// get_archive_url tests
 	// ========================================
