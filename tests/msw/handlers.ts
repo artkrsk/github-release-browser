@@ -94,7 +94,7 @@ export const handlers = [
 				{ name: 'feature/test', commit: { sha: 'ghi789', url: 'https://api.github.com/repos/owner/repo/commits/ghi789' }, protected: false }
 			]
 
-			return HttpResponse.json(createGitHubApiResponse(branches))
+			return HttpResponse.json(createGitHubApiResponse({ branches }))
 		}
 
 		/** Get Directory Contents */
@@ -136,7 +136,80 @@ export const handlers = [
 				}
 			]
 
-			return HttpResponse.json(createGitHubApiResponse(contents))
+			return HttpResponse.json(createGitHubApiResponse({ contents }))
+		}
+
+		/** Rate limit endpoint */
+		if (action?.toString().endsWith('_get_rate_limit')) {
+			return HttpResponse.json({
+				success: true,
+				data: {
+					rate_limit: {
+						limit: 5000,
+						remaining: 4500,
+						reset: Math.floor(Date.now() / 1000) + 3600
+					}
+				}
+			})
+		}
+
+		/** Get repository info */
+		if (action?.toString().endsWith('_get_repo_info')) {
+			const repo = formData.get('repo') as string
+			const [owner, name] = repo?.split('/') || ['owner', 'repo']
+			return HttpResponse.json({
+				success: true,
+				data: {
+					repo_info: {
+						name,
+						full_name: repo,
+						default_branch: 'main',
+						description: 'Test repository'
+					}
+				}
+			})
+		}
+
+		/** Get archive URL */
+		if (action?.toString().endsWith('_get_archive_url')) {
+			const repo = formData.get('repo') as string
+			const ref = formData.get('ref') as string
+			return HttpResponse.json({
+				success: true,
+				data: {
+					archive_url: `https://github.com/${repo}/archive/refs/heads/${ref}.zip`
+				}
+			})
+		}
+
+		/** Parse URI */
+		if (action?.toString().endsWith('_parse_uri')) {
+			return HttpResponse.json({
+				success: true,
+				data: {
+					owner: 'owner',
+					repo: 'repo',
+					tag: 'v1.0.0',
+					asset: 'app.zip'
+				}
+			})
+		}
+
+		/** Get download URL */
+		if (action?.toString().endsWith('_get_download_url')) {
+			return HttpResponse.json({
+				success: true,
+				data: {
+					download_url: 'https://objects.githubusercontent.com/github-production-release-asset-2e65be/12345678/file.zip'
+				}
+			})
+		}
+
+		/** Cache clearing operations */
+		if (action?.toString().endsWith('_clear_cache') ||
+		    action?.toString().endsWith('_clear_releases_cache') ||
+		    action?.toString().endsWith('_clear_branches_cache')) {
+			return HttpResponse.json({ success: true, data: {} })
 		}
 
 		/** Fallback for unhandled actions */
