@@ -74,222 +74,174 @@ describe('BrowserApp component', () => {
     expect(element.props.config.strings?.loading).toBe('Loading repositories...')
   })
 
-  test('renders with different API URLs', () => {
-    const apiUrls = [
-      'https://example.com/wp-admin/admin-ajax.php',
-      'https://myapp.com/ajax-handler.php',
-      'https://localhost:3000/api'
-    ]
+  test.each([
+    'https://example.com/wp-admin/admin-ajax.php',
+    'https://myapp.com/ajax-handler.php',
+    'https://localhost:3000/api'
+  ])('renders with API URL %s', (apiUrl) => {
+    const config = { ...mockConfig, apiUrl }
+    const element = React.createElement(BrowserApp, { config })
 
-    apiUrls.forEach(url => {
-      const config = { ...mockConfig, apiUrl: url }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.apiUrl).toBe(url)
-    })
+    expect(element.props.config.apiUrl).toBe(apiUrl)
   })
 
-  test('renders with different nonces', () => {
-    const nonces = [
-      'nonce-123',
-      'security-token-abc',
-      'wp_rest_nonce_xyz'
-    ]
+  test.each([
+    'nonce-123',
+    'security-token-abc',
+    'wp_rest_nonce_xyz'
+  ])('renders with nonce %s', (nonce) => {
+    const config = { ...mockConfig, nonce }
+    const element = React.createElement(BrowserApp, { config })
 
-    nonces.forEach(nonce => {
-      const config = { ...mockConfig, nonce }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.nonce).toBe(nonce)
-    })
+    expect(element.props.config.nonce).toBe(nonce)
   })
 
-  test('renders with different action prefixes', () => {
-    const actionPrefixes = [
-      'github_release',
-      'my_app_action',
-      'custom_prefix'
-    ]
+  test.each([
+    'github_release',
+    'my_app_action',
+    'custom_prefix'
+  ])('renders with action prefix %s', (actionPrefix) => {
+    const config = { ...mockConfig, actionPrefix }
+    const element = React.createElement(BrowserApp, { config })
 
-    actionPrefixes.forEach(prefix => {
-      const config = { ...mockConfig, actionPrefix: prefix }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.actionPrefix).toBe(prefix)
-    })
+    expect(element.props.config.actionPrefix).toBe(actionPrefix)
   })
 
-  test('renders with different onSelectAsset callbacks', () => {
-    const callbacks = [
-      vi.fn(),
-      vi.fn(),
-      () => {},
-      function mockCallback() {}
-    ]
+  test.each([
+    vi.fn(),
+    vi.fn(),
+    () => {},
+    function mockCallback() {}
+  ])('renders with onSelectAsset callback %#', (onSelectAsset) => {
+    const config = { ...mockConfig, onSelectAsset }
+    const element = React.createElement(BrowserApp, { config })
 
-    callbacks.forEach(callback => {
-      const config = { ...mockConfig, onSelectAsset: callback }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.onSelectAsset).toBe(callback)
-      expect(typeof element.props.config.onSelectAsset).toBe('function')
-    })
+    expect(element.props.config.onSelectAsset).toBe(onSelectAsset)
+    expect(typeof element.props.config.onSelectAsset).toBe('function')
   })
 
-  test('renders with optional protocol', () => {
-    const protocols = [
-      'github-release://',
-      'custom-protocol://',
-      undefined
-    ]
+  test.each([
+    'github-release://',
+    'custom-protocol://',
+    undefined
+  ])('renders with protocol %s', (protocol) => {
+    const config = { ...mockConfig, protocol }
+    const element = React.createElement(BrowserApp, { config })
 
-    protocols.forEach(protocol => {
-      const config = { ...mockConfig, protocol }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.protocol).toBe(protocol)
-    })
+    expect(element.props.config.protocol).toBe(protocol)
   })
 
-  test('renders with different feature configurations', () => {
-    const featureConfigs = [
-      { useLatestRelease: true },
-      { useLatestRelease: false },
-      { useLatestRelease: true, someOtherFeature: true },
-      {},
-      undefined
-    ]
+  test.each([
+    { useLatestRelease: true },
+    { useLatestRelease: false },
+    { useLatestRelease: true, someOtherFeature: true },
+    {},
+    undefined
+  ])('renders with features config %j', (features) => {
+    const config = { ...mockConfig, features }
+    const element = React.createElement(BrowserApp, { config })
 
-    featureConfigs.forEach(features => {
-      const config = { ...mockConfig, features }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.features).toEqual(features)
-    })
+    expect(element.props.config.features).toEqual(features)
   })
 
-  test('renders with different upgrade URLs', () => {
-    const upgradeUrls = [
-      'https://example.com/pro',
-      'https://myapp.com/upgrade',
-      undefined
-    ]
+  test.each([
+    'https://example.com/pro',
+    'https://myapp.com/upgrade',
+    undefined
+  ])('renders with upgrade URL %s', (upgradeUrl) => {
+    const config = { ...mockConfig, upgradeUrl }
+    const element = React.createElement(BrowserApp, { config })
 
-    upgradeUrls.forEach(upgradeUrl => {
-      const config = { ...mockConfig, upgradeUrl }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.upgradeUrl).toBe(upgradeUrl)
-    })
+    expect(element.props.config.upgradeUrl).toBe(upgradeUrl)
   })
 
-  test('renders with different string configurations', () => {
-    const stringConfigs = [
-      { loading: 'Loading...' },
-      {
-        loading: 'Loading repositories',
-        selectRepo: 'Select repo',
-        insertIntoDownload: 'Insert file'
-      },
-      {
-        loading: 'Loading...',
-        selectRepo: 'Select Repository',
-        insertIntoDownload: 'Insert into download',
-        back: 'Back',
-        refresh: 'Refresh',
-        search: 'Search',
-        noResults: 'No results',
-        noRepos: 'No repositories',
-        welcomeTitle: 'Welcome',
-        tokenSetupMessage: 'Setup token',
-        invalidTokenTitle: 'Invalid token',
-        invalidTokenMessage: 'Token is invalid',
-        tryAgain: 'Try Again',
-        upgradeToPro: 'Upgrade',
-        assetsIn: 'Assets in',
-        latest: 'latest',
-        noAssetsInRelease: 'No assets',
-        releases: 'Releases',
-        useLatestRelease: 'Use latest',
-        useLatestReleaseDesc: 'Auto use latest',
-        asset: 'file',
-        assets: 'files',
-        getPro: 'Get Pro'
-      },
-      {},
-      undefined
-    ]
+  test.each([
+    { loading: 'Loading...' },
+    {
+      loading: 'Loading repositories',
+      selectRepo: 'Select repo',
+      insertIntoDownload: 'Insert file'
+    },
+    {
+      loading: 'Loading...',
+      selectRepo: 'Select Repository',
+      insertIntoDownload: 'Insert into download',
+      back: 'Back',
+      refresh: 'Refresh',
+      search: 'Search',
+      noResults: 'No results',
+      noRepos: 'No repositories',
+      welcomeTitle: 'Welcome',
+      tokenSetupMessage: 'Setup token',
+      invalidTokenTitle: 'Invalid token',
+      invalidTokenMessage: 'Token is invalid',
+      tryAgain: 'Try Again',
+      upgradeToPro: 'Upgrade',
+      assetsIn: 'Assets in',
+      latest: 'latest',
+      noAssetsInRelease: 'No assets',
+      releases: 'Releases',
+      useLatestRelease: 'Use latest',
+      useLatestReleaseDesc: 'Auto use latest',
+      asset: 'file',
+      assets: 'files',
+      getPro: 'Get Pro'
+    },
+    {},
+    undefined
+  ])('renders with strings config %#', (strings) => {
+    const config = { ...mockConfig, strings }
+    const element = React.createElement(BrowserApp, { config })
 
-    stringConfigs.forEach(strings => {
-      const config = { ...mockConfig, strings }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.strings).toEqual(strings)
-    })
+    expect(element.props.config.strings).toEqual(strings)
   })
 
-  test('renders with different text domains', () => {
-    const textDomains = [
-      'my-text-domain',
-      'github-release-browser',
-      'default',
-      undefined
-    ]
+  test.each([
+    'my-text-domain',
+    'github-release-browser',
+    'default',
+    undefined
+  ])('renders with text domain %s', (textDomain) => {
+    const config = { ...mockConfig, textDomain }
+    const element = React.createElement(BrowserApp, { config })
 
-    textDomains.forEach(textDomain => {
-      const config = { ...mockConfig, textDomain }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.textDomain).toBe(textDomain)
-    })
+    expect(element.props.config.textDomain).toBe(textDomain)
   })
 
-  test('renders with different assets URLs', () => {
-    const assetsUrls = [
-      'https://example.com/assets/',
-      'https://cdn.example.com/',
-      '/wp-content/plugins/my-app/assets/',
-      undefined
-    ]
+  test.each([
+    'https://example.com/assets/',
+    'https://cdn.example.com/',
+    '/wp-content/plugins/my-app/assets/',
+    undefined
+  ])('renders with assets URL %s', (assetsUrl) => {
+    const config = { ...mockConfig, assetsUrl }
+    const element = React.createElement(BrowserApp, { config })
 
-    assetsUrls.forEach(assetsUrl => {
-      const config = { ...mockConfig, assetsUrl }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.assetsUrl).toBe(assetsUrl)
-    })
+    expect(element.props.config.assetsUrl).toBe(assetsUrl)
   })
 
-  test('renders with different cache prefixes', () => {
-    const cachePrefixes = [
-      'my_cache_',
-      'github_release_',
-      'app_',
-      undefined
-    ]
+  test.each([
+    'my_cache_',
+    'github_release_',
+    'app_',
+    undefined
+  ])('renders with cache prefix %s', (cachePrefix) => {
+    const config = { ...mockConfig, cachePrefix }
+    const element = React.createElement(BrowserApp, { config })
 
-    cachePrefixes.forEach(cachePrefix => {
-      const config = { ...mockConfig, cachePrefix }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.cachePrefix).toBe(cachePrefix)
-    })
+    expect(element.props.config.cachePrefix).toBe(cachePrefix)
   })
 
-  test('renders with different token keys', () => {
-    const tokenKeys = [
-      'github_token',
-      'api_key',
-      'access_token',
-      undefined
-    ]
+  test.each([
+    'github_token',
+    'api_key',
+    'access_token',
+    undefined
+  ])('renders with token key %s', (tokenKey) => {
+    const config = { ...mockConfig, tokenKey }
+    const element = React.createElement(BrowserApp, { config })
 
-    tokenKeys.forEach(tokenKey => {
-      const config = { ...mockConfig, tokenKey }
-      const element = React.createElement(BrowserApp, { config })
-
-      expect(element.props.config.tokenKey).toBe(tokenKey)
-    })
+    expect(element.props.config.tokenKey).toBe(tokenKey)
   })
 
   test('renders with complex configuration', () => {
