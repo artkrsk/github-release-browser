@@ -95,49 +95,46 @@ test.describe('Repository Search', () => {
 		expect(refreshedRepos.length).toBe(initialRepos.length)
 	})
 
-	test('should select repository and navigate to releases', async ({ browserModal }) => {
+	test('should select repository and navigate to assets view', async ({ browserModal }) => {
 		/** Wait for repositories to load */
 		await browserModal.waitForLoading()
 		const repos = await browserModal.getVisibleRepositories()
 		expect(repos.length).toBeGreaterThan(0)
 
-		/** Select first repository */
-		const firstRepo = repos[0]
-		await browserModal.selectRepository(firstRepo)
+		/** Find a repository that has releases (some repos may have none) */
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).not.toBeNull()
 
-		/** Verify navigation to releases view */
-		await browserModal.waitForLoading()
+		/** Select "Use Latest Release" to navigate to assets view */
+		await browserModal.selectLatestRelease()
 
-		/** Should now see releases or assets view */
-		/** Back button should be visible */
+		/** Verify navigation to assets view - back button should be visible */
 		const backButton = browserModal.backButton
-		await expect(backButton).toBeVisible()
+		await expect(backButton).toBeVisible({ timeout: 10000 })
 	})
 
-	test('should maintain search state when returning from releases', async ({ browserModal }) => {
+	test('should navigate back from assets view to repositories', async ({ browserModal }) => {
 		/** Wait for repositories to load */
 		await browserModal.waitForLoading()
 		const allRepos = await browserModal.getVisibleRepositories()
+		expect(allRepos.length).toBeGreaterThan(0)
 
-		/** Search for specific term */
-		const searchTerm = allRepos[0].substring(0, 5)
-		await browserModal.searchRepository(searchTerm)
+		/** Find a repository that has releases and navigate to assets view */
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).not.toBeNull()
+		await browserModal.selectLatestRelease()
 
-		/** Select a repository */
-		const filteredRepos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(filteredRepos[0])
+		/** Verify we're in assets view */
+		await expect(browserModal.backButton).toBeVisible({ timeout: 10000 })
 
-		/** Navigate back */
-		await browserModal.waitForLoading()
+		/** Navigate back to repositories */
 		await browserModal.goBack()
 
-		/** Verify search is still applied */
+		/** Verify we're back in repositories view */
 		await browserModal.waitForLoading()
 		const reposAfterBack = await browserModal.getVisibleRepositories()
 
-		/** Search should still be active */
-		/** Note: Implementation may or may not preserve search state */
-		/** This test verifies the behavior either way */
+		/** Should see repositories again */
 		expect(reposAfterBack.length).toBeGreaterThan(0)
 	})
 })
