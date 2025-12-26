@@ -88,14 +88,16 @@ export class WordPressAdmin {
 	 * @returns The download URL or error message
 	 */
 	async testURI(): Promise<string> {
-		const button = this.page.locator('text=Test URI')
+		const button = this.page.locator('#test-uri-btn')
 		await button.click()
 
-		/** Wait for AJAX response */
-		await this.page.waitForTimeout(1000)
+		/** Wait for AJAX response - the result container appears after click */
+		const result = this.page.locator('#uri-test-output')
+		await result.waitFor({ state: 'visible', timeout: 10000 })
 
-		/** Get result from result div */
-		const result = this.page.locator('#uri_test_result')
+		/** Wait a bit more for AJAX to complete */
+		await this.page.waitForTimeout(2000)
+
 		return await result.textContent() || ''
 	}
 

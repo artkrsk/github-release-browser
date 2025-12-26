@@ -246,7 +246,7 @@ export class BrowserModal {
 
 	/** Close the modal */
 	async close() {
-		const closeButton = this.page.locator('#TB_closeWindowButton')
+		const closeButton = this.page.locator('#TB_closeWindowButton').first()
 		await closeButton.click()
 		await this.modal.waitFor({ state: 'hidden' })
 	}

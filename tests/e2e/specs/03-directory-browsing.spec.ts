@@ -111,18 +111,23 @@ test.describe('Directory Browsing', () => {
 		const initialItems = await browserModal.iframe.locator('.components-panel__body, button').count()
 
 		/** Switch to another branch if available */
-		const branchSelect = browserModal.iframe.locator('select')
-		const options = await branchSelect.locator('option').count()
+		const branchSelect = browserModal.iframe.locator('select').first()
+		const options = await branchSelect.locator('option').allTextContents()
 
-		if (options > 1) {
-			/** Select second branch */
-			await browserModal.selectBranch('develop')
+		/** Find a branch other than 'main' to switch to */
+		const otherBranch = options.find(opt => opt && opt.trim() !== 'main' && opt.trim() !== '')
+		if (otherBranch) {
+			/** Select the other branch */
+			await browserModal.selectBranch(otherBranch.trim())
 			await browserModal.waitForLoading()
 
 			/** Directory should reload */
 			/** Items count might be same or different depending on branch */
 			const newItems = await browserModal.iframe.locator('.components-panel__body, button').count()
 			expect(newItems).toBeGreaterThanOrEqual(0)
+		} else {
+			/** Only one branch available, verify initial items loaded */
+			expect(initialItems).toBeGreaterThan(0)
 		}
 	})
 

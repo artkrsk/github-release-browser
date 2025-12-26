@@ -16,17 +16,17 @@ import { test, expect } from '../fixtures/wordpress'
 
 test.describe('Asset Confirmation', () => {
 	test('should populate URI field when asset is confirmed', async ({ browserModal, wpAdmin }) => {
-		/** Navigate to asset selection */
+		/** Navigate to asset selection - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		/** Confirm selection */
@@ -42,17 +42,17 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should generate github-release:// URI for release assets', async ({ browserModal, wpAdmin }) => {
-		/** Complete asset selection flow */
+		/** Complete asset selection flow - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		await browserModal.confirmSelection()
@@ -67,17 +67,17 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should close modal after confirmation', async ({ browserModal }) => {
-		/** Navigate and select asset */
+		/** Navigate and select asset - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		/** Verify modal is open */
@@ -89,14 +89,13 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should enable confirm button only when asset is selected', async ({ browserModal }) => {
-		/** Navigate to assets view */
+		/** Navigate to assets view - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 
@@ -105,6 +104,7 @@ test.describe('Asset Confirmation', () => {
 
 		/** Select an asset */
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		/** Now confirm button should be enabled */
@@ -112,17 +112,17 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should test URI and get download URL', async ({ browserModal, wpAdmin }) => {
-		/** Complete full selection flow */
+		/** Complete full selection flow - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		await browserModal.confirmSelection()
@@ -142,17 +142,17 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should preserve URI after modal is closed', async ({ browserModal, wpAdmin, page }) => {
-		/** Complete selection flow */
+		/** Complete selection flow - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		await browserModal.confirmSelection()
@@ -176,17 +176,17 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should handle multiple asset selections correctly', async ({ browserModal, wpAdmin }) => {
-		/** First selection */
+		/** First selection - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
+		expect(repoWithReleases).toBeTruthy()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-		await browserModal.selectRelease(releases[0])
+		/** Select the latest release */
+		await browserModal.selectLatestRelease()
 
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
+		expect(assets.length).toBeGreaterThan(0)
 		await browserModal.selectAsset(assets[0])
 
 		await browserModal.confirmSelection()
@@ -201,12 +201,12 @@ test.describe('Asset Confirmation', () => {
 			await modal2.waitForModal()
 			await modal2.waitForLoading()
 
-			const repos2 = await modal2.getVisibleRepositories()
-			await modal2.selectRepository(repos2[0])
+			/** Find a repository with releases again */
+			const repoWithReleases2 = await modal2.findRepositoryWithReleases()
+			expect(repoWithReleases2).toBeTruthy()
 
-			await modal2.waitForLoading()
-			const releases2 = await modal2.getVisibleReleases()
-			await modal2.selectRelease(releases2[0])
+			/** Select the latest release */
+			await modal2.selectLatestRelease()
 
 			await modal2.waitForLoading()
 			const assets2 = await modal2.getVisibleAssets()

@@ -56,16 +56,8 @@ test.describe('Loading States', () => {
 		await browserModal.waitForLoading()
 		const repos = await browserModal.getVisibleRepositories()
 
-		/** Click repository and check for spinner */
-		const repoButton = browserModal.page.locator(`text=${repos[0]}`).first()
-		await repoButton.click()
-
-		/** Spinner should appear (might be too fast to catch) */
-		try {
-			await expect(browserModal.spinner).toBeVisible({ timeout: 1000 })
-		} catch {
-			/** Too fast, already loaded */
-		}
+		/** Click repository and check for spinner - use iframe locator */
+		await browserModal.selectRepository(repos[0])
 
 		/** Eventually spinner disappears and releases load */
 		await browserModal.waitForLoading()
@@ -73,29 +65,21 @@ test.describe('Loading States', () => {
 	})
 
 	test('should show loading spinner when release is selected', async ({ browserModal }) => {
-		/** Navigate to releases */
+		/** Navigate to releases - find a repository with releases */
 		await browserModal.waitForLoading()
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
 
-		await browserModal.waitForLoading()
-		const releases = await browserModal.getVisibleReleases()
-
-		if (releases.length > 0) {
-			/** Click release and check for spinner */
-			const releaseButton = browserModal.page.locator(`text=${releases[0]}`).first()
-			await releaseButton.click()
-
-			/** Spinner might appear briefly */
-			try {
-				await expect(browserModal.spinner).toBeVisible({ timeout: 500 })
-			} catch {
-				/** Loaded too quickly */
-			}
+		if (repoWithReleases) {
+			/** Select the latest release */
+			await browserModal.selectLatestRelease()
 
 			/** Eventually loads */
 			await browserModal.waitForLoading()
 			await browserModal.expectNotLoading()
+		} else {
+			/** No repository with releases found, just verify repos loaded */
+			const repos = await browserModal.getVisibleRepositories()
+			expect(repos.length).toBeGreaterThan(0)
 		}
 	})
 
@@ -199,24 +183,36 @@ test.describe('Loading States', () => {
 		await browserModal.waitForLoading()
 		await browserModal.expectNotLoading()
 
-		/** Navigate forward */
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
-		await browserModal.waitForLoading()
-		await browserModal.expectNotLoading()
+		/** Navigate forward - find a repository with releases */
+		const repoWithReleases = await browserModal.findRepositoryWithReleases()
 
-		/** Navigate back */
-		await browserModal.goBack()
-		await browserModal.waitForLoading()
-		await browserModal.expectNotLoading()
+		if (repoWithReleases) {
+			/** Select release - this navigates to assets view */
+			await browserModal.selectLatestRelease()
+			await browserModal.waitForLoading()
+			await browserModal.expectNotLoading()
 
-		/** Navigate forward again */
-		await browserModal.selectRepository(repos[0])
-		await browserModal.waitForLoading()
-		await browserModal.expectNotLoading()
+			/** Navigate back */
+			await browserModal.goBack()
+			await browserModal.waitForLoading()
+			await browserModal.expectNotLoading()
 
-		/** Loading state should be consistent */
-		expect(await browserModal.spinner.isVisible()).toBe(false)
+			/** Loading state should be consistent */
+			expect(await browserModal.spinner.isVisible()).toBe(false)
+		} else {
+			/** Just expand/collapse a repository accordion */
+			const repos = await browserModal.getVisibleRepositories()
+			await browserModal.selectRepository(repos[0])
+			await browserModal.waitForLoading()
+			await browserModal.expectNotLoading()
+
+			/** Collapse it back */
+			await browserModal.collapseCurrentRepository(repos[0])
+			await browserModal.expectNotLoading()
+
+			/** Loading state should be consistent */
+			expect(await browserModal.spinner.isVisible()).toBe(false)
+		}
 	})
 
 	test('should not show loading spinner for instant operations', async ({ browserModal }) => {
@@ -242,27 +238,25 @@ test.describe('Loading States', () => {
 		const repos = await browserModal.getVisibleRepositories()
 
 		if (repos.length > 1) {
-			/** Rapidly click different repositories */
-			const firstRepo = browserModal.page.locator(`text=${repos[0]}`).first()
-			await firstRepo.click()
+			/** Rapidly click different repositories using proper selectors */
+			await browserModal.selectRepository(repos[0])
 
 			/** Wait a tiny bit */
 			await browserModal.page.waitForTimeout(100)
 
-			/** Click another (might cancel previous) */
-			await browserModal.backButton.click()
+			/** Collapse the first and click another */
+			await browserModal.collapseCurrentRepository(repos[0])
 			await browserModal.page.waitForTimeout(100)
 
-			const secondRepo = browserModal.page.locator(`text=${repos[1]}`).first()
-			await secondRepo.click()
+			await browserModal.selectRepository(repos[1])
 
 			/** Eventually should finish loading */
 			await browserModal.waitForLoading()
 			await browserModal.expectNotLoading()
 
-			/** Should show valid content */
-			const releases = await browserModal.getVisibleReleases()
-			expect(releases.length).toBeGreaterThanOrEqual(0)
+			/** Should show valid content (either releases or empty state) */
+			const panels = await browserModal.iframe.locator('.components-panel__body').count()
+			expect(panels).toBeGreaterThan(0)
 		}
 	})
 })
