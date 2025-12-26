@@ -108,22 +108,9 @@ jobs:
     steps:
       - name: Check test results
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Test Results Summary"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Vitest Unit Tests: ${{ needs.vitest-unit.result }}"
-          echo "Vitest MSW Tests:  ${{ needs.vitest-msw.result }}"
-          echo "PHP Unit Tests:    ${{ needs.php-unit.result }}"
-          echo ""
-          echo "✅ CI validates 863 tests (750 TS unit + 8 MSW + 105 PHP unit)"
-          echo ""
-          echo "📝 Note: PHP Integration (requires wp-env) and E2E (60 tests)"
-          echo "   are disabled in CI due to wp-env timing issues."
-          echo "   See: WordPress/Gutenberg#61627"
-          echo ""
-          echo "🏠 Run locally before merging:"
-          echo "   pnpm test:integration"
-          echo "   pnpm test:e2e"
+          echo "Vitest Unit: ${{ needs.vitest-unit.result }}"
+          echo "Vitest MSW:  ${{ needs.vitest-msw.result }}"
+          echo "PHP Unit:    ${{ needs.php-unit.result }}"
 
       - name: Fail if any tests failed
         if: |

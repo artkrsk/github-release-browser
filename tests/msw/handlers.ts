@@ -298,11 +298,11 @@ export const emptyResultsHandler = http.post('*/wp-admin/admin-ajax.php', async 
 	}
 
 	if (action?.toString().endsWith('_get_branches')) {
-		return HttpResponse.json(createGitHubApiResponse([]))
+		return HttpResponse.json(createGitHubApiResponse({ branches: [] }))
 	}
 
 	if (action?.toString().endsWith('_get_contents')) {
-		return HttpResponse.json(createGitHubApiResponse([]))
+		return HttpResponse.json(createGitHubApiResponse({ contents: [] }))
 	}
 
 	/** Fallback */
