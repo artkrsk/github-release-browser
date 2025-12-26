@@ -3,7 +3,7 @@ name: Tests
 on:
   pull_request:
   push:
-    branches: [main, develop, feature/comprehensive-e2e-tests]
+    branches: [main, develop]
   workflow_dispatch:
 
 jobs:
