@@ -3,6 +3,7 @@ import React from 'react'
 import { render, screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ReleaseList } from '@/components/ReleaseList'
+import { createMockRelease, createMockAsset } from '../../test-utils'
 import { IRelease } from '@/interfaces'
 
 // Mock format utility
@@ -30,38 +31,23 @@ vi.mock('@/utils/getString', () => ({
 
 describe('ReleaseList component', () => {
   const mockReleases: IRelease[] = [
-    {
-      url: 'https://api.github.com/repos/owner/repo/releases/1',
-      html_url: 'https://github.com/owner/repo/releases/tag/v1.0.0',
-      assets_url: 'https://api.github.com/repos/owner/repo/releases/1/assets',
-      upload_url: 'https://uploads.github.com/repos/owner/repo/releases/1/assets',
-      tarball_url: 'https://api.github.com/repos/owner/repo/tarball/v1.0.0',
-      zipball_url: 'https://api.github.com/repos/owner/repo/zipball/v1.0.0',
+    createMockRelease({
       id: 1,
       tag_name: 'v1.0.0',
-      target_commitish: 'main',
       name: 'First Release',
       body: 'Release notes for v1.0.0',
-      draft: false,
-      prerelease: false,
       created_at: '2024-01-01T00:00:00Z',
       published_at: '2024-01-15T00:00:00Z',
       assets: [
-        {
-          url: 'https://api.github.com/repos/owner/repo/releases/assets/1',
+        createMockAsset({
           id: 1,
           name: 'file.zip',
-          label: null,
-          content_type: 'application/zip',
-          state: 'uploaded',
           size: 1024,
-          download_count: 10,
-          created_at: '2024-01-01T00:00:00Z',
-          updated_at: '2024-01-01T00:00:00Z'
-        }
+          download_count: 10
+        })
       ]
-    },
-    {
+    }),
+    createMockRelease({
       url: 'https://api.github.com/repos/owner/repo/releases/2',
       html_url: 'https://github.com/owner/repo/releases/tag/v2.0.0',
       assets_url: 'https://api.github.com/repos/owner/repo/releases/2/assets',
@@ -70,40 +56,33 @@ describe('ReleaseList component', () => {
       zipball_url: 'https://api.github.com/repos/owner/repo/zipball/v2.0.0',
       id: 2,
       tag_name: 'v2.0.0',
-      target_commitish: 'main',
       name: 'Second Release',
       body: 'Release notes for v2.0.0',
-      draft: false,
-      prerelease: false,
       created_at: '2024-02-01T00:00:00Z',
       published_at: '2024-02-15T00:00:00Z',
       assets: [
-        {
+        createMockAsset({
           url: 'https://api.github.com/repos/owner/repo/releases/assets/2',
           id: 2,
           name: 'file2.zip',
-          label: null,
-          content_type: 'application/zip',
-          state: 'uploaded',
           size: 2048,
           download_count: 20,
           created_at: '2024-02-01T00:00:00Z',
           updated_at: '2024-02-01T00:00:00Z'
-        },
-        {
+        }),
+        createMockAsset({
           url: 'https://api.github.com/repos/owner/repo/releases/assets/3',
           id: 3,
           name: 'file3.tar.gz',
           label: 'Source Tarball',
           content_type: 'application/gzip',
-          state: 'uploaded',
           size: 4096,
           download_count: 15,
           created_at: '2024-02-01T00:00:00Z',
           updated_at: '2024-02-01T00:00:00Z'
-        }
+        })
       ]
-    }
+    })
   ]
 
   const defaultProps = {
