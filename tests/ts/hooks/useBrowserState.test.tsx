@@ -1,7 +1,6 @@
 import { renderHook, act } from '@testing-library/react'
 import { useBrowserState } from '@/hooks/useBrowserState'
-import { TBrowserView } from '@/types'
-import { IRepo, IRelease, IAsset } from '@/interfaces'
+import { createMockRepo, createMockRelease, createMockAsset } from '@test-utils'
 
 describe('useBrowserState', () => {
   beforeEach(() => {
@@ -53,43 +52,7 @@ describe('useBrowserState', () => {
   it('should manage repository state correctly', () => {
     const { result } = renderHook(() => useBrowserState())
 
-    const mockRepos: IRepo[] = [
-      {
-        id: 1,
-        name: 'test-repo',
-        full_name: 'owner/test-repo',
-        description: 'Test repo',
-        html_url: 'https://github.com/owner/test-repo',
-        private: false,
-        stargazers_count: 10,
-        watchers_count: 10,
-        forks_count: 5,
-        language: 'TypeScript',
-        updated_at: '2024-01-01T00:00:00Z',
-        created_at: '2024-01-01T00:00:00Z',
-        pushed_at: '2024-01-01T00:00:00Z',
-        default_branch: 'main',
-        owner: {
-          login: 'owner',
-          id: 1,
-          avatar_url: 'https://github.com/owner.png',
-          gravatar_id: '',
-          url: 'https://api.github.com/users/owner',
-          html_url: 'https://github.com/owner',
-          followers_url: 'https://api.github.com/users/owner/followers',
-          following_url: 'https://api.github.com/users/owner/following{/other_user}',
-          gists_url: 'https://api.github.com/users/owner/gists{/gist_id}',
-          starred_url: 'https://api.github.com/users/owner/starred{/owner}{/repo}',
-          subscriptions_url: 'https://api.github.com/users/owner/subscriptions',
-          organizations_url: 'https://api.github.com/users/owner/orgs',
-          repos_url: 'https://api.github.com/users/owner/repos',
-          events_url: 'https://api.github.com/users/owner/events{/privacy}',
-          received_events_url: 'https://api.github.com/users/owner/received_events',
-          type: 'User',
-          site_admin: false
-        }
-      }
-    ]
+    const mockRepos = [createMockRepo({ description: 'Test repo' })]
 
     act(() => {
       result.current.setRepos(mockRepos)
@@ -131,37 +94,8 @@ describe('useBrowserState', () => {
   it('should manage selection state correctly', () => {
     const { result } = renderHook(() => useBrowserState())
 
-    const mockRelease: IRelease = {
-      url: 'https://api.github.com/repos/owner/repo/releases/1',
-      html_url: 'https://github.com/owner/repo/releases/tag/v1.0.0',
-      assets_url: 'https://api.github.com/repos/owner/repo/releases/1/assets',
-      upload_url: 'https://uploads.github.com/repos/owner/repo/releases/1/assets',
-      tarball_url: 'https://api.github.com/repos/owner/repo/tarball/v1.0.0',
-      zipball_url: 'https://api.github.com/repos/owner/repo/zipball/v1.0.0',
-      id: 1,
-      tag_name: 'v1.0.0',
-      target_commitish: 'main',
-      name: 'Test Release',
-      body: 'Test release notes',
-      draft: false,
-      prerelease: false,
-      created_at: '2024-01-01T00:00:00Z',
-      published_at: '2024-01-15T00:00:00Z',
-      assets: []
-    }
-
-    const mockAsset: IAsset = {
-      url: 'https://api.github.com/repos/owner/repo/releases/assets/1',
-      id: 1,
-      name: 'test-file.zip',
-      label: null,
-      content_type: 'application/zip',
-      state: 'uploaded',
-      size: 1024,
-      download_count: 10,
-      created_at: '2024-01-01T00:00:00Z',
-      updated_at: '2024-01-01T00:00:00Z'
-    }
+    const mockRelease = createMockRelease({ assets: [] })
+    const mockAsset = createMockAsset()
 
     act(() => {
       result.current.setSelectedRepo('owner/test-repo')
@@ -245,43 +179,23 @@ describe('useBrowserState', () => {
   it('should handle complex repo releases state updates', () => {
     const { result } = renderHook(() => useBrowserState())
 
-    const mockReleases: IRelease[] = [
-      {
-        url: 'https://api.github.com/repos/owner/repo/releases/1',
-        html_url: 'https://github.com/owner/repo/releases/tag/v1.0.0',
-        assets_url: 'https://api.github.com/repos/owner/repo/releases/1/assets',
-        upload_url: 'https://uploads.github.com/repos/owner/repo/releases/1/assets',
-        tarball_url: 'https://api.github.com/repos/owner/repo/tarball/v1.0.0',
-        zipball_url: 'https://api.github.com/repos/owner/repo/zipball/v1.0.0',
+    const mockReleases = [
+      createMockRelease({
         id: 1,
         tag_name: 'v1.0.0',
-        target_commitish: 'main',
         name: 'Test Release 1',
         body: 'Test release notes 1',
-        draft: false,
-        prerelease: false,
-        created_at: '2024-01-01T00:00:00Z',
-        published_at: '2024-01-15T00:00:00Z',
         assets: []
-      },
-      {
-        url: 'https://api.github.com/repos/owner/repo/releases/2',
-        html_url: 'https://github.com/owner/repo/releases/tag/v2.0.0',
-        assets_url: 'https://api.github.com/repos/owner/repo/releases/2/assets',
-        upload_url: 'https://uploads.github.com/repos/owner/repo/releases/2/assets',
-        tarball_url: 'https://api.github.com/repos/owner/repo/tarball/v2.0.0',
-        zipball_url: 'https://api.github.com/repos/owner/repo/zipball/v2.0.0',
+      }),
+      createMockRelease({
         id: 2,
         tag_name: 'v2.0.0',
-        target_commitish: 'main',
         name: 'Test Release 2',
         body: 'Test release notes 2',
-        draft: false,
-        prerelease: false,
         created_at: '2024-01-02T00:00:00Z',
         published_at: '2024-01-16T00:00:00Z',
         assets: []
-      }
+      })
     ]
 
     act(() => {
