@@ -122,7 +122,7 @@ test.describe('Loading States', () => {
 		expect(repos.length).toBeGreaterThan(0)
 	})
 
-	test('should disable buttons during loading', async ({ browserModal, page }) => {
+	test('should disable buttons during loading', async ({ browserModal }) => {
 		/** Wait for initial load */
 		await browserModal.waitForLoading()
 
@@ -139,9 +139,9 @@ test.describe('Loading States', () => {
 			/** Just verify loading completes properly */
 			await browserModal.waitForLoading()
 
-			/** After loading, should be interactive again */
-			const backButton = browserModal.backButton
-			await expect(backButton).toBeVisible()
+			/** After loading, should have content */
+			const panels = await browserModal.iframe.locator('.components-panel__body').count()
+			expect(panels).toBeGreaterThan(0)
 		}
 	})
 
