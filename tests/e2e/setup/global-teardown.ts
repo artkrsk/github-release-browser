@@ -11,22 +11,10 @@ import { FullConfig } from '@playwright/test'
  * @see https://playwright.dev/docs/test-global-setup-teardown
  */
 async function globalTeardown(config: FullConfig) {
-	console.log('\n🧹 Global E2E Teardown Starting...')
-
 	/**
-	 * In CI, wp-env should be stopped after tests
+	 * In CI, wp-env is stopped via workflow
 	 * Locally, we keep it running for faster subsequent runs
 	 */
-	if (process.env.CI) {
-		console.log('🛑 Stopping wp-env (CI environment)...')
-		// Note: wp-env stop is handled by CI workflow
-		// We don't stop it here to avoid issues with artifacts upload
-	} else {
-		console.log('ℹ️  Keeping wp-env running (local environment)')
-		console.log('   Stop manually with: pnpm env:stop')
-	}
-
-	console.log('✅ Global E2E Teardown Complete')
 }
 
 export default globalTeardown

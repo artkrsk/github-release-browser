@@ -21,10 +21,8 @@ export async function clearAllCaches(): Promise<void> {
 	try {
 		/** Clear all transients using WP-CLI in wp-env container */
 		await execAsync('pnpm env:cli wp transient delete --all')
-		console.log('✅ WordPress transients cleared')
 	} catch (error) {
-		console.warn('⚠️  Failed to clear WordPress transients:', error)
-		/** Don't fail the test, just warn */
+		/** Don't fail the test if cache clearing fails */
 	}
 }
 
@@ -37,9 +35,8 @@ export async function clearAllCaches(): Promise<void> {
 export async function clearTransient(key: string): Promise<void> {
 	try {
 		await execAsync(`pnpm env:cli wp transient delete ${key}`)
-		console.log(`✅ Transient '${key}' cleared`)
 	} catch (error) {
-		console.warn(`⚠️  Failed to clear transient '${key}':`, error)
+		/** Don't fail the test if cache clearing fails */
 	}
 }
 
@@ -56,7 +53,6 @@ export async function listTransients(): Promise<string[]> {
 		const transients = JSON.parse(stdout)
 		return transients.map((t: any) => t.name)
 	} catch (error) {
-		console.warn('⚠️  Failed to list transients:', error)
 		return []
 	}
 }
@@ -65,7 +61,6 @@ export async function listTransients(): Promise<string[]> {
  * Seed cache with test data (optional)
  *
  * Pre-populate WordPress transients to speed up tests.
- * Use sparingly - most tests should work with real API calls.
  *
  * @param key - Transient key
  * @param value - JSON-serializable value
@@ -81,9 +76,8 @@ export async function seedCache(
 		await execAsync(
 			`pnpm env:cli wp transient set ${key} '${jsonValue}' ${expiration}`
 		)
-		console.log(`✅ Transient '${key}' seeded`)
 	} catch (error) {
-		console.warn(`⚠️  Failed to seed transient '${key}':`, error)
+		/** Don't fail if seeding fails */
 	}
 }
 

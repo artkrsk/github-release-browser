@@ -131,7 +131,6 @@ export class WordPressAdmin {
 	 * Use cache-helper.ts utilities instead for test cache management.
 	 */
 	async clearCacheViaAdmin() {
-		/** This is a placeholder - implement if caching plugin is added */
-		console.warn('Cache clearing via admin not implemented. Use cache-helper.ts instead.')
+		/** Placeholder - use cache-helper.ts utilities instead */
 	}
 }
