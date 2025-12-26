@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures/wordpress'
+import { setupDirectoryMode, setupDirectoryModeWithoutBranch } from '../helpers/navigation-helpers'
 
 /**
  * E2E Tests: Directory Browsing
@@ -30,16 +31,8 @@ test.describe('Directory Browsing', () => {
 	})
 
 	test('should load branches when repository is selected in directory mode', async ({ browserModal }) => {
-		/** Switch to directory mode */
-		await browserModal.waitForLoading()
-		await browserModal.switchToDirectoryMode()
-
-		/** Select a repository */
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
-
-		/** Wait for branches to load */
-		await browserModal.waitForLoading()
+		/** Switch to directory mode and select repository */
+		await setupDirectoryModeWithoutBranch(browserModal)
 
 		/** Verify branch selector is visible */
 		const branchSelect = browserModal.iframe.locator('select, .components-select-control select')
@@ -47,49 +40,25 @@ test.describe('Directory Browsing', () => {
 	})
 
 	test('should display directory contents when branch is selected', async ({ browserModal }) => {
-		/** Switch to directory mode and select repository */
-		await browserModal.waitForLoading()
-		await browserModal.switchToDirectoryMode()
-
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
-
-		/** Wait for branches and select one */
-		await browserModal.waitForLoading()
-		await browserModal.selectBranch('main')
-
-		/** Wait for directory contents to load */
-		await browserModal.waitForLoading()
+		/** Setup directory mode with main branch */
+		await setupDirectoryMode(browserModal)
 
 		/** Verify directory/file items are displayed */
-		/** Directory browsing should show folder/file items */
 		const items = await browserModal.iframe.locator('.components-panel__body, [role="treeitem"], button').count()
 		expect(items).toBeGreaterThan(0)
 	})
 
 	test('should navigate into folders', async ({ browserModal }) => {
-		/** Navigate to directory view */
-		await browserModal.waitForLoading()
-		await browserModal.switchToDirectoryMode()
-
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
-
-		await browserModal.waitForLoading()
-		await browserModal.selectBranch('main')
-		await browserModal.waitForLoading()
+		/** Setup directory mode with main branch */
+		await setupDirectoryMode(browserModal)
 
 		/** Find and click a folder */
-		/** Assuming there's at least one folder in the root */
 		const folders = browserModal.iframe.locator('.components-panel__body button')
 		const folderCount = await folders.count()
 
 		if (folderCount > 0) {
 			await folders.first().click()
 			await browserModal.waitForLoading()
-
-			/** Verify we navigated or content changed */
-			/** Folder navigation might work differently */
 			expect(folderCount).toBeGreaterThan(0)
 		}
 	})
@@ -132,17 +101,8 @@ test.describe('Directory Browsing', () => {
 	})
 
 	test('should select folder and generate github-dir:// URI', async ({ browserModal, wpAdmin }) => {
-		/** Navigate to directory view and select repository */
-		await browserModal.waitForLoading()
-		await browserModal.switchToDirectoryMode()
-
-		const repos = await browserModal.getVisibleRepositories()
-		await browserModal.selectRepository(repos[0])
-
-		/** Select branch and wait for contents */
-		await browserModal.waitForLoading()
-		await browserModal.selectBranch('main')
-		await browserModal.waitForLoading()
+		/** Setup directory mode with main branch */
+		await setupDirectoryMode(browserModal)
 
 		/** Select first folder or file */
 		const items = browserModal.iframe.locator('.components-panel__body button')
@@ -150,11 +110,7 @@ test.describe('Directory Browsing', () => {
 
 		if (itemCount > 0) {
 			await items.first().click()
-
-			/** Confirm selection */
 			await browserModal.confirmSelection()
-
-			/** Verify modal closes */
 			await browserModal.expectModalClosed()
 
 			/** Verify github-dir:// URI is generated */

@@ -10,6 +10,10 @@ import { Page, Locator, expect } from '@playwright/test'
  * Playwright must interact with the iframe content.
  */
 export class BrowserModal {
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Constructor & Properties
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 	readonly page: Page
 	readonly modal: Locator
 	readonly iframe: Locator
@@ -34,6 +38,10 @@ export class BrowserModal {
 		this.confirmButton = this.iframe.locator('button:has-text("Insert into download")')
 	}
 
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Core Modal Operations
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 	/** Wait for modal to be visible and stable */
 	async waitForModal() {
 		await this.modal.waitFor({ state: 'visible' })
@@ -46,12 +54,20 @@ export class BrowserModal {
 		await this.spinner.waitFor({ state: 'hidden', timeout: 15000 })
 	}
 
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Navigation & Search
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 	/** Search for repositories */
 	async searchRepository(query: string) {
 		await this.searchInput.fill(query)
 		/** Wait a bit for client-side filtering */
 		await this.page.waitForTimeout(300)
 	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Repository Actions
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	/** Expand a repository accordion by name (clicks the accordion toggle) */
 	async expandRepository(name: string) {
@@ -64,6 +80,10 @@ export class BrowserModal {
 	async selectRepository(name: string) {
 		await this.expandRepository(name)
 	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Release Actions
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	/** Select the "Use Latest Release" option in an expanded repository */
 	async selectLatestRelease() {
@@ -80,6 +100,10 @@ export class BrowserModal {
 		await release.click()
 		await this.waitForLoading()
 	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Asset Actions
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	/** Select an asset by filename */
 	async selectAsset(filename: string) {
@@ -109,6 +133,10 @@ export class BrowserModal {
 		return await this.confirmButton.isDisabled()
 	}
 
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Directory Mode Actions
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 	/** Switch to directory browsing mode */
 	async switchToDirectoryMode() {
 		const toggle = this.iframe.locator('button[data-value="directory"], button[aria-label="Directory"]')
@@ -137,6 +165,10 @@ export class BrowserModal {
 		await this.waitForLoading()
 	}
 
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Data Extraction (Getters)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 	/** Get error message text */
 	async getErrorMessage(): Promise<string | null> {
 		const errorElement = this.iframe.locator('[data-testid="error-message"]')
@@ -151,6 +183,10 @@ export class BrowserModal {
 		const errorElement = this.iframe.locator('[data-testid="error-message"]')
 		return await errorElement.isVisible()
 	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// State Checking (Boolean Queries)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	/** Get all visible repository names */
 	async getVisibleRepositories(): Promise<string[]> {
@@ -243,6 +279,10 @@ export class BrowserModal {
 		await repoButton.click()
 		await this.page.waitForTimeout(300)
 	}
+
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+	// Assertions (Expectations)
+	// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 	/** Close the modal */
 	async close() {

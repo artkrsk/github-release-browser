@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures/wordpress'
+import { navigateToAssetsView } from '../helpers/navigation-helpers'
 
 /**
  * E2E Tests: Repository Search and Selection
@@ -114,27 +115,18 @@ test.describe('Repository Search', () => {
 	})
 
 	test('should navigate back from assets view to repositories', async ({ browserModal }) => {
-		/** Wait for repositories to load */
-		await browserModal.waitForLoading()
-		const allRepos = await browserModal.getVisibleRepositories()
-		expect(allRepos.length).toBeGreaterThan(0)
-
-		/** Find a repository that has releases and navigate to assets view */
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).not.toBeNull()
-		await browserModal.selectLatestRelease()
+		/** Navigate to assets view */
+		await navigateToAssetsView(browserModal)
 
 		/** Verify we're in assets view */
 		await expect(browserModal.backButton).toBeVisible({ timeout: 10000 })
 
 		/** Navigate back to repositories */
 		await browserModal.goBack()
+		await browserModal.waitForLoading()
 
 		/** Verify we're back in repositories view */
-		await browserModal.waitForLoading()
 		const reposAfterBack = await browserModal.getVisibleRepositories()
-
-		/** Should see repositories again */
 		expect(reposAfterBack.length).toBeGreaterThan(0)
 	})
 })

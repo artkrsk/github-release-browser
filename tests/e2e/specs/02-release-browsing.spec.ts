@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures/wordpress'
+import { navigateToAssetsView, selectFirstAsset } from '../helpers/navigation-helpers'
 
 /**
  * E2E Tests: Release Browsing
@@ -90,33 +91,13 @@ test.describe('Release Browsing', () => {
 	})
 
 	test('should complete full release browsing flow', async ({ browserModal, wpAdmin }) => {
-		/** 1. Load repositories and find one with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** 2. Verify releases loaded (already expanded by findRepositoryWithReleases) */
-		const releases = await browserModal.getVisibleReleases()
-		expect(releases.length).toBeGreaterThan(0)
-
-		/** 3. Select release */
-		await browserModal.selectRelease(releases[0])
-
-		/** 4. Verify assets loaded */
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-
-		/** 5. Select asset */
-		await browserModal.selectAsset(assets[0])
-
-		/** 6. Confirm selection */
+		/** Complete full flow: navigate → select → confirm */
+		await navigateToAssetsView(browserModal)
+		await selectFirstAsset(browserModal)
 		await browserModal.confirmSelection()
-
-		/** 7. Verify modal closes */
 		await browserModal.expectModalClosed()
 
-		/** 8. Verify URI is populated in parent page */
+		/** Verify URI is populated in parent page */
 		const uri = await wpAdmin.getSelectedAssetURI()
 		expect(uri).toBeTruthy()
 		expect(uri).toContain('github-release://')

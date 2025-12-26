@@ -1,4 +1,5 @@
 import { test, expect } from '../fixtures/wordpress'
+import { navigateToAssetsView, selectFirstAsset } from '../helpers/navigation-helpers'
 
 /**
  * E2E Tests: Asset Confirmation and URI Generation
@@ -16,23 +17,12 @@ import { test, expect } from '../fixtures/wordpress'
 
 test.describe('Asset Confirmation', () => {
 	test('should populate URI field when asset is confirmed', async ({ browserModal, wpAdmin }) => {
-		/** Navigate to asset selection - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
+		/** Navigate to assets view and select first asset */
+		await navigateToAssetsView(browserModal)
+		await selectFirstAsset(browserModal)
 
 		/** Confirm selection */
 		await browserModal.confirmSelection()
-
-		/** Verify modal closed */
 		await browserModal.expectModalClosed()
 
 		/** Verify URI is populated */
@@ -42,89 +32,47 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should generate github-release:// URI for release assets', async ({ browserModal, wpAdmin }) => {
-		/** Complete asset selection flow - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
-
+		/** Navigate to assets and complete selection */
+		await navigateToAssetsView(browserModal)
+		await selectFirstAsset(browserModal)
 		await browserModal.confirmSelection()
 		await browserModal.expectModalClosed()
 
 		/** Verify URI format */
 		const uri = await wpAdmin.getSelectedAssetURI()
 		expect(uri).toMatch(/^github-release:\/\//)
-
-		/** URI should contain repository and tag information */
 		expect(uri).toContain('/')
 	})
 
 	test('should close modal after confirmation', async ({ browserModal }) => {
-		/** Navigate and select asset - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
+		/** Navigate to assets and select asset */
+		await navigateToAssetsView(browserModal)
+		await selectFirstAsset(browserModal)
 
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
-
-		/** Verify modal is open */
+		/** Verify modal is open, then confirm and verify it closes */
 		await browserModal.expectModalOpen()
-
-		/** Confirm and verify modal closes */
 		await browserModal.confirmSelection()
 		await browserModal.expectModalClosed()
 	})
 
 	test('should enable confirm button only when asset is selected', async ({ browserModal }) => {
-		/** Navigate to assets view - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
+		/** Navigate to assets view */
+		await navigateToAssetsView(browserModal)
 
 		/** Initially, confirm button should be disabled */
 		expect(await browserModal.isConfirmDisabled()).toBe(true)
 
 		/** Select an asset */
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
+		await selectFirstAsset(browserModal)
 
 		/** Now confirm button should be enabled */
 		expect(await browserModal.isConfirmDisabled()).toBe(false)
 	})
 
 	test('should test URI and get download URL', async ({ browserModal, wpAdmin }) => {
-		/** Complete full selection flow - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
-
+		/** Complete full selection flow */
+		await navigateToAssetsView(browserModal)
+		await selectFirstAsset(browserModal)
 		await browserModal.confirmSelection()
 		await browserModal.expectModalClosed()
 
@@ -134,27 +82,14 @@ test.describe('Asset Confirmation', () => {
 
 		/** Test URI via AJAX endpoint */
 		const result = await wpAdmin.testURI()
-
-		/** Result should contain a download URL or success message */
 		expect(result).toBeTruthy()
-		/** Should either be a URL or a success message */
 		expect(result.length).toBeGreaterThan(0)
 	})
 
 	test('should preserve URI after modal is closed', async ({ browserModal, wpAdmin, page }) => {
-		/** Complete selection flow - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
-
+		/** Complete selection flow */
+		await navigateToAssetsView(browserModal)
+		await selectFirstAsset(browserModal)
 		await browserModal.confirmSelection()
 		await browserModal.expectModalClosed()
 
@@ -166,8 +101,6 @@ test.describe('Asset Confirmation', () => {
 		await wpAdmin.openBrowserModal()
 		const modalAfterReopen = new (await import('../page-objects/BrowserModal')).BrowserModal(page)
 		await modalAfterReopen.waitForModal()
-
-		/** Close modal without selecting anything */
 		await modalAfterReopen.close()
 
 		/** URI should still be preserved */
@@ -176,19 +109,9 @@ test.describe('Asset Confirmation', () => {
 	})
 
 	test('should handle multiple asset selections correctly', async ({ browserModal, wpAdmin }) => {
-		/** First selection - find a repository with releases */
-		await browserModal.waitForLoading()
-		const repoWithReleases = await browserModal.findRepositoryWithReleases()
-		expect(repoWithReleases).toBeTruthy()
-
-		/** Select the latest release */
-		await browserModal.selectLatestRelease()
-
-		await browserModal.waitForLoading()
-		const assets = await browserModal.getVisibleAssets()
-		expect(assets.length).toBeGreaterThan(0)
-		await browserModal.selectAsset(assets[0])
-
+		/** First selection */
+		await navigateToAssetsView(browserModal)
+		const assets = await selectFirstAsset(browserModal)
 		await browserModal.confirmSelection()
 		await browserModal.expectModalClosed()
 
@@ -199,19 +122,11 @@ test.describe('Asset Confirmation', () => {
 			await wpAdmin.openBrowserModal()
 			const modal2 = new (await import('../page-objects/BrowserModal')).BrowserModal(browserModal.page)
 			await modal2.waitForModal()
-			await modal2.waitForLoading()
 
-			/** Find a repository with releases again */
-			const repoWithReleases2 = await modal2.findRepositoryWithReleases()
-			expect(repoWithReleases2).toBeTruthy()
-
-			/** Select the latest release */
-			await modal2.selectLatestRelease()
-
-			await modal2.waitForLoading()
+			/** Navigate and select different asset */
+			await navigateToAssetsView(modal2)
 			const assets2 = await modal2.getVisibleAssets()
-			await modal2.selectAsset(assets2[1]) // Select different asset
-
+			await modal2.selectAsset(assets2[1])
 			await modal2.confirmSelection()
 			await modal2.expectModalClosed()
 
