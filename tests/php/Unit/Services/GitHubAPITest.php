@@ -39,16 +39,56 @@ class GitHubAPITest extends TestCase {
 		parent::tearDown();
 	}
 
+	// ========================================
+	// Helper methods
+	// ========================================
+
+	/** Mock a cached response */
+	private function mockCachedResponse( string $key, $value ): void {
+		$this->cache->shouldReceive( 'get' )
+			->once()
+			->with( $key )
+			->andReturn( $value );
+	}
+
+	/** Mock a cache miss */
+	private function mockCacheMiss( string $key ): void {
+		$this->cache->shouldReceive( 'get' )
+			->with( $key )
+			->andReturn( false );
+	}
+
+	/** Mock cache set */
+	private function mockCacheSet(): void {
+		$this->cache->shouldReceive( 'set' )
+			->andReturn( true );
+	}
+
+	/** Mock GitHub API call with token */
+	private function mockGitHubApiCall( string $url, array $response_data, int $status_code = 200, string $token = 'token' ): void {
+		$this->config->shouldReceive( 'get' )
+			->with( 'github_token' )
+			->andReturn( $token );
+
+		$headers = $token ? array( 'Authorization' => "Bearer {$token}" ) : array();
+
+		$this->http_client->shouldReceive( 'get' )
+			->once()
+			->with( $url, $headers )
+			->andReturn( new Response( $status_code, json_encode( $response_data ), array() ) );
+	}
+
+	// ========================================
+	// get_releases tests
+	// ========================================
+
 	public function test_get_releases_returns_cached_data_when_available(): void {
 		$cached_releases = array(
 			array( 'tag_name' => 'v1.0.0' ),
 			array( 'tag_name' => 'v1.1.0' ),
 		);
 
-		$this->cache->shouldReceive( 'get' )
-			->once()
-			->with( 'releases_owner/repo_1' )
-			->andReturn( $cached_releases );
+		$this->mockCachedResponse( 'releases_owner/repo_1', $cached_releases );
 
 		$result = $this->api->get_releases( 'owner/repo', 1 );
 
@@ -60,28 +100,14 @@ class GitHubAPITest extends TestCase {
 			array( 'tag_name' => 'v1.0.0', 'assets' => array() ),
 		);
 
-		$this->cache->shouldReceive( 'get' )
-			->once()
-			->with( 'releases_owner/repo_1' )
-			->andReturn( false );
-
-		$this->config->shouldReceive( 'get' )
-			->once()
-			->with( 'github_token' )
-			->andReturn( 'test-token' );
-
-		$this->http_client->shouldReceive( 'get' )
-			->once()
-			->with(
-				'https://api.github.com/repos/owner/repo/releases?page=1&per_page=30',
-				array( 'Authorization' => 'Bearer test-token' )
-			)
-			->andReturn( new Response( 200, json_encode( $api_releases ), array() ) );
-
-		$this->cache->shouldReceive( 'set' )
-			->once()
-			->with( 'releases_owner/repo_1', $api_releases, 300 )
-			->andReturn( true );
+		$this->mockCacheMiss( 'releases_owner/repo_1' );
+		$this->mockGitHubApiCall(
+			'https://api.github.com/repos/owner/repo/releases?page=1&per_page=30',
+			$api_releases,
+			200,
+			'test-token'
+		);
+		$this->mockCacheSet();
 
 		$result = $this->api->get_releases( 'owner/repo', 1 );
 
@@ -160,10 +186,7 @@ class GitHubAPITest extends TestCase {
 	public function test_get_rate_limit_returns_cached_data_when_available(): void {
 		$cached_rate_limit = array( 'remaining' => 4999, 'limit' => 5000 );
 
-		$this->cache->shouldReceive( 'get' )
-			->once()
-			->with( 'rate_limit' )
-			->andReturn( $cached_rate_limit );
+		$this->mockCachedResponse( 'rate_limit', $cached_rate_limit );
 
 		$result = $this->api->get_rate_limit();
 
