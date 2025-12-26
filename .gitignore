@@ -35,6 +35,10 @@ package-lock.json
 /.nyc_output
 /cypress/videos/
 /cypress/screenshots/
+/playwright-report
+/test-results
+.env.test
+!.env.test.example
 
 # Environment files
 .env
