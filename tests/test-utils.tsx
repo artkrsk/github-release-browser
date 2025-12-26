@@ -211,31 +211,13 @@ export const createMockBrowserConfig = (overrides = {}) => ({
 export const mockWindowOpen = vi.fn()
 
 beforeEach(() => {
+  mockAssetIdCounter = 1  // Reset counter between tests
   Object.defineProperty(window, 'open', {
     value: mockWindowOpen,
     writable: true
   })
   vi.clearAllMocks()
 })
-
-// Helper to wait for async operations
-export const waitForAsync = () => new Promise(resolve => setTimeout(resolve, 0))
-
-// Helper to create mock fetch responses
-export const createMockFetchResponse = (data: any, success = true) => ({
-  ok: success,
-  status: success ? 200 : 400,
-  json: async () => ({
-    success,
-    data: success ? data : { message: 'Test error' }
-  })
-})
-
-// Helper for testing component cleanup
-export const cleanup = () => {
-  vi.clearAllMocks()
-  mockWindowOpen.mockClear()
-}
 
 /** Default localized strings for test environment */
 const DEFAULT_TEST_STRINGS = {

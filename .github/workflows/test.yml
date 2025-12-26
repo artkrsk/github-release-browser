@@ -67,35 +67,56 @@ jobs:
       - name: Run MSW integration tests
         run: pnpm test:msw
 
+  php-unit:
+    name: PHP Unit Tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.4'
+          extensions: mbstring
+          coverage: xdebug
+
+      - name: Get Composer cache directory
+        id: composer-cache
+        run: echo "dir=$(composer config cache-files-dir)" >> $GITHUB_OUTPUT
+
+      - name: Cache Composer dependencies
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.composer-cache.outputs.dir }}
+          key: ${{ runner.os }}-composer-${{ hashFiles('**/composer.lock') }}
+          restore-keys: ${{ runner.os }}-composer-
+
+      - name: Install Composer dependencies
+        run: composer install --no-progress --prefer-dist
+
+      - name: Run PHP unit tests
+        run: composer test
+
   test-summary:
     name: Test Summary
     runs-on: ubuntu-latest
-    needs: [vitest-unit, vitest-msw]
+    needs: [vitest-unit, vitest-msw, php-unit]
     if: always()
 
     steps:
       - name: Check test results
         run: |
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Test Results Summary"
-          echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-          echo "Vitest Unit Tests: ${{ needs.vitest-unit.result }}"
-          echo "Vitest MSW Tests:  ${{ needs.vitest-msw.result }}"
-          echo ""
-          echo "✅ CI validates 676 tests (668 unit + 8 MSW)"
-          echo ""
-          echo "📝 Note: PHP Integration (105 tests) and E2E (60 tests)"
-          echo "   are disabled in CI due to wp-env timing issues."
-          echo "   See: WordPress/Gutenberg#61627"
-          echo ""
-          echo "🏠 Run locally before merging:"
-          echo "   pnpm test:integration"
-          echo "   pnpm test:e2e"
+          echo "Vitest Unit: ${{ needs.vitest-unit.result }}"
+          echo "Vitest MSW:  ${{ needs.vitest-msw.result }}"
+          echo "PHP Unit:    ${{ needs.php-unit.result }}"
 
       - name: Fail if any tests failed
         if: |
           needs.vitest-unit.result == 'failure' ||
-          needs.vitest-msw.result == 'failure'
+          needs.vitest-msw.result == 'failure' ||
+          needs.php-unit.result == 'failure'
         run: exit 1
 
 # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
