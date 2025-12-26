@@ -114,13 +114,18 @@ export const mockWordPressComponents = {
 				data-value={value}
 				className={`wp-toggle-group-control ${className || ''}`}
 			>
-				{children}
+				{React.Children.map(children, (child) => {
+					if (React.isValidElement(child)) {
+						return React.cloneElement(child, { onClick: () => onChange?.(child.props.value) } as any)
+					}
+					return child
+				})}
 			</div>
 		)
 	},
 
-	__experimentalToggleGroupControlOption: ({ value, label, ...props }: any) => (
-		<button data-testid={`toggle-option-${value}`} data-value={value} {...props}>
+	__experimentalToggleGroupControlOption: ({ value, label, onClick, ...props }: any) => (
+		<button onClick={onClick} data-testid={`toggle-option-${value}`} data-value={value} {...props}>
 			{label}
 		</button>
 	)

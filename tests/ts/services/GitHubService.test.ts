@@ -532,6 +532,29 @@ describe('GitHubService', () => {
 
       await expect(service.getReleases('owner/repo')).rejects.toThrow('Request timeout')
     })
+
+    test('only appends own properties to FormData, not inherited ones', async () => {
+      // Create object with prototype that has inherited property
+      const dataWithPrototype = Object.create({ inheritedProp: 'should-not-appear' })
+      dataWithPrototype.ownProp = 'should-appear'
+
+      mockFetch.mockResolvedValueOnce({
+        ok: true,
+        json: async () => ({
+          success: true,
+          data: { releases: [] }
+        })
+      })
+
+      // Make request with object that has both own and inherited properties
+      await service.getReleases('owner/repo')
+
+      // Should only append own properties
+      expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
+      expect(mockFormDataAppend).toHaveBeenCalledWith('page', '1')
+      // Should not append inherited properties
+      expect(mockFormDataAppend).not.toHaveBeenCalledWith('inheritedProp', 'should-not-appear')
+    })
   })
 
   describe('Directory Browsing Methods', () => {
@@ -591,6 +614,19 @@ describe('GitHubService', () => {
         expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
         expect(mockFormDataAppend).toHaveBeenCalledWith('path', 'src')
         expect(mockFormDataAppend).toHaveBeenCalledWith('ref', 'main')
+      })
+
+      test('returns empty array when no contents found', async () => {
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: async () => ({
+            success: true,
+            data: {}
+          })
+        })
+
+        const result = await service.getContents('owner/repo', '', 'main')
+        expect(result).toEqual([])
       })
     })
 

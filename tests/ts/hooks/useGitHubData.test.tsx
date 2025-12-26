@@ -174,6 +174,42 @@ describe('useGitHubData', () => {
     expect(mockSetLoadingRepos).not.toHaveBeenCalledWith(false)
   })
 
+  it('should not update error state if component is unmounted during fetchRepos error', async () => {
+    const errorMessage = 'Network error'
+    mockService.getUserRepos.mockRejectedValue(new Error(errorMessage))
+
+    const { result } = renderHook(() =>
+      useGitHubData(
+        mockService,
+        isMountedRef,
+        mockSetRepos,
+        {},
+        mockSetRepoReleases,
+        {},
+        mockSetReleaseErrors,
+        mockSetLoadingRepos,
+        mockSetLoadingRepo,
+        mockSetError
+      )
+    )
+
+    act(() => {
+      result.current.fetchRepos()
+    })
+
+    // Unmount component before error is handled
+    isMountedRef.current = false
+
+    await waitFor(() => {
+      expect(mockService.getUserRepos).toHaveBeenCalledTimes(1)
+    })
+
+    // setError(null) is called at start (before unmount), but error message should not be set
+    expect(mockSetError).toHaveBeenCalledTimes(1)
+    expect(mockSetError).toHaveBeenCalledWith(null)
+    expect(mockSetLoadingRepos).not.toHaveBeenCalledWith(false)
+  })
+
   it('should fetch releases for repo successfully', async () => {
     const repoFullName = 'owner/test-repo'
     const mockReleases: IRelease[] = [createMockRelease()]
@@ -362,6 +398,43 @@ describe('useGitHubData', () => {
 
     // Should not update state if unmounted
     expect(mockSetRepoReleases).not.toHaveBeenCalled()
+    expect(mockSetLoadingRepo).not.toHaveBeenCalledWith(null)
+  })
+
+  it('should not update error state if component is unmounted during fetchReleases error', async () => {
+    const repoFullName = 'owner/test-repo'
+    const currentRepoReleases = {}
+
+    mockService.getReleases.mockRejectedValue(new Error('API Error'))
+
+    const { result } = renderHook(() =>
+      useGitHubData(
+        mockService,
+        isMountedRef,
+        mockSetRepos,
+        currentRepoReleases,
+        mockSetRepoReleases,
+        {},
+        mockSetReleaseErrors,
+        mockSetLoadingRepos,
+        mockSetLoadingRepo,
+        mockSetError
+      )
+    )
+
+    act(() => {
+      result.current.fetchReleasesForRepo(repoFullName)
+    })
+
+    // Unmount component before error is handled
+    isMountedRef.current = false
+
+    await waitFor(() => {
+      expect(mockService.getReleases).toHaveBeenCalledTimes(1)
+    })
+
+    // Should not update error state if unmounted
+    expect(mockSetReleaseErrors).not.toHaveBeenCalled()
     expect(mockSetLoadingRepo).not.toHaveBeenCalledWith(null)
   })
 

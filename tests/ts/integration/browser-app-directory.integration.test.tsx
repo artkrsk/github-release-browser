@@ -479,6 +479,28 @@ describe('BrowserApp - Directory Integration', () => {
         expect(screen.getByTestId('directory-current-path')).toHaveTextContent('src/components')
       })
     })
+
+    test('handleConfirmDirectory does not proceed when selectedFolderPath is null', async () => {
+      mockBrowserState.view = 'directory'
+      mockBrowserState.selectedRepo = 'owner/test-repo'
+      mockBrowserState.branches = [{ name: 'main', commit: { sha: 'abc123' }, protected: false }]
+      mockBrowserState.selectedBranch = 'main'
+      mockBrowserState.selectedFolderPath = null
+
+      render(<BrowserApp config={mockConfig} />)
+
+      await waitFor(() => {
+        expect(screen.getByTestId('directory-view')).toBeInTheDocument()
+      })
+
+      const primaryButton = screen.getByTestId('button-primary')
+
+      // Force click even though button is disabled to test the early return guard
+      primaryButton.click()
+
+      // Should not call getArchiveUrl since validation fails (selectedFolderPath is null)
+      expect(mockGetArchiveUrl).not.toHaveBeenCalled()
+    })
   })
 
   describe('Source Mode Switching', () => {
