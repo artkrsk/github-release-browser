@@ -1,3 +1,28 @@
+/**
+ * Test Utilities & Mock Data Factories
+ *
+ * This file provides three main categories of utilities:
+ *
+ * 1. **Domain Entity Factories** - Use these to create mock GitHub entities
+ *    - createMockAsset() - Creates IAsset objects
+ *    - createMockRelease() - Creates IRelease objects
+ *    - createMockRepo() - Creates IRepo objects
+ *    - createMockBrowserConfig() - Creates IBrowserConfig objects
+ *
+ * 2. **Test Utilities** - Rendering and setup helpers
+ *    - render() - Custom render with providers
+ *    - setupTestEnvironment() - Configures window.githubReleaseBrowserConfig
+ *    - mockWindowOpen - Mock for window.open
+ *
+ * 3. **Testing Library Re-exports** - Standard testing utilities
+ *    - screen, waitFor, fireEvent, act, userEvent
+ *
+ * **Usage Guidelines:**
+ * - ALWAYS use factories instead of creating inline mock objects
+ * - Factories accept partial overrides via the overrides parameter
+ * - For WordPress AJAX response wrappers, see tests/msw/factories.ts
+ * - For integration test state mocks, see tests/ts/integration/__helpers__/
+ */
 import React from 'react'
 import { render, RenderOptions } from '@testing-library/react'
 import { vi } from 'vitest'
@@ -23,7 +48,22 @@ export { customRender as render }
 // Unique ID counter for mock data generation
 let mockAssetIdCounter = 1
 
-// Mock data generators
+/**
+ * Domain Entity Factories
+ *
+ * These factories create realistic mock objects for GitHub API entities.
+ * Always use these instead of creating inline objects to ensure consistency.
+ */
+
+/**
+ * Creates a mock GitHub release asset
+ *
+ * @param overrides - Partial properties to override defaults
+ * @returns IAsset object with realistic default values
+ *
+ * @example
+ * const asset = createMockAsset({ name: 'my-plugin.zip', size: 2048 })
+ */
 export const createMockAsset = (overrides = {}) => ({
   url: `https://api.github.com/repos/owner/repo/releases/assets/${mockAssetIdCounter}`,
   id: mockAssetIdCounter++,
@@ -38,6 +78,18 @@ export const createMockAsset = (overrides = {}) => ({
   ...overrides
 })
 
+/**
+ * Creates a mock GitHub release
+ *
+ * @param overrides - Partial properties to override defaults
+ * @returns IRelease object with one default asset included
+ *
+ * @example
+ * const release = createMockRelease({
+ *   tag_name: 'v2.0.0',
+ *   assets: [createMockAsset(), createMockAsset()]
+ * })
+ */
 export const createMockRelease = (overrides = {}) => ({
   url: 'https://api.github.com/repos/owner/repo/releases/1',
   html_url: 'https://github.com/owner/repo/releases/tag/v1.0.0',
@@ -58,6 +110,19 @@ export const createMockRelease = (overrides = {}) => ({
   ...overrides
 })
 
+/**
+ * Creates a mock GitHub repository
+ *
+ * @param overrides - Partial properties to override defaults
+ * @returns IRepo object with complete owner information
+ *
+ * @example
+ * const repo = createMockRepo({
+ *   name: 'my-repo',
+ *   full_name: 'owner/my-repo',
+ *   stargazers_count: 500
+ * })
+ */
 export const createMockRepo = (overrides = {}) => ({
   id: 1,
   name: 'test-repo',
@@ -95,6 +160,18 @@ export const createMockRepo = (overrides = {}) => ({
   ...overrides
 })
 
+/**
+ * Creates a mock browser configuration object
+ *
+ * @param overrides - Partial properties to override defaults
+ * @returns IBrowserConfig object with all required fields
+ *
+ * @example
+ * const config = createMockBrowserConfig({
+ *   apiUrl: 'https://custom.com/ajax',
+ *   features: { useLatestRelease: false }
+ * })
+ */
 export const createMockBrowserConfig = (overrides = {}) => ({
   apiUrl: 'https://example.com/wp-admin/admin-ajax.php',
   nonce: 'test-nonce-123',
@@ -160,8 +237,38 @@ export const cleanup = () => {
   mockWindowOpen.mockClear()
 }
 
+/** Default localized strings for test environment */
+const DEFAULT_TEST_STRINGS = {
+  'actions.insertIntoDownload': 'Insert into download',
+  'repositories.searchPlaceholder': 'Search repositories...',
+  'repositories.select': 'Select Repository',
+  'repositories.refresh': 'Refresh repositories',
+  'repositories.noResults': 'No repositories match your search',
+  'repositories.noneFound': 'No repositories found',
+  'common.tryAgain': 'Try Again',
+  'common.getPro': 'Get Pro',
+  'common.upgradeToPro': 'Upgrade to Pro',
+  'loading.repositories': 'Loading repositories...',
+  'assets.backToRepos': 'Back to repositories',
+  'assets.assetsIn': 'Assets in',
+  'assets.latest': 'latest',
+  'assets.noAssets': 'No assets found in this release',
+  'assets.asset': 'asset',
+  'assets.assets': 'assets',
+  'releases.noReleases': 'No releases found.',
+  'releases.createOne': 'Create one →',
+  'releases.useLatest': 'Use Latest Release',
+  'releases.latestDescription': 'Automatically serve the latest published release',
+  'releases.title': 'Releases',
+  'error.welcome.title': 'Welcome to Release Browser',
+  'error.welcome.description': 'To browse and insert files from your GitHub releases, you need to configure your GitHub Personal Access Token.',
+  'error.goToSettings': 'Go to Settings',
+  'error.title.invalidToken': 'Invalid GitHub Token',
+  'error.desc.invalidToken': 'Your GitHub Personal Access Token is invalid or has been revoked. Please update your token in the settings.'
+}
+
 // Setup test environment with mocked window.githubReleaseBrowserConfig
-export const setupTestEnvironment = (config = {}) => {
+export const setupTestEnvironment = (config: Record<string, unknown> = {}) => {
   const defaultConfig = {
     apiUrl: 'https://example.com/wp-admin/admin-ajax.php',
     nonce: 'test-nonce-123',
@@ -169,42 +276,17 @@ export const setupTestEnvironment = (config = {}) => {
     onSelectAsset: vi.fn(),
     features: { useLatestRelease: true },
     upgradeUrl: 'https://example.com/upgrade',
-    strings: {
-      'actions.insertIntoDownload': 'Insert into download',
-      'repositories.searchPlaceholder': 'Search repositories...',
-      'repositories.select': 'Select Repository',
-      'repositories.refresh': 'Refresh repositories',
-      'repositories.noResults': 'No repositories match your search',
-      'repositories.noneFound': 'No repositories found',
-      'common.tryAgain': 'Try Again',
-      'common.getPro': 'Get Pro',
-      'common.upgradeToPro': 'Upgrade to Pro',
-      'loading.repositories': 'Loading repositories...',
-      'assets.backToRepos': 'Back to repositories',
-      'assets.assetsIn': 'Assets in',
-      'assets.latest': 'latest',
-      'assets.noAssets': 'No assets found in this release',
-      'assets.asset': 'asset',
-      'assets.assets': 'assets',
-      'releases.noReleases': 'No releases found.',
-      'releases.createOne': 'Create one →',
-      'releases.useLatest': 'Use Latest Release',
-      'releases.latestDescription': 'Automatically serve the latest published release',
-      'releases.title': 'Releases',
-      'error.welcome.title': 'Welcome to Release Browser',
-      'error.welcome.description': 'To browse and insert files from your GitHub releases, you need to configure your GitHub Personal Access Token.',
-      'error.goToSettings': 'Go to Settings',
-      'error.title.invalidToken': 'Invalid GitHub Token',
-      'error.desc.invalidToken': 'Your GitHub Personal Access Token is invalid or has been revoked. Please update your token in the settings.'
-    },
+    strings: DEFAULT_TEST_STRINGS,
     settingsUrl: 'https://example.com/settings'
   }
+
+  const configStrings = config.strings as Record<string, string> | undefined
 
   // Merge config with defaults, preserving all default strings unless explicitly overridden
   const mergedConfig = {
     ...defaultConfig,
     ...config,
-    strings: config.strings ? { ...defaultConfig.strings, ...config.strings } : defaultConfig.strings
+    strings: configStrings ? { ...DEFAULT_TEST_STRINGS, ...configStrings } : DEFAULT_TEST_STRINGS
   }
 
   Object.defineProperty(window, 'githubReleaseBrowserConfig', {

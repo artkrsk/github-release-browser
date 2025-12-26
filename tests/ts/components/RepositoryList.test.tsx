@@ -3,7 +3,7 @@ import React from 'react'
 import { screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { RepositoryList } from '@/components/RepositoryList'
-import { render, setupTestEnvironment, createMockBrowserConfig } from '@test-utils'
+import { render, setupTestEnvironment, createMockBrowserConfig, createMockRepo } from '@test-utils'
 
 // Import centralized WordPress component mocks
 import { mockWordPressComponents } from '../../mocks/wordpress-components'
@@ -66,27 +66,9 @@ describe('RepositoryList - Simple Testing', () => {
 
   const defaultProps = {
     repos: [
-      {
-        id: 1,
-        name: 'owner/test-repo-1',
-        full_name: 'owner/test-repo-1',
-        description: 'Test repository 1',
-        private: false
-      },
-      {
-        id: 2,
-        name: 'organization/proj-repo-2',
-        full_name: 'organization/proj-repo-2',
-        description: 'Test repository 2',
-        private: true
-      },
-      {
-        id: 3,
-        name: 'user/demo-repo-3',
-        full_name: 'user/demo-repo-3',
-        description: 'Test repository 3',
-        private: false
-      }
+      createMockRepo({ id: 1, name: 'owner/test-repo-1', full_name: 'owner/test-repo-1', description: 'Test repository 1', private: false }),
+      createMockRepo({ id: 2, name: 'organization/proj-repo-2', full_name: 'organization/proj-repo-2', description: 'Test repository 2', private: true }),
+      createMockRepo({ id: 3, name: 'user/demo-repo-3', full_name: 'user/demo-repo-3', description: 'Test repository 3', private: false })
     ],
     searchQuery: '',
     expandedRepo: null,

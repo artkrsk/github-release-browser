@@ -18,30 +18,21 @@ describe('AssetList', () => {
 
 	describe('Props Contract (createElement)', () => {
 		const mockAssets: IAsset[] = [
-			{
-				url: 'https://api.github.com/repos/owner/repo/releases/assets/1',
+			createMockAsset({
 				id: 1,
 				name: 'file1.zip',
-				label: null,
 				content_type: 'application/zip',
-				state: 'uploaded',
 				size: 1024,
-				download_count: 10,
-				created_at: '2024-01-01T00:00:00Z',
-				updated_at: '2024-01-01T00:00:00Z'
-			},
-			{
-				url: 'https://api.github.com/repos/owner/repo/releases/assets/2',
+				download_count: 10
+			}),
+			createMockAsset({
 				id: 2,
 				name: 'file2.tar.gz',
 				label: 'File 2 Label',
 				content_type: 'application/gzip',
-				state: 'uploaded',
 				size: 2048,
-				download_count: 20,
-				created_at: '2024-01-02T00:00:00Z',
-				updated_at: '2024-01-02T00:00:00Z'
-			}
+				download_count: 20
+			})
 		]
 
 		const defaultProps = {

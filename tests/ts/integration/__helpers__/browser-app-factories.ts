@@ -1,3 +1,32 @@
+/**
+ * Integration Test Helper Factories
+ *
+ * **Purpose**: Mock Application State & Hook Return Values
+ * These factories create mock state objects and function mocks for integration tests.
+ * They represent the complete application state as used by hooks and components.
+ *
+ * **When to Use**:
+ * - In integration tests (tests/ts/integration/*.test.tsx)
+ * - When you need complete browser state with all setters
+ * - When mocking hook return values (useGitHubData, useBrowserState, etc.)
+ *
+ * **Do NOT Use For**:
+ * - Creating domain entities like IRepo, IRelease, IAsset
+ *   → Use tests/test-utils.tsx factories instead
+ * - Creating WordPress AJAX responses
+ *   → Use tests/msw/factories.ts instead
+ *
+ * **Composition Pattern**:
+ * These factories can compose domain entities from test-utils:
+ * ```typescript
+ * import { createMockRepo } from '@test-utils'
+ * const state = createDefaultMockState()
+ * state.repos = [createMockRepo(), createMockRepo()]
+ * ```
+ *
+ * @see tests/test-utils.tsx - Domain entity factories
+ * @see tests/msw/factories.ts - WordPress AJAX response wrappers
+ */
 import { vi } from 'vitest'
 
 /** Create default mock browser state */
