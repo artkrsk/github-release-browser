@@ -3,6 +3,24 @@
  *
  * Factory functions for creating mock API responses in WordPress AJAX format.
  * These factories wrap GitHub API data in the WordPress success/error response structure.
+ *
+ * **Purpose**: WordPress AJAX Response Wrappers
+ * These factories are specifically for MSW (Mock Service Worker) handlers.
+ * They wrap GitHub API data in WordPress AJAX response format: { success: boolean, data: any }
+ *
+ * **When to Use**:
+ * - In MSW handlers (tests/msw/handlers.ts)
+ * - When mocking WordPress AJAX endpoint responses
+ * - For simulating different error scenarios (401, 403, 404, 500)
+ *
+ * **Do NOT Use For**:
+ * - Creating domain entities (use tests/test-utils.tsx factories instead)
+ * - Integration test state mocks (use tests/ts/integration/__helpers__/ instead)
+ *
+ * **See Also**:
+ * - Domain entity factories: tests/test-utils.tsx
+ * - MSW handlers: tests/msw/handlers.ts
+ * - Integration helpers: tests/ts/integration/__helpers__/browser-app-factories.ts
  */
 
 /** WordPress AJAX Success Response */
