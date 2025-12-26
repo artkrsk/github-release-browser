@@ -3,6 +3,7 @@ import { WordPressAdmin } from '../page-objects/WordPressAdmin'
 import { BrowserModal } from '../page-objects/BrowserModal'
 import { clearAllCaches } from '../utils/cache-helper'
 import { waitForWordPressReady } from '../utils/wp-ready'
+import { enableAllDebugging } from '../utils/debug'
 
 /**
  * Custom Playwright Fixtures for WordPress Testing
@@ -48,6 +49,9 @@ export const test = base.extend<WordPressFixtures>({
 	 * Provides a Playwright page that's already logged into WordPress admin
 	 */
 	authenticatedPage: async ({ page, baseURL }, use) => {
+		/** Enable debugging to capture console errors and network issues */
+		enableAllDebugging(page)
+
 		/** Ensure WordPress is ready */
 		await waitForWordPressReady(page, baseURL!)
 

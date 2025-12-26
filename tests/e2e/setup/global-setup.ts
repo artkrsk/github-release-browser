@@ -18,8 +18,9 @@ async function globalSetup(config: FullConfig) {
 
 	const baseURL = config.use?.baseURL || 'http://localhost:8888'
 
-	/** Step 1: Inject GitHub token in CI environment */
-	if (process.env.CI && process.env.GITHUB_TOKEN) {
+	/** Step 1: Inject GitHub token in CI environment only */
+	/** In local dev, .wp-env.override.json should already exist */
+	if (process.env.CI === 'true' && process.env.GITHUB_TOKEN) {
 		console.log('📝 Injecting GitHub token for CI...')
 		const overrideConfig = {
 			config: {
@@ -30,6 +31,8 @@ async function globalSetup(config: FullConfig) {
 		const overridePath = path.resolve(process.cwd(), '.wp-env.override.json')
 		fs.writeFileSync(overridePath, JSON.stringify(overrideConfig, null, 2))
 		console.log('✅ GitHub token injected')
+	} else {
+		console.log('ℹ️  Using existing .wp-env.override.json (local development)')
 	}
 
 	/** Step 2: Wait for WordPress to be ready */

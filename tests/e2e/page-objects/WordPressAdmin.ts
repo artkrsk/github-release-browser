@@ -70,10 +70,12 @@ export class WordPressAdmin {
 	/**
 	 * Get the selected asset URI from the input field
 	 *
+	 * The input ID is 'github-asset-uri' per dev-harness.php
+	 *
 	 * @returns The URI value or null if empty
 	 */
 	async getSelectedAssetURI(): Promise<string | null> {
-		const input = this.page.locator('#github_release_uri')
+		const input = this.page.locator('#github-asset-uri')
 		const value = await input.inputValue()
 		return value || null
 	}
