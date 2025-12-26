@@ -40,117 +40,32 @@ vi.mock('@/services/GitHubService', () => ({
 import { mockWordPressComponents } from '../../mocks/wordpress-components'
 vi.mock('@wordpress/components', () => mockWordPressComponents)
 
+// Hoist component mocks (must be inline due to vi.hoisted running before imports)
+// See tests/ts/integration/__mocks__/components.ts for documentation on mock structure
+const componentMocks = vi.hoisted(() => {
+  const React = require('react')
+  const h = React.createElement
+  return {
+    LoadingState: ({ message }: { message: string }) => h('div', { 'data-testid': 'loading-state' }, message),
+    ErrorState: ({ error, onRetry }: { error: string; onRetry: () => void }) => h('div', { 'data-testid': 'error-state' }, h('div', { 'data-testid': 'error-message' }, error), h('button', { onClick: onRetry, 'data-testid': 'retry-button' }, 'Retry')),
+    RepositorySearch: ({ searchQuery, onSearchChange, onRefresh, refreshDisabled }: any) => h('div', { 'data-testid': 'repository-search' }, h('input', { 'data-testid': 'search-input', value: searchQuery || '', onChange: (e: any) => onSearchChange(e.target.value), placeholder: 'Search repositories...' }), h('button', { 'data-testid': 'refresh-button', onClick: onRefresh, disabled: refreshDisabled }, 'Refresh')),
+    RepositoryList: ({ repos, onRepoToggle }: any) => h('div', { 'data-testid': 'repository-list' }, repos && repos.length > 0 ? repos.map((repo: any) => h('div', { key: repo.id }, h('button', { onClick: () => onRepoToggle(repo.full_name), 'data-testid': `repo-${repo.id}` }, repo.name))) : h('div', { 'data-testid': 'no-repos' }, 'No repositories')),
+    AssetsView: ({ selectedRepo, onBack, onRefresh }: any) => h('div', { 'data-testid': 'assets-view' }, h('div', { 'data-testid': 'selected-repo' }, selectedRepo), h('button', { onClick: onBack, 'data-testid': 'back-button' }, 'Back'), onRefresh && h('button', { onClick: onRefresh, 'data-testid': 'assets-refresh' }, 'Refresh')),
+    AppFooter: ({ primaryButton, config }: any) => h('div', { 'data-testid': 'app-footer' }, primaryButton, config?.upgradeUrl && h('a', { href: config.upgradeUrl, 'data-testid': 'upgrade-link' }, 'Upgrade')),
+    SourceModeToggle: ({ mode, onModeChange, disabled }: any) => h('div', { 'data-testid': 'source-mode-toggle' }, h('button', { 'data-testid': 'toggle-releases', onClick: () => onModeChange('releases'), disabled, 'data-active': mode === 'releases' }, 'Releases'), h('button', { 'data-testid': 'toggle-directory', onClick: () => onModeChange('directory'), disabled, 'data-active': mode === 'directory' }, 'Directory')),
+    DirectoryView: ({ selectedRepo, selectedBranch, currentPath, onBack, onSelectBranch, onNavigate, onRefresh }: any) => h('div', { 'data-testid': 'directory-view' }, h('div', { 'data-testid': 'directory-selected-repo' }, selectedRepo), h('div', { 'data-testid': 'directory-selected-branch' }, selectedBranch), h('div', { 'data-testid': 'directory-current-path' }, currentPath), h('button', { onClick: onBack, 'data-testid': 'directory-back-button' }, 'Back'), h('button', { onClick: () => onSelectBranch('develop'), 'data-testid': 'directory-change-branch' }, 'Change Branch'), h('button', { onClick: () => onNavigate('src/components'), 'data-testid': 'directory-navigate' }, 'Navigate'), onRefresh && h('button', { onClick: onRefresh, 'data-testid': 'directory-refresh' }, 'Refresh'))
+  }
+})
+
 // Mock child components
-vi.mock('@/components/LoadingState', () => ({
-  LoadingState: ({ message }: { message: string }) => (
-    <div data-testid="loading-state">{message}</div>
-  )
-}))
-
-vi.mock('@/components/ErrorState', () => ({
-  ErrorState: ({ error, onRetry }: { error: string; onRetry: () => void }) => (
-    <div data-testid="error-state">
-      <div data-testid="error-message">{error}</div>
-      <button onClick={onRetry} data-testid="retry-button">Retry</button>
-    </div>
-  )
-}))
-
-vi.mock('@/components/RepositorySearch', () => ({
-  RepositorySearch: ({ searchQuery, onSearchChange, onRefresh, refreshDisabled }: any) => (
-    <div data-testid="repository-search">
-      <input
-        data-testid="search-input"
-        value={searchQuery || ''}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search repositories..."
-      />
-      <button
-        data-testid="refresh-button"
-        onClick={onRefresh}
-        disabled={refreshDisabled}
-      >
-        Refresh
-      </button>
-    </div>
-  )
-}))
-
-vi.mock('@/components/RepositoryList', () => ({
-  RepositoryList: ({ repos, onRepoToggle }: any) => (
-    <div data-testid="repository-list">
-      {repos && repos.length > 0 ? (
-        repos.map((repo: any) => (
-          <div key={repo.id}>
-            <button onClick={() => onRepoToggle(repo.full_name)} data-testid={`repo-${repo.id}`}>
-              {repo.name}
-            </button>
-          </div>
-        ))
-      ) : (
-        <div data-testid="no-repos">No repositories</div>
-      )}
-    </div>
-  )
-}))
-
-vi.mock('@/components/AssetsView', () => ({
-  AssetsView: ({ selectedRepo, onBack, onRefresh }: any) => (
-    <div data-testid="assets-view">
-      <div data-testid="selected-repo">{selectedRepo}</div>
-      <button onClick={onBack} data-testid="back-button">Back</button>
-      {onRefresh && <button onClick={onRefresh} data-testid="assets-refresh">Refresh</button>}
-    </div>
-  )
-}))
-
-vi.mock('@/components/AppFooter', () => ({
-  AppFooter: ({ primaryButton, config }: any) => (
-    <div data-testid="app-footer">
-      {primaryButton}
-      {config?.upgradeUrl && (
-        <a href={config.upgradeUrl} data-testid="upgrade-link">Upgrade</a>
-      )}
-    </div>
-  )
-}))
-
-vi.mock('@/components/SourceModeToggle', () => ({
-  SourceModeToggle: ({ mode, onModeChange, disabled }: any) => (
-    <div data-testid="source-mode-toggle">
-      <button
-        data-testid="toggle-releases"
-        onClick={() => onModeChange('releases')}
-        disabled={disabled}
-        data-active={mode === 'releases'}
-      >
-        Releases
-      </button>
-      <button
-        data-testid="toggle-directory"
-        onClick={() => onModeChange('directory')}
-        disabled={disabled}
-        data-active={mode === 'directory'}
-      >
-        Directory
-      </button>
-    </div>
-  )
-}))
-
-vi.mock('@/components/DirectoryView', () => ({
-  DirectoryView: ({ selectedRepo, selectedBranch, currentPath, onBack, onSelectBranch, onNavigate, onRefresh }: any) => (
-    <div data-testid="directory-view">
-      <div data-testid="directory-selected-repo">{selectedRepo}</div>
-      <div data-testid="directory-selected-branch">{selectedBranch}</div>
-      <div data-testid="directory-current-path">{currentPath}</div>
-      <button onClick={onBack} data-testid="directory-back-button">Back</button>
-      <button onClick={() => onSelectBranch('develop')} data-testid="directory-change-branch">Change Branch</button>
-      <button onClick={() => onNavigate('src/components')} data-testid="directory-navigate">Navigate</button>
-      {onRefresh && <button onClick={onRefresh} data-testid="directory-refresh">Refresh</button>}
-    </div>
-  )
-}))
+vi.mock('@/components/LoadingState', () => ({ LoadingState: componentMocks.LoadingState }))
+vi.mock('@/components/ErrorState', () => ({ ErrorState: componentMocks.ErrorState }))
+vi.mock('@/components/RepositorySearch', () => ({ RepositorySearch: componentMocks.RepositorySearch }))
+vi.mock('@/components/RepositoryList', () => ({ RepositoryList: componentMocks.RepositoryList }))
+vi.mock('@/components/AssetsView', () => ({ AssetsView: componentMocks.AssetsView }))
+vi.mock('@/components/AppFooter', () => ({ AppFooter: componentMocks.AppFooter }))
+vi.mock('@/components/SourceModeToggle', () => ({ SourceModeToggle: componentMocks.SourceModeToggle }))
+vi.mock('@/components/DirectoryView', () => ({ DirectoryView: componentMocks.DirectoryView }))
 
 // Mock hooks
 let mockBrowserState: any = {}
