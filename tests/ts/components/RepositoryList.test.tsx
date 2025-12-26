@@ -5,72 +5,9 @@ import userEvent from '@testing-library/user-event'
 import { RepositoryList } from '@/components/RepositoryList'
 import { render, setupTestEnvironment, createMockBrowserConfig } from '@test-utils'
 
-// Mock WordPress components with simple structure
-vi.mock('@wordpress/components', () => ({
-  Button: ({ children, onClick, disabled, variant, icon, label, className, ...props }: any) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      data-variant={variant || 'default'}
-      className={`wp-button wp-button-${variant || 'default'} ${className || ''}`}
-      data-testid={`button-${variant || 'default'}`}
-      {...props}
-    >
-      {children}
-    </button>
-  ),
-  SearchControl: ({ value, onChange, placeholder, className, ...props }: any) => (
-    <input
-      type="search"
-      value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={`wp-search-control ${className || ''}`}
-      data-testid="search-control"
-      {...props}
-    />
-  ),
-  Panel: ({ children, className, ...props }: any) => (
-    <div
-      role="region"
-      className={`wp-panel ${className || ''}`}
-      data-testid="panel"
-      {...props}
-    >
-      {children}
-    </div>
-  ),
-  PanelBody: ({ children, title, opened, onToggle, className, ...props }: any) => (
-    <div className={`wp-panel-body ${className || ''}`} data-testid="panel-body">
-      <button
-        onClick={onToggle}
-        aria-expanded={opened}
-        className="wp-panel-body__toggle"
-        data-testid="panel-toggle"
-      >
-        {title}
-      </button>
-      {opened && (
-        <div className="wp-panel-body__content" data-testid="panel-content">
-          {children}
-        </div>
-      )}
-    </div>
-  ),
-  Spinner: ({ className, ...props }: any) => (
-    <div
-      className={`wp-spinner ${className || ''}`}
-      data-testid="spinner"
-      role="status"
-      aria-label="Loading"
-      {...props}
-    >
-      <span>⏳</span>
-    </div>
-  )
-}))
+// Import centralized WordPress component mocks
+import { mockWordPressComponents } from '../../mocks/wordpress-components'
+vi.mock('@wordpress/components', () => mockWordPressComponents)
 
 // Mock ReleaseList component
 vi.mock('@/components/ReleaseList', () => ({

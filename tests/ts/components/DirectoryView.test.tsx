@@ -6,21 +6,9 @@ import { DirectoryView } from '@/components/DirectoryView'
 import { render } from '@test-utils'
 import { IBranch, IContentItem } from '@/interfaces'
 
-// Mock WordPress components
-vi.mock('@wordpress/components', () => ({
-  Button: ({ children, onClick, variant, className, label, ...props }: any) => (
-    <button
-      onClick={onClick}
-      data-variant={variant}
-      className={`wp-button wp-button-${variant || 'default'} ${className || ''}`}
-      data-testid={`button-${variant || 'default'}`}
-      aria-label={label}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}))
+// Import centralized WordPress component mocks
+import { mockWordPressComponents } from '../../mocks/wordpress-components'
+vi.mock('@wordpress/components', () => mockWordPressComponents)
 
 // Mock BranchSelector component
 vi.mock('@/components/BranchSelector', () => ({

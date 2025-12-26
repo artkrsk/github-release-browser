@@ -1,5 +1,6 @@
 import { describe, test, expect, vi } from 'vitest'
-import { render } from '@test-utils'
+import { render, screen } from '@test-utils'
+import userEvent from '@testing-library/user-event'
 import { SourceModeToggle } from '@/components/SourceModeToggle'
 import { TSourceMode } from '@/types'
 
@@ -83,6 +84,36 @@ describe('SourceModeToggle', () => {
       render(<SourceModeToggle {...defaultProps} onModeChange={customCallback} />)
 
       expect(document.querySelector('.github-release-browser-source-toggle')).toBeInTheDocument()
+    })
+  })
+
+  describe('Interactions', () => {
+    test('calls onModeChange when toggle value changes to releases', async () => {
+      const user = userEvent.setup()
+      const mockCallback = vi.fn()
+      render(<SourceModeToggle {...defaultProps} mode="directory" onModeChange={mockCallback} />)
+
+      const releasesButton = screen.getByTestId('toggle-option-releases')
+      expect(releasesButton).toBeInTheDocument()
+
+      await user.click(releasesButton)
+
+      expect(mockCallback).toHaveBeenCalledWith('releases')
+      expect(mockCallback).toHaveBeenCalledTimes(1)
+    })
+
+    test('calls onModeChange when toggle value changes to directory', async () => {
+      const user = userEvent.setup()
+      const mockCallback = vi.fn()
+      render(<SourceModeToggle {...defaultProps} mode="releases" onModeChange={mockCallback} />)
+
+      const directoryButton = screen.getByTestId('toggle-option-directory')
+      expect(directoryButton).toBeInTheDocument()
+
+      await user.click(directoryButton)
+
+      expect(mockCallback).toHaveBeenCalledWith('directory')
+      expect(mockCallback).toHaveBeenCalledTimes(1)
     })
   })
 })

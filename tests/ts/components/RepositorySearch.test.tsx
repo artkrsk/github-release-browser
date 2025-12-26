@@ -5,34 +5,9 @@ import userEvent from '@testing-library/user-event'
 import { RepositorySearch } from '@/components/RepositorySearch'
 import { render, setupTestEnvironment } from '@test-utils'
 
-// Mock WordPress components with simple structure
-vi.mock('@wordpress/components', () => ({
-  Button: ({ children, onClick, disabled, variant, icon, label, className, ...props }: any) => (
-    <button
-      onClick={onClick}
-      disabled={disabled}
-      aria-label={label}
-      title={label}
-      data-variant={variant}
-      data-testid={`button-${variant || 'default'}`}
-      className={`wp-button wp-button-${variant || 'default'} ${className || ''}`}
-      {...props}
-    >
-      {children}
-    </button>
-  ),
-  SearchControl: ({ value, onChange, placeholder, className, ...props }: any) => (
-    <input
-      type="search"
-      value={value || ''}
-      onChange={(e) => onChange(e.target.value)}
-      placeholder={placeholder}
-      className={`wp-search-control ${className || ''}`}
-      data-testid="search-control"
-      {...props}
-    />
-  )
-}))
+// Import centralized WordPress component mocks
+import { mockWordPressComponents } from '../../mocks/wordpress-components'
+vi.mock('@wordpress/components', () => mockWordPressComponents)
 
 describe('RepositorySearch - Simple Testing', () => {
   const mockOnSearchChange = vi.fn()

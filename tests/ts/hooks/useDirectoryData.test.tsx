@@ -115,6 +115,62 @@ describe('useDirectoryData', () => {
       expect(mockSetError).toHaveBeenCalledWith('API Error')
     })
 
+    test('sets generic error message when branch fetch throws non-Error', async () => {
+      mockService.getBranches = vi.fn().mockRejectedValue('string error')
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockSetError).toHaveBeenCalledWith('Failed to fetch branches')
+    })
+
+    test('does not set branch if unmounted after branches but before selectedBranch', async () => {
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      // Unmount after branches are set
+      mockService.getBranches = vi.fn().mockImplementation(async () => {
+        const branches = mockBranches
+        if (mockIsMountedRef.current) {
+          mockSetBranches(branches)
+        }
+        mockIsMountedRef.current = false // Unmount here
+        return branches
+      })
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      // Should not set selectedBranch or contents since unmounted
+      expect(mockSetSelectedBranch).not.toHaveBeenCalled()
+      expect(mockSetDirectoryContents).not.toHaveBeenCalled()
+    })
+
     test('sets loading states correctly', async () => {
       const { result } = renderHook(() =>
         useDirectoryData(
@@ -294,6 +350,30 @@ describe('useDirectoryData', () => {
       expect(mockSetDirectoryContents).toHaveBeenCalledWith([])
       expect(mockSetError).toHaveBeenCalledWith('Not found')
     })
+
+    test('sets generic error message when contents fetch throws non-Error', async () => {
+      mockService.getContents = vi.fn().mockRejectedValue('string error')
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchContents('owner/repo', 'src', 'main')
+      })
+
+      expect(mockSetDirectoryContents).toHaveBeenCalledWith([])
+      expect(mockSetError).toHaveBeenCalledWith('Failed to fetch directory contents')
+    })
   })
 
   describe('fetchRepoInfo', () => {
@@ -340,6 +420,154 @@ describe('useDirectoryData', () => {
       })
 
       expect(mockSetSelectedBranch).toHaveBeenCalledWith('main')
+    })
+
+    test('does not set branch if unmounted during success', async () => {
+      mockIsMountedRef.current = false
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchRepoInfo('owner/repo')
+      })
+
+      expect(mockSetSelectedBranch).not.toHaveBeenCalled()
+    })
+
+    test('does not set branch if unmounted during error', async () => {
+      mockService.getRepoInfo = vi.fn().mockRejectedValue(new Error('Not found'))
+      mockIsMountedRef.current = false
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchRepoInfo('owner/repo')
+      })
+
+      expect(mockSetSelectedBranch).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('Unmounted state handling', () => {
+    test('does not update state if unmounted before fetchBranches completes', async () => {
+      mockIsMountedRef.current = false
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockSetBranches).not.toHaveBeenCalled()
+      expect(mockSetLoadingBranches).not.toHaveBeenCalledWith(false)
+    })
+
+    test('does not update state if unmounted before fetchContents completes', async () => {
+      mockIsMountedRef.current = false
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchContents('owner/repo', 'src', 'main')
+      })
+
+      expect(mockSetDirectoryContents).not.toHaveBeenCalled()
+      expect(mockSetLoadingContents).not.toHaveBeenCalledWith(false)
+    })
+
+    test('does not set error if unmounted during fetchBranches error', async () => {
+      mockService.getBranches = vi.fn().mockRejectedValue(new Error('API Error'))
+      mockIsMountedRef.current = false
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchBranches('owner/repo')
+      })
+
+      expect(mockSetError).not.toHaveBeenCalled()
+      expect(mockSetLoadingBranches).not.toHaveBeenCalledWith(false)
+    })
+
+    test('does not set error if unmounted during fetchContents error', async () => {
+      mockService.getContents = vi.fn().mockRejectedValue(new Error('Not found'))
+      mockIsMountedRef.current = false
+
+      const { result } = renderHook(() =>
+        useDirectoryData(
+          mockService,
+          mockIsMountedRef,
+          mockSetBranches,
+          mockSetSelectedBranch,
+          mockSetDirectoryContents,
+          mockSetLoadingBranches,
+          mockSetLoadingContents,
+          mockSetError
+        )
+      )
+
+      await act(async () => {
+        await result.current.fetchContents('owner/repo', 'src', 'main')
+      })
+
+      expect(mockSetDirectoryContents).not.toHaveBeenCalledWith([])
+      expect(mockSetError).not.toHaveBeenCalled()
+      expect(mockSetLoadingContents).not.toHaveBeenCalledWith(false)
     })
   })
 })

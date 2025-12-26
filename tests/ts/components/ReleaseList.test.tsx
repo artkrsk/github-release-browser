@@ -16,30 +16,9 @@ vi.mock('@/components/FeatureBadge', () => ({
     React.createElement('span', { className: 'mock-feature-badge' }, feature)
 }))
 
-// Mock WordPress components
-vi.mock('@wordpress/components', () => ({
-  Card: ({ children, className, onClick, ...props }: any) => (
-    <div
-      className={`wp-card ${className || ''}`}
-      onClick={onClick}
-      data-testid={className?.includes('latest') ? 'latest-release-card' : 'release-card'}
-      role="button"
-      tabIndex={0}
-      {...props}
-    >
-      {children}
-    </div>
-  ),
-  CardBody: ({ children, className, ...props }: any) => (
-    <div
-      className={`wp-card-body ${className || ''}`}
-      data-testid="card-body"
-      {...props}
-    >
-      {children}
-    </div>
-  )
-}))
+// Import centralized WordPress component mocks
+import { mockWordPressComponents } from '../../mocks/wordpress-components'
+vi.mock('@wordpress/components', () => mockWordPressComponents)
 
 // Mock window.open
 const mockWindowOpen = vi.fn()
