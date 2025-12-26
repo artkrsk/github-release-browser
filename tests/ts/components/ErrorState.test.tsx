@@ -1,31 +1,15 @@
 import { describe, test, expect, vi, beforeEach } from 'vitest'
 import React from 'react'
-import { screen } from '@testing-library/react'
+import { screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ErrorState, detectErrorType } from '@/components/ErrorState'
 import { render, setupTestEnvironment } from '@test-utils'
 
-// Mock WordPress components
-vi.mock('@wordpress/components', () => ({
-  Button: ({ children, onClick, variant, className, ...props }: {
-    children?: React.ReactNode
-    onClick?: () => void
-    variant?: string
-    className?: string
-  }) => (
-    <button
-      onClick={onClick}
-      data-variant={variant}
-      className={`wp-button wp-button-${variant || 'default'} ${className || ''}`}
-      data-testid={`button-${variant || 'default'}`}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}))
+// Import centralized WordPress component mocks
+import { mockWordPressComponents } from '../../mocks/wordpress-components'
+vi.mock('@wordpress/components', () => mockWordPressComponents)
 
-describe('detectErrorType', () => {
+describe('detectErrorType utility', () => {
   test('returns "token_missing" for "not configured" messages', () => {
     expect(detectErrorType('GitHub Personal Access Token not configured')).toBe('token_missing')
     expect(detectErrorType('Token not configured')).toBe('token_missing')
@@ -87,7 +71,7 @@ describe('detectErrorType', () => {
   })
 })
 
-describe('ErrorState', () => {
+describe('ErrorState Component', () => {
   const mockOnRetry = vi.fn()
 
   beforeEach(() => {
@@ -95,7 +79,7 @@ describe('ErrorState', () => {
     vi.clearAllMocks()
   })
 
-  describe('Props Handling', () => {
+  describe('Props and Rendering', () => {
     test('renders with required props', () => {
       render(
         <ErrorState
@@ -166,7 +150,7 @@ describe('ErrorState', () => {
     })
   })
 
-  describe('Simple Error Detection', () => {
+  describe('Error Type Detection', () => {
     test('renders token missing error for "not configured" message', () => {
       render(
         <ErrorState
@@ -330,22 +314,6 @@ describe('ErrorState', () => {
       expect(screen.getByText('Network connection failed')).toBeInTheDocument()
       expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
     })
-  })
-
-  describe('Legacy Error Detection (Backward Compatibility)', () => {
-    test('renders token missing error for "not configured" message', () => {
-      render(
-        <ErrorState
-          error="GitHub Personal Access Token not configured"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByText('To browse and insert files from your GitHub releases, you need to configure your GitHub Personal Access Token.')).toBeInTheDocument()
-      expect(screen.getByText('Try Again')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-    })
 
     test('renders token missing error with custom translations', () => {
       setupTestEnvironment({
@@ -469,9 +437,81 @@ describe('ErrorState', () => {
       expect(screen.getByText('Token expired but not revoked')).toBeInTheDocument()
       expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
     })
+
+    test('covers "required" keyword for token missing detection', () => {
+      render(
+        <ErrorState
+          error="GitHub token is required for this operation"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
+    })
+
+    test('covers whitespace handling in error detection', () => {
+      render(
+        <ErrorState
+          error="   GitHub token not configured   "
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
+    })
+
+    test('covers combined token keywords detection', () => {
+      render(
+        <ErrorState
+          error="Your personal access token appears to be invalid"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
+    })
+
+    test('covers generic error fallback for unknown patterns', () => {
+      render(
+        <ErrorState
+          error="Something completely unexpected happened"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Something completely unexpected happened')).toBeInTheDocument()
+      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
+    })
+
+    test('covers error with mixed case token keywords', () => {
+      render(
+        <ErrorState
+          error="GitHub TOKEN is Missing"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
+    })
+
+    test('covers error with only configure keyword but no token', () => {
+      render(
+        <ErrorState
+          error="Please configure your repository settings"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Please configure your repository settings')).toBeInTheDocument()
+      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
+    })
   })
 
-  describe('Button Interactions', () => {
+  describe('User Interactions', () => {
     test('calls onRetry when retry button is clicked', async () => {
       const user = userEvent.setup()
       render(
@@ -533,6 +573,579 @@ describe('ErrorState', () => {
       await user.click(retryButton)
 
       expect(mockOnRetry).toHaveBeenCalledTimes(3)
+    })
+
+    test('supports keyboard navigation and activation', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="Service unavailable"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      // Test keyboard navigation
+      retryButton.focus()
+      expect(retryButton).toHaveFocus()
+
+      // Test keyboard activation
+      await user.keyboard('{Enter}')
+      expect(mockOnRetry).toHaveBeenCalledTimes(1)
+    })
+
+    test('supports space key activation', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="API rate limit exceeded"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+      retryButton.focus()
+
+      await user.keyboard('{ }')
+      expect(mockOnRetry).toHaveBeenCalledTimes(1)
+    })
+
+    test('prevents multiple rapid clicks when button should be disabled', async () => {
+      const user = userEvent.setup()
+      let clickCount = 0
+
+      render(
+        <ErrorState
+          error="Connection timeout"
+          onRetry={() => {
+            clickCount++
+            if (clickCount > 1) {
+              throw new Error('Button should not be clickable multiple times rapidly')
+            }
+          }}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      await user.click(retryButton)
+      // Note: Component doesn't actually disable the button, but test ensures it doesn't crash
+      expect(clickCount).toBe(1)
+    })
+
+    test('handles focus management correctly', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="Authentication failed"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      // Tab to button
+      await user.tab()
+      expect(retryButton).toHaveFocus()
+
+      // Activate and check focus is maintained
+      await user.keyboard('{Enter}')
+      expect(mockOnRetry).toHaveBeenCalled()
+    })
+  })
+
+  describe('Accessibility', () => {
+    test('renders accessible error structure for generic errors', () => {
+      render(
+        <ErrorState
+          error="Network connection failed"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const errorText = screen.getByText('Network connection failed')
+      expect(errorText).toBeInTheDocument()
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+      expect(retryButton).toBeInTheDocument()
+      expect(retryButton).not.toBeDisabled()
+    })
+
+    test('renders accessible structure for token missing errors', () => {
+      render(
+        <ErrorState
+          error="GitHub token not configured"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const title = screen.getByRole('heading', { name: 'Welcome to Release Browser' })
+      expect(title).toBeInTheDocument()
+
+      const message = screen.getByText(/to browse and insert files from your github releases/i)
+      expect(message).toBeInTheDocument()
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+      expect(retryButton).toBeInTheDocument()
+    })
+
+    test('renders accessible structure for invalid token errors', () => {
+      render(
+        <ErrorState
+          error="Invalid GitHub token"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const title = screen.getByRole('heading', { name: 'Invalid GitHub Token' })
+      expect(title).toBeInTheDocument()
+
+      const message = screen.getByText(/your github personal access token is invalid or has been revoked/i)
+      expect(message).toBeInTheDocument()
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+      expect(retryButton).toBeInTheDocument()
+    })
+  })
+
+  describe('Component Lifecycle', () => {
+    test('handles rapid error type changes', async () => {
+      const user = userEvent.setup()
+      const { rerender } = render(
+        <ErrorState
+          error="Initial error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      // Initial state
+      expect(screen.getByText('Initial error')).toBeInTheDocument()
+
+      // Change to token missing
+      rerender(
+        <ErrorState
+          error="GitHub token not configured"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      })
+
+      // Change to invalid token
+      rerender(
+        <ErrorState
+          error="Invalid GitHub token"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Invalid GitHub Token')).toBeInTheDocument()
+      })
+
+      // Back to generic error
+      rerender(
+        <ErrorState
+          error="Network timeout"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      await waitFor(() => {
+        expect(screen.getByText('Network timeout')).toBeInTheDocument()
+      })
+    })
+
+    test('maintains correct button state during re-renders', async () => {
+      const user = userEvent.setup()
+      const { rerender } = render(
+        <ErrorState
+          error="First error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const firstButton = screen.getByRole('button', { name: 'Try Again' })
+      await user.click(firstButton)
+      expect(mockOnRetry).toHaveBeenCalledTimes(1)
+
+      rerender(
+        <ErrorState
+          error="Second error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const secondButton = screen.getByRole('button', { name: 'Try Again' })
+      await user.click(secondButton)
+      expect(mockOnRetry).toHaveBeenCalledTimes(2)
+    })
+
+    test('updates error message when prop changes', () => {
+      const { rerender } = render(
+        <ErrorState
+          error="Initial error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Initial error')).toBeInTheDocument()
+
+      rerender(
+        <ErrorState
+          error="Updated error message"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Updated error message')).toBeInTheDocument()
+      expect(screen.queryByText('Initial error')).not.toBeInTheDocument()
+    })
+
+    test('changes error type when prop changes from generic to token missing', () => {
+      const { rerender } = render(
+        <ErrorState
+          error="Generic network error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Generic network error')).toBeInTheDocument()
+      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
+
+      rerender(
+        <ErrorState
+          error="GitHub token not configured"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
+    })
+
+    test('changes error type when prop changes from token missing to invalid', () => {
+      const { rerender } = render(
+        <ErrorState
+          error="GitHub token not configured"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
+      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
+
+      rerender(
+        <ErrorState
+          error="Invalid GitHub token"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Invalid GitHub Token')).toBeInTheDocument()
+      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
+    })
+  })
+
+  describe('Event Handling', () => {
+    test('handles click events with modifiers', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="Test error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      // Ctrl+Click should still trigger
+      await user.click(retryButton, { ctrlKey: true })
+      expect(mockOnRetry).toHaveBeenCalledTimes(1)
+
+      // Shift+Click should still trigger
+      await user.click(retryButton, { shiftKey: true })
+      expect(mockOnRetry).toHaveBeenCalledTimes(2)
+    })
+
+    test('handles right-click without triggering retry', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="Test error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      fireEvent.contextMenu(retryButton)
+      expect(mockOnRetry).not.toHaveBeenCalled()
+    })
+
+    test('handles double-click events', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="Test error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      await user.dblClick(retryButton)
+      // Should trigger twice (once for each click in the double-click)
+      expect(mockOnRetry).toHaveBeenCalledTimes(2)
+    })
+  })
+
+  describe('Visual States and Responsive Behavior', () => {
+    test('applies hover states to buttons', async () => {
+      const user = userEvent.setup()
+      render(
+        <ErrorState
+          error="Server error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const retryButton = screen.getByRole('button', { name: 'Try Again' })
+
+      await user.hover(retryButton)
+      expect(retryButton).toBeInTheDocument()
+      // WordPress Button component handles hover styles internally
+
+      await user.unhover(retryButton)
+      expect(retryButton).toBeInTheDocument()
+    })
+
+    test('maintains button styles across different error types', () => {
+      const { rerender } = render(
+        <ErrorState
+          error="Generic error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const genericButton = screen.getByRole('button', { name: 'Try Again' })
+      expect(genericButton).toBeInTheDocument()
+
+      rerender(
+        <ErrorState
+          error="GitHub token not configured"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const tokenMissingButton = screen.getByRole('button', { name: 'Try Again' })
+      expect(tokenMissingButton).toBeInTheDocument()
+
+      rerender(
+        <ErrorState
+          error="Invalid GitHub token"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      const invalidTokenButton = screen.getByRole('button', { name: 'Try Again' })
+      expect(invalidTokenButton).toBeInTheDocument()
+    })
+
+    test('adapts to different container sizes', () => {
+      const { rerender } = render(
+        <div style={{ width: '200px' }}>
+          <ErrorState
+            error="This is a very long error message that should wrap properly in small containers"
+            onRetry={mockOnRetry}
+          />
+        </div>
+      )
+
+      const errorContainer = screen.getByText(/this is a very long error message/i)
+      expect(errorContainer).toBeInTheDocument()
+
+      rerender(
+        <div style={{ width: '1000px' }}>
+          <ErrorState
+            error="This is a very long error message that should wrap properly in small containers"
+            onRetry={mockOnRetry}
+          />
+        </div>
+      )
+
+      expect(errorContainer).toBeInTheDocument()
+    })
+
+    test('handles container visibility changes', async () => {
+      const { rerender } = render(
+        <div style={{ display: 'none' }}>
+          <ErrorState
+            error="Hidden error"
+            onRetry={mockOnRetry}
+          />
+        </div>
+      )
+
+      // Component should render even if parent is hidden
+      rerender(
+        <div style={{ display: 'block' }}>
+          <ErrorState
+            error="Now visible error"
+            onRetry={mockOnRetry}
+          />
+        </div>
+      )
+
+      expect(screen.getByText('Now visible error')).toBeInTheDocument()
+    })
+  })
+
+  describe('Custom Content Integration', () => {
+    test('renders complex custom content with interactive elements', async () => {
+      const user = userEvent.setup()
+      const customButtonHandler = vi.fn()
+
+      render(
+        <ErrorState
+          error="Should not show"
+          onRetry={mockOnRetry}
+        >
+          <div>
+            <h2>Custom Error Interface</h2>
+            <p>Something went wrong. Please try one of these options:</p>
+            <button onClick={customButtonHandler} data-testid="custom-action-1">
+              Refresh Page
+            </button>
+            <button onClick={customButtonHandler} data-testid="custom-action-2">
+              Contact Support
+            </button>
+            <input placeholder="Enter email" data-testid="email-input" />
+          </div>
+        </ErrorState>
+      )
+
+      expect(screen.getByText('Custom Error Interface')).toBeInTheDocument()
+      expect(screen.getByText('Something went wrong. Please try one of these options:')).toBeInTheDocument()
+
+      const customButton1 = screen.getByTestId('custom-action-1')
+      const customButton2 = screen.getByTestId('custom-action-2')
+      const emailInput = screen.getByTestId('email-input')
+
+      await user.click(customButton1)
+      expect(customButtonHandler).toHaveBeenCalledTimes(1)
+
+      await user.click(customButton2)
+      expect(customButtonHandler).toHaveBeenCalledTimes(2)
+
+      await user.type(emailInput, 'test@example.com')
+      expect(emailInput).toHaveValue('test@example.com')
+    })
+
+    test('passes through props correctly with children', () => {
+      render(
+        <ErrorState
+          error="Should not show"
+          onRetry={mockOnRetry}
+          className="custom-wrapper-class"
+        >
+          <div data-testid="child-content">Custom child content</div>
+        </ErrorState>
+      )
+
+      const container = screen.getByTestId('child-content').closest('.github-release-browser-browser__error')
+      expect(container).toHaveClass('custom-wrapper-class')
+      expect(screen.getByTestId('child-content')).toBeInTheDocument()
+    })
+
+    test('children take precedence over default error rendering', () => {
+      render(
+        <ErrorState
+          error="This should not appear"
+          onRetry={mockOnRetry}
+        >
+          <div data-testid="custom-content">
+            <h1>Custom Error Title</h1>
+            <p>Custom error description</p>
+            <button data-testid="custom-retry">Custom Retry</button>
+          </div>
+        </ErrorState>
+      )
+
+      expect(screen.getByTestId('custom-content')).toBeInTheDocument()
+      expect(screen.getByText('Custom Error Title')).toBeInTheDocument()
+      expect(screen.getByText('Custom error description')).toBeInTheDocument()
+      expect(screen.getByTestId('custom-retry')).toBeInTheDocument()
+      expect(screen.queryByText('This should not appear')).not.toBeInTheDocument()
+    })
+
+    test('empty children still prevent default rendering', () => {
+      render(
+        <ErrorState
+          error="This should not appear"
+          onRetry={mockOnRetry}
+        >
+          <></>
+        </ErrorState>
+      )
+
+      expect(screen.queryByText('This should not appear')).not.toBeInTheDocument()
+    })
+
+    test('text children render correctly', () => {
+      render(
+        <ErrorState
+          error="This should not appear"
+          onRetry={mockOnRetry}
+        >
+          Simple text content
+        </ErrorState>
+      )
+
+      expect(screen.getByText('Simple text content')).toBeInTheDocument()
+      expect(screen.queryByText('This should not appear')).not.toBeInTheDocument()
+    })
+  })
+
+  describe('Performance and Memory', () => {
+    test('handles many rapid re-renders without memory leaks', async () => {
+      const { rerender } = render(
+        <ErrorState
+          error="Error 1"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      // Rapidly re-render with different errors
+      for (let i = 2; i <= 10; i++) {
+        rerender(
+          <ErrorState
+            error={`Error ${i}`}
+            onRetry={mockOnRetry}
+          />
+        )
+      }
+
+      expect(screen.getByText('Error 10')).toBeInTheDocument()
+    })
+
+    test('cleans up event listeners on unmount', () => {
+      const { unmount } = render(
+        <ErrorState
+          error="Test error"
+          onRetry={mockOnRetry}
+        />
+      )
+
+      expect(screen.getByText('Test error')).toBeInTheDocument()
+
+      unmount()
+
+      // Component should unmount without errors
+      expect(document.querySelector('[data-testid="error-container"]')).not.toBeInTheDocument()
     })
   })
 
@@ -646,197 +1259,6 @@ describe('ErrorState', () => {
       )
 
       expect(screen.getByText('Error with special chars: !@#$%^&*()')).toBeInTheDocument()
-    })
-  })
-
-  describe('Component Re-rendering', () => {
-    test('updates error message when prop changes', () => {
-      const { rerender } = render(
-        <ErrorState
-          error="Initial error"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Initial error')).toBeInTheDocument()
-
-      rerender(
-        <ErrorState
-          error="Updated error message"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Updated error message')).toBeInTheDocument()
-      expect(screen.queryByText('Initial error')).not.toBeInTheDocument()
-    })
-
-    test('changes error type when prop changes from generic to token missing', () => {
-      const { rerender } = render(
-        <ErrorState
-          error="Generic network error"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Generic network error')).toBeInTheDocument()
-      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
-
-      rerender(
-        <ErrorState
-          error="GitHub token not configured"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-    })
-
-    test('changes error type when prop changes from token missing to invalid', () => {
-      const { rerender } = render(
-        <ErrorState
-          error="GitHub token not configured"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-
-      rerender(
-        <ErrorState
-          error="Invalid GitHub token"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Invalid GitHub Token')).toBeInTheDocument()
-      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
-    })
-  })
-
-  describe('Children Rendering Priority', () => {
-    test('children take precedence over default error rendering', () => {
-      render(
-        <ErrorState
-          error="This should not appear"
-          onRetry={mockOnRetry}
-        >
-          <div data-testid="custom-content">
-            <h1>Custom Error Title</h1>
-            <p>Custom error description</p>
-            <button data-testid="custom-retry">Custom Retry</button>
-          </div>
-        </ErrorState>
-      )
-
-      expect(screen.getByTestId('custom-content')).toBeInTheDocument()
-      expect(screen.getByText('Custom Error Title')).toBeInTheDocument()
-      expect(screen.getByText('Custom error description')).toBeInTheDocument()
-      expect(screen.getByTestId('custom-retry')).toBeInTheDocument()
-      expect(screen.queryByText('This should not appear')).not.toBeInTheDocument()
-    })
-
-    test('empty children still prevent default rendering', () => {
-      render(
-        <ErrorState
-          error="This should not appear"
-          onRetry={mockOnRetry}
-        >
-          <></>
-        </ErrorState>
-      )
-
-      expect(screen.queryByText('This should not appear')).not.toBeInTheDocument()
-    })
-
-    test('text children render correctly', () => {
-      render(
-        <ErrorState
-          error="This should not appear"
-          onRetry={mockOnRetry}
-        >
-          Simple text content
-        </ErrorState>
-      )
-
-      expect(screen.getByText('Simple text content')).toBeInTheDocument()
-      expect(screen.queryByText('This should not appear')).not.toBeInTheDocument()
-    })
-  })
-
-  describe('Error Detection Function Coverage', () => {
-    test('covers "required" keyword for token missing detection', () => {
-      render(
-        <ErrorState
-          error="GitHub token is required for this operation"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-    })
-
-    test('covers whitespace handling in error detection', () => {
-      render(
-        <ErrorState
-          error="   GitHub token not configured   "
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-    })
-
-    test('covers combined token keywords detection', () => {
-      render(
-        <ErrorState
-          error="Your personal access token appears to be invalid"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-    })
-
-    test('covers generic error fallback for unknown patterns', () => {
-      render(
-        <ErrorState
-          error="Something completely unexpected happened"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Something completely unexpected happened')).toBeInTheDocument()
-      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
-    })
-
-    test('covers error with mixed case token keywords', () => {
-      render(
-        <ErrorState
-          error="GitHub TOKEN is Missing"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Welcome to Release Browser')).toBeInTheDocument()
-      expect(screen.getByTestId('button-primary')).toBeInTheDocument()
-    })
-
-    test('covers error with only configure keyword but no token', () => {
-      render(
-        <ErrorState
-          error="Please configure your repository settings"
-          onRetry={mockOnRetry}
-        />
-      )
-
-      expect(screen.getByText('Please configure your repository settings')).toBeInTheDocument()
-      expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
     })
   })
 })

@@ -5,20 +5,9 @@ import userEvent from '@testing-library/user-event'
 import { AssetsView } from '@/components/AssetsView'
 import { createMockAsset, createMockRelease, createMockBrowserConfig, render } from '@test-utils'
 
-// Mock WordPress components
-vi.mock('@wordpress/components', () => ({
-  Button: ({ children, onClick, variant, className, ...props }: any) => (
-    <button
-      onClick={onClick}
-      data-variant={variant}
-      className={`wp-button wp-button-${variant || 'default'} ${className || ''}`}
-      data-testid={`button-${variant || 'default'}`}
-      {...props}
-    >
-      {children}
-    </button>
-  )
-}))
+// Import centralized WordPress component mocks
+import { mockWordPressComponents } from '../../mocks/wordpress-components'
+vi.mock('@wordpress/components', () => mockWordPressComponents)
 
 // Mock AssetList to focus on AssetsView testing
 vi.mock('@/components/AssetList', () => ({
