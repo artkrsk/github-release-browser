@@ -7,6 +7,13 @@ import { createRoot } from 'react-dom/client'
 import { createElement } from 'react'
 import { BrowserApp } from './components/BrowserApp'
 
+// Expose the component as the UMD default export so the global
+// (window.ArtsGitHubReleaseBrowser) IS the BrowserApp component — host integrations
+// can mount it themselves (e.g. inside a custom wp.media frame), in addition to the
+// auto-mount side effect below. The UMD library is configured to expose the default
+// export as the global, so a named export alone leaves the global undefined.
+export default BrowserApp
+
 // Auto-initialize when DOM is ready
 if (document.readyState === 'loading') {
 	document.addEventListener('DOMContentLoaded', initBrowser)
