@@ -1,0 +1,13 @@
+diff --git a/lib/init-config.js b/lib/init-config.js
+index 9c6885d5f9a0aa6cdd81e09751a93c852026a9ec..909b9de8b35f07f6e406ce27dab4c23296406d4a 100644
+--- a/lib/init-config.js
++++ b/lib/init-config.js
+@@ -268,7 +268,7 @@ RUN rm /tmp/composer-setup.php`;
+ 	dockerFileContent += `
+ USER $HOST_UID:$HOST_GID
+ ENV PATH="\${PATH}:/home/$HOST_USERNAME/.composer/vendor/bin"
+-RUN composer global require --dev phpunit/phpunit:"^5.7.21 || ^6.0 || ^7.0 || ^8.0 || ^9.0 || ^10.0"
++RUN composer global require phpunit/phpunit:"^10.0 || ^11.0"
+ USER root`;
+ 
+ 	return dockerFileContent;
