@@ -42,7 +42,7 @@ const customRender = (
   options?: Omit<RenderOptions, 'wrapper'>
 ) => render(ui, { wrapper: AllTheProviders, ...options })
 
-// Re-export everything from Testing Library
+// Override the re-exported render with the custom one
 export { customRender as render }
 
 // Unique ID counter for mock data generation

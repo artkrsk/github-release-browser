@@ -1,4 +1,3 @@
-// Import required types
 import type { IRepo } from './IRepo'
 import type { IRelease } from './IRelease'
 import type { IRateLimit } from './IRateLimit'

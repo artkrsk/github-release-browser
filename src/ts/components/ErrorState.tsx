@@ -45,7 +45,6 @@ export const ErrorState: React.FC<IErrorStateProps> = ({
   className = '',
   children
 }) => {
-  // Use configurable error detection from global config
   const errorType = detectErrorType(error)
 
   // Get settings URL from global config

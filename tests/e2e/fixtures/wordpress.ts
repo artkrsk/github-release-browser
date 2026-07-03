@@ -10,7 +10,7 @@ import { waitForWordPressReady } from '../utils/wp-ready'
  * These fixtures extend Playwright's base test with WordPress-specific functionality:
  * - authenticatedPage: Automatically logged in as admin
  * - browserModal: Navigate to test page and open modal
- * - cleanWordPressState: Reset cache between tests
+ * - cleanState: Reset cache between tests
  *
  * @see https://playwright.dev/docs/test-fixtures
  */

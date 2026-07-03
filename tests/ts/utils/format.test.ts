@@ -134,7 +134,7 @@ describe('formatRelativeTime utility', () => {
     const now = new Date('2024-01-15T12:00:00Z')
     vi.setSystemTime(now)
 
-    // Exactly 7 days ago falls into the months range (>= 30 days calculation)
+    // Exactly 7 days ago falls into the weeks range (7 is not < 7, but < 30)
     const dateString = '2024-01-08T12:00:00Z'
     const result = formatRelativeTime(dateString)
 
