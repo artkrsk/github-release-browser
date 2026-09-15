@@ -86,9 +86,19 @@ class BrowserTest extends WP_UnitTestCase {
 			)
 		);
 
-		// Check core AJAX handlers are registered.
+		// Check core AJAX handlers are registered. Deliberately no `wp_ajax_nopriv_` twins: every
+		// handler here reads a private repo or mints a signed asset URL with the configured token, so
+		// an unauthenticated caller has no business reaching one even when the capability check would
+		// refuse it — assert the absence explicitly so a regression here is caught, not silently
+		// unregistered again.
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_releases' ) !== false );
-		$this->assertTrue( has_action( 'wp_ajax_nopriv_test_browser_get_releases' ) !== false );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_releases' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_rate_limit' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_parse_uri' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_download_url' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_user_repos' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_clear_cache' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_test_file' ) );
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_rate_limit' ) !== false );
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_parse_uri' ) !== false );
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_download_url' ) !== false );
@@ -105,11 +115,15 @@ class BrowserTest extends WP_UnitTestCase {
 			)
 		);
 
-		// Directory-specific handlers should be registered.
+		// Directory-specific handlers should be registered — also with no nopriv twins.
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_branches' ) !== false );
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_contents' ) !== false );
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_archive_url' ) !== false );
 		$this->assertTrue( has_action( 'wp_ajax_test_browser_get_repo_info' ) !== false );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_branches' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_contents' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_archive_url' ) );
+		$this->assertFalse( has_action( 'wp_ajax_nopriv_test_browser_get_repo_info' ) );
 	}
 
 	public function test_directory_handlers_not_registered_when_disabled(): void {

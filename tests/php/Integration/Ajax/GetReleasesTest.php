@@ -57,6 +57,95 @@ class GetReleasesTest extends WP_Ajax_UnitTestCase {
 		$this->assertStringContainsString( 'Unauthorized', $response['data']['message'] );
 	}
 
+	/**
+	 * The floor moved up from `read` (every subscriber holds it) to a configurable capability
+	 * (`manage_options` by default) — a subscriber must still be refused.
+	 */
+	public function test_ajax_get_releases_subscriber_is_refused(): void {
+		remove_all_actions( "wp_ajax_{$this->action_prefix}_get_releases" );
+		remove_all_actions( "wp_ajax_nopriv_{$this->action_prefix}_get_releases" );
+
+		new Browser( array( 'action_prefix' => $this->action_prefix ) );
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'subscriber' ) );
+		wp_set_current_user( $user_id );
+
+		$_POST['_wpnonce'] = wp_create_nonce( "{$this->action_prefix}_nonce" );
+		$_POST['nonce']    = $_POST['_wpnonce'];
+		$_POST['repo']     = 'owner/repo';
+
+		try {
+			$this->_handleAjax( "{$this->action_prefix}_get_releases" );
+		} catch ( WPAjaxDieContinueException $e ) {
+			$response = json_decode( $this->_last_response, true );
+		}
+
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 'Unauthorized', $response['data']['message'] );
+	}
+
+	/**
+	 * Half of the pair that proves the capability comes from config rather than being hardcoded: an
+	 * editor (holds `edit_posts`, not `manage_options`) is refused under the default config. The other
+	 * half — the SAME role admitted once the config names a capability it holds — is the next test;
+	 * split across two methods because _handleAjax() only supports one call per test.
+	 */
+	public function test_ajax_get_releases_editor_is_refused_under_default_capability(): void {
+		remove_all_actions( "wp_ajax_{$this->action_prefix}_get_releases" );
+		remove_all_actions( "wp_ajax_nopriv_{$this->action_prefix}_get_releases" );
+
+		new Browser( array( 'action_prefix' => $this->action_prefix ) );
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$_POST['_wpnonce'] = wp_create_nonce( "{$this->action_prefix}_nonce" );
+		$_POST['nonce']    = $_POST['_wpnonce'];
+		$_POST['repo']     = 'owner/repo';
+
+		try {
+			$this->_handleAjax( "{$this->action_prefix}_get_releases" );
+		} catch ( WPAjaxDieContinueException $e ) {
+			$response = json_decode( $this->_last_response, true );
+		}
+
+		$this->assertFalse( $response['success'], 'editor must not pass the default manage_options gate' );
+		$this->assertSame( 'Unauthorized', $response['data']['message'] );
+	}
+
+	/** The other half: the same editor role, admitted once the config names a capability it holds. */
+	public function test_ajax_get_releases_editor_succeeds_when_configured_capability_matches(): void {
+		remove_all_actions( "wp_ajax_{$this->action_prefix}_get_releases" );
+		remove_all_actions( "wp_ajax_nopriv_{$this->action_prefix}_get_releases" );
+
+		$mock_api = $this->createMock( IPlatformAPI::class );
+		$mock_api->method( 'get_releases' )->willReturn( array() );
+
+		new Browser(
+			array(
+				'action_prefix' => $this->action_prefix,
+				'capability'    => 'edit_posts',
+			),
+			$mock_api
+		);
+
+		$user_id = $this->factory()->user->create( array( 'role' => 'editor' ) );
+		wp_set_current_user( $user_id );
+
+		$_POST['_wpnonce'] = wp_create_nonce( "{$this->action_prefix}_nonce" );
+		$_POST['nonce']    = $_POST['_wpnonce'];
+		$_POST['repo']     = 'owner/repo';
+
+		try {
+			$this->_handleAjax( "{$this->action_prefix}_get_releases" );
+		} catch ( WPAjaxDieStopException | WPAjaxDieContinueException $e ) {
+			// Expected.
+		}
+
+		$response = json_decode( $this->_last_response, true );
+		$this->assertTrue( $response['success'] );
+	}
+
 	public function test_ajax_get_releases_without_repo_returns_error(): void {
 		remove_all_actions( "wp_ajax_{$this->action_prefix}_get_releases" );
 		remove_all_actions( "wp_ajax_nopriv_{$this->action_prefix}_get_releases" );

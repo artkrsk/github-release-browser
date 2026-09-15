@@ -24,6 +24,7 @@ use Arts\GH\ReleaseBrowser\Includes\ModalIntegration;
  *   enable_directories: bool,
  *   settings_url: string,
  *   strings: array<string, string>,
+ *   capability?: string,
  *   action_prefix?: string,
  *   features?: array<string, mixed>,
  *   upgrade_url?: string,
@@ -57,6 +58,7 @@ class Browser {
 				'dir_protocol'          => 'github-dir://',
 				'enable_latest_release' => false, // Set to false for lite version
 				'enable_directories'    => false, // Set to true to enable directory browsing
+				'capability'            => 'manage_options', // Who may use the browser + its AJAX surface.
 				'settings_url'          => admin_url( 'options-general.php?page=edd-settings&tab=extensions' ),
 				'strings'               => array(
 					'actions.insertIntoDownload'     => esc_html__( 'Insert into download', 'github-release-browser' ),
@@ -180,59 +182,83 @@ class Browser {
 	}
 
 	/**
+	 * The capability every AJAX handler requires. These are admin authoring tools — browsing a private
+	 * repo, minting signed asset URLs, clearing caches — so the floor is an editor-level capability,
+	 * never `read` (which every subscriber on a store has). Hosts narrow it further via config.
+	 */
+	private function get_capability(): string {
+		$cap = $this->config['capability'] ?? '';
+
+		return is_string( $cap ) && '' !== $cap ? $cap : 'manage_options';
+	}
+
+	/**
+	 * Whether a URL is an https GitHub REST API endpoint. Used to gate any request that carries the
+	 * configured token: the token must never leave api.github.com. Host is compared exactly — a
+	 * suffix test would accept `api.github.com.example.com`.
+	 *
+	 * @param string $url The URL to check.
+	 * @return bool
+	 */
+	private static function is_github_api_url( string $url ): bool {
+		$parts = wp_parse_url( $url );
+
+		if ( ! is_array( $parts ) ) {
+			return false;
+		}
+
+		$scheme = isset( $parts['scheme'] ) && is_string( $parts['scheme'] ) ? strtolower( $parts['scheme'] ) : '';
+		$host   = isset( $parts['host'] ) && is_string( $parts['host'] ) ? strtolower( $parts['host'] ) : '';
+
+		return 'https' === $scheme && 'api.github.com' === $host;
+	}
+
+	/**
 	 * Register AJAX handlers for GitHub API calls
+	 */
+	/**
+	 * Admin-only AJAX surface. Deliberately no `wp_ajax_nopriv_` twins: every handler here reads a
+	 * private repo or mints a signed URL with the configured token, so an unauthenticated caller has
+	 * no business reaching one even when the capability check would refuse it.
 	 */
 	private function register_ajax_handlers(): void {
 		$action_prefix = $this->get_action_prefix();
 
 		// Get releases
 		add_action( "wp_ajax_{$action_prefix}_get_releases", array( $this, 'ajax_get_releases' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_get_releases", array( $this, 'ajax_get_releases' ) );
 
 		// Get rate limit
 		add_action( "wp_ajax_{$action_prefix}_get_rate_limit", array( $this, 'ajax_get_rate_limit' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_get_rate_limit", array( $this, 'ajax_get_rate_limit' ) );
 
 		// Parse URI
 		add_action( "wp_ajax_{$action_prefix}_parse_uri", array( $this, 'ajax_parse_uri' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_parse_uri", array( $this, 'ajax_parse_uri' ) );
 
 		// Get asset download URL
 		add_action( "wp_ajax_{$action_prefix}_get_download_url", array( $this, 'ajax_get_download_url' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_get_download_url", array( $this, 'ajax_get_download_url' ) );
 
 		// Get user repositories
 		add_action( "wp_ajax_{$action_prefix}_get_user_repos", array( $this, 'ajax_get_user_repos' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_get_user_repos", array( $this, 'ajax_get_user_repos' ) );
 
 		// Clear cache
 		add_action( "wp_ajax_{$action_prefix}_clear_cache", array( $this, 'ajax_clear_cache' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_clear_cache", array( $this, 'ajax_clear_cache' ) );
 
 		// Test file
 		add_action( "wp_ajax_{$action_prefix}_test_file", array( $this, 'ajax_test_file' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_test_file", array( $this, 'ajax_test_file' ) );
 
 		// Cache refresh handlers (always available for manual refresh)
 		add_action( "wp_ajax_{$action_prefix}_clear_releases_cache", array( $this, 'ajax_clear_releases_cache' ) );
-		add_action( "wp_ajax_nopriv_{$action_prefix}_clear_releases_cache", array( $this, 'ajax_clear_releases_cache' ) );
 
 		// Directory browsing handlers (only registered when feature is enabled)
 		if ( $this->config['enable_directories'] ) {
 			add_action( "wp_ajax_{$action_prefix}_get_branches", array( $this, 'ajax_get_branches' ) );
-			add_action( "wp_ajax_nopriv_{$action_prefix}_get_branches", array( $this, 'ajax_get_branches' ) );
 
 			add_action( "wp_ajax_{$action_prefix}_get_contents", array( $this, 'ajax_get_contents' ) );
-			add_action( "wp_ajax_nopriv_{$action_prefix}_get_contents", array( $this, 'ajax_get_contents' ) );
 
 			add_action( "wp_ajax_{$action_prefix}_get_archive_url", array( $this, 'ajax_get_archive_url' ) );
-			add_action( "wp_ajax_nopriv_{$action_prefix}_get_archive_url", array( $this, 'ajax_get_archive_url' ) );
 
 			add_action( "wp_ajax_{$action_prefix}_get_repo_info", array( $this, 'ajax_get_repo_info' ) );
-			add_action( "wp_ajax_nopriv_{$action_prefix}_get_repo_info", array( $this, 'ajax_get_repo_info' ) );
 
 			add_action( "wp_ajax_{$action_prefix}_clear_branches_cache", array( $this, 'ajax_clear_branches_cache' ) );
-			add_action( "wp_ajax_nopriv_{$action_prefix}_clear_branches_cache", array( $this, 'ajax_clear_branches_cache' ) );
 		}
 	}
 
@@ -243,7 +269,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => 'Unauthorized' ) );
 		}
 
@@ -306,7 +332,7 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -337,7 +363,7 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -358,7 +384,7 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -387,7 +413,7 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -397,6 +423,13 @@ class Browser {
 
 		if ( empty( $asset_url ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Asset URL is required', 'github-release-browser' ) ) );
+		}
+
+		// The request below attaches the GitHub token as a Bearer header, so the destination must be
+		// GitHub's own API and nothing else — otherwise any caller who can reach this handler can name
+		// a URL of their choosing and have the site hand the token to it.
+		if ( ! self::is_github_api_url( $asset_url ) ) {
+			wp_send_json_error( array( 'message' => esc_html__( 'Asset URL must be a GitHub API URL', 'github-release-browser' ) ) );
 		}
 
 		try {
@@ -434,7 +467,7 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -475,7 +508,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -503,7 +536,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -536,7 +569,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -567,7 +600,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -595,7 +628,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
@@ -623,7 +656,7 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		if ( ! current_user_can( 'read' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 

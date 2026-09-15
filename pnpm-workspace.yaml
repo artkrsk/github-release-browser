@@ -1,2 +1,5 @@
+allowBuilds:
+  esbuild: true
+  msw: true
 patchedDependencies:
   '@wordpress/env@10.37.0': patches/@wordpress__env@10.37.0.patch

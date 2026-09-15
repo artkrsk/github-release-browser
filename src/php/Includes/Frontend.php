@@ -54,12 +54,29 @@ class Frontend {
 	}
 
 	/**
+	 * The capability required to use the browser UI. Must match Browser::get_capability(), since the
+	 * script this enqueues is useless to anyone the AJAX handlers will refuse.
+	 */
+	private function get_capability(): string {
+		$cap = $this->config['capability'] ?? '';
+
+		return is_string( $cap ) && '' !== $cap ? $cap : 'manage_options';
+	}
+
+	/**
 	 * Enqueue frontend scripts and styles
 	 */
 	public function enqueue_scripts(): void {
 		static $enqueued = false;
 
 		if ( $enqueued ) {
+			return;
+		}
+
+		// The payload below carries a working nonce for the browser's AJAX surface, and this hook runs
+		// on EVERY admin screen — including the profile page any subscriber can open. Without this gate
+		// a store's customers are handed a valid nonce for handlers that read private repos.
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			return;
 		}
 
