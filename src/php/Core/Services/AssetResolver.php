@@ -40,7 +40,17 @@ class AssetResolver {
 		}
 
 		foreach ( $release['assets'] as $asset ) {
-			if ( is_array( $asset ) && isset( $asset['name'] ) && is_string( $asset['name'] ) && fnmatch( $pattern, $asset['name'] ) ) {
+			if ( ! is_array( $asset ) || ! isset( $asset['name'] ) || ! is_string( $asset['name'] ) ) {
+				continue;
+			}
+
+			// Source archives synthesized for an asset-less release carry negative ids and 404 on the
+			// asset endpoint, so they must never win a name match against a real upload.
+			if ( isset( $asset['id'] ) && is_numeric( $asset['id'] ) && (int) $asset['id'] <= 0 ) {
+				continue;
+			}
+
+			if ( fnmatch( $pattern, $asset['name'] ) ) {
 				/** @var array<string, mixed> */
 				return $asset;
 			}

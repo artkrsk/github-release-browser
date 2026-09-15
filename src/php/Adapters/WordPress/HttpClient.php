@@ -13,9 +13,9 @@ class HttpClient implements IHttpClient {
 	/**
 	 * Make GET request to URL
 	 *
-	 * @param string                                  $url     URL to request.
-	 * @param array<string, string>                   $headers HTTP headers.
-	 * @param array{timeout?: int, redirection?: int} $options Request options.
+	 * @param string                                                                                     $url     URL to request.
+	 * @param array<string, string>                                                                      $headers HTTP headers.
+	 * @param array{timeout?: int, redirection?: int, stream?: bool, filename?: string, max_bytes?: int} $options Request options.
 	 * @return Response Response object.
 	 */
 	public function get( string $url, array $headers = array(), array $options = array() ): Response {
@@ -27,6 +27,19 @@ class HttpClient implements IHttpClient {
 			'timeout'     => $timeout,
 			'redirection' => $redirection,
 		);
+
+		// Streaming keeps a multi-MB asset off the heap; WP writes the body to `filename` and leaves
+		// the returned body empty.
+		if ( ! empty( $options['stream'] ) && ! empty( $options['filename'] ) && is_string( $options['filename'] ) ) {
+			$args['stream']   = true;
+			$args['filename'] = $options['filename'];
+		}
+
+		// Enforced as bytes arrive, so an oversized response is abandoned mid-transfer rather than
+		// written out in full and measured afterwards.
+		if ( ! empty( $options['max_bytes'] ) && is_int( $options['max_bytes'] ) ) {
+			$args['limit_response_size'] = $options['max_bytes'];
+		}
 
 		$response = wp_remote_get( $url, $args );
 

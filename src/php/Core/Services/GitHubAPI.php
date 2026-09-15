@@ -249,6 +249,79 @@ class GitHubAPI implements IPlatformAPI {
 	}
 
 	/**
+	 * Download a release asset to a local file. See IPlatformAPI::download_asset_to_file().
+	 *
+	 * Two hops by necessity: the API endpoint answers with a 302 to a signed storage URL, and that
+	 * second request must NOT carry the Authorization header — the signed URL already authenticates
+	 * itself, and storage rejects a request presenting both. Hence get_download_url() first, then a
+	 * bare streamed GET.
+	 *
+	 * @param string $repo      Repository in `owner/name` form.
+	 * @param int    $asset_id  Release asset id.
+	 * @param int    $timeout   Seconds to allow for the download.
+	 * @param int    $max_bytes Refuse assets larger than this, 0 for no limit.
+	 * @return string Absolute path to the downloaded file, or '' on any failure.
+	 */
+	public function download_asset_to_file( string $repo, int $asset_id, int $timeout = 60, int $max_bytes = 0 ): string {
+		// Synthesized source archives carry negative ids and 404 on the asset endpoint.
+		if ( $asset_id <= 0 ) {
+			return '';
+		}
+
+		$url = $this->get_download_url( $repo, $asset_id );
+
+		if ( '' === $url ) {
+			return '';
+		}
+
+		// wp_tempnam() lives in wp-admin/includes/file.php, which is NOT loaded on REST, cron or
+		// webhook requests — exactly where a release sync runs.
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+
+		$tmp = wp_tempnam( 'gh-asset-' . $asset_id );
+
+		if ( ! is_string( $tmp ) || '' === $tmp ) {
+			return '';
+		}
+
+		// No headers: the signed URL is self-authenticating (see the docblock). `max_bytes` is enforced
+		// during transfer rather than after it — the transport aborts once the cap is passed, so an
+		// oversized asset never lands on disk in full.
+		$options = array(
+			'timeout'  => $timeout,
+			'stream'   => true,
+			'filename' => $tmp,
+		);
+
+		if ( $max_bytes > 0 ) {
+			$options['max_bytes'] = $max_bytes;
+		}
+
+		$response = $this->http_client->get( $url, array(), $options );
+
+		// A non-200 body is streamed to the file too — the transport writes whatever arrives without
+		// inspecting the status — so an error page would otherwise be handed back as if it were a ZIP.
+		if ( 200 !== $response->status_code ) {
+			wp_delete_file( $tmp );
+
+			return '';
+		}
+
+		$size = filesize( $tmp );
+
+		// wp_tempnam() creates the file up front, so "it exists" proves nothing; emptiness does.
+		if ( ! is_int( $size ) || $size <= 0 || ( $max_bytes > 0 && $size > $max_bytes ) ) {
+			wp_delete_file( $tmp );
+
+			return '';
+		}
+
+		return $tmp;
+	}
+
+	/**
 	 * Test connection with GitHub API
 	 *
 	 * @param string $token Optional token to test (defaults to configured token).

@@ -55,6 +55,23 @@ interface IPlatformAPI {
 	public function get_download_url( string $repo, int $asset_id ): string;
 
 	/**
+	 * Download a release asset to a local file.
+	 *
+	 * Resolves the asset's short-lived signed URL and streams the body to disk. Works for private
+	 * repositories: the signed URL carries its own credentials, so the configured token is never
+	 * re-sent to the storage host (doing so makes the storage provider reject the request).
+	 *
+	 * The caller owns the returned file and must delete it.
+	 *
+	 * @param string $repo        Repository in `owner/name` form.
+	 * @param int    $asset_id    Release asset id. Ids <= 0 are synthesized source archives and are refused.
+	 * @param int    $timeout     Seconds to allow for the download.
+	 * @param int    $max_bytes   Refuse assets larger than this, 0 for no limit.
+	 * @return string Absolute path to the downloaded file, or '' on any failure.
+	 */
+	public function download_asset_to_file( string $repo, int $asset_id, int $timeout = 60, int $max_bytes = 0 ): string;
+
+	/**
 	 * Test connection with platform API
 	 *
 	 * @param string $token Optional token to test (defaults to configured token).
