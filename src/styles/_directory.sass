@@ -42,6 +42,9 @@
 		letter-spacing: 0.5px
 		font-size: 11px
 
+	&__dropdown
+		width: 100%
+
 	.components-select-control__input
 		font-size: var(--gh-rb-font-size-normal)
 
@@ -86,6 +89,12 @@
 
 	&__list
 		margin-top: 10px
+
+	// The current-folder entry rendered above the child folders; dashed edge marks it as
+	// "select where you already are" rather than another folder to descend into.
+	&__root-option
+		border: 1px dashed var(--gh-rb-border-divider)
+		margin-bottom: 14px
 
 	&__item
 		margin-bottom: 10px
