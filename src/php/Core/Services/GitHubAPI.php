@@ -84,18 +84,24 @@ class GitHubAPI implements IPlatformAPI {
 	/**
 	 * Get GitHub API rate limit
 	 *
+	 * @param string $token Optional token to check (defaults to configured token, the only cached case).
 	 * @return array{remaining: int, limit: int} Rate limit data.
 	 */
-	public function get_rate_limit(): array {
+	public function get_rate_limit( string $token = '' ): array {
 		$cache_key = 'rate_limit';
-		$cached    = $this->cache->get( $cache_key );
+		$use_cache = $token === '';
 
-		if ( $cached !== false && is_array( $cached ) ) {
-			/** @var array{remaining: int, limit: int} */
-			return $cached;
+		if ( $use_cache ) {
+			$cached = $this->cache->get( $cache_key );
+
+			if ( $cached !== false && is_array( $cached ) ) {
+				/** @var array{remaining: int, limit: int} */
+				return $cached;
+			}
+
+			$token = $this->get_token();
 		}
 
-		$token   = $this->get_token();
 		$headers = array();
 
 		if ( $token !== '' ) {
@@ -125,7 +131,9 @@ class GitHubAPI implements IPlatformAPI {
 			'limit'     => isset( $data['resources']['core']['limit'] ) && is_int( $data['resources']['core']['limit'] ) ? $data['resources']['core']['limit'] : 5000,
 		);
 
-		$this->cache->set( $cache_key, $rate_limit, 60 ); // 1 minute - transients handle serialization
+		if ( $use_cache ) {
+			$this->cache->set( $cache_key, $rate_limit, 60 ); // 1 minute - transients handle serialization
+		}
 
 		return $rate_limit;
 	}

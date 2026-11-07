@@ -367,8 +367,11 @@ class Browser {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
+		$raw_token = $_POST['token'] ?? '';
+		$token     = is_string( $raw_token ) ? sanitize_text_field( wp_unslash( $raw_token ) ) : '';
+
 		try {
-			$rate_limit = $this->github_api->get_rate_limit();
+			$rate_limit = $this->github_api->get_rate_limit( $token );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}

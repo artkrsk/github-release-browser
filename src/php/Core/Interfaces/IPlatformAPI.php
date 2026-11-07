@@ -41,9 +41,13 @@ interface IPlatformAPI {
 	/**
 	 * Get API rate limit information
 	 *
+	 * An explicit token is checked uncached, so a token being validated before it is saved
+	 * reports its own limit rather than the configured token's (or the anonymous one).
+	 *
+	 * @param string $token Optional token to check (defaults to configured token).
 	 * @return array{remaining: int, limit: int} Rate limit data.
 	 */
-	public function get_rate_limit(): array;
+	public function get_rate_limit( string $token = '' ): array;
 
 	/**
 	 * Get download URL for asset (follows redirects)
