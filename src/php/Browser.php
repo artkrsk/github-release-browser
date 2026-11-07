@@ -291,8 +291,13 @@ class Browser {
 		$tag     = $parsed['release'] ?? 'latest';
 		$pattern = isset( $parsed['asset'] ) && is_string( $parsed['asset'] ) ? $parsed['asset'] : null;
 
-		// Clear cache to force fresh API request for token validation
-		$this->github_api->clear_cache( "release_{$repo}_{$tag}" );
+		// Clear cache to force fresh API request for token validation.
+		// "latest" resolves through the releases list, not a per-tag entry.
+		if ( $tag === 'latest' ) {
+			$this->github_api->clear_releases_cache( $repo );
+		} else {
+			$this->github_api->clear_cache( "release_{$repo}_{$tag}" );
+		}
 
 		// Try to resolve the release
 		$release = $this->resolve_release( $parsed );
@@ -312,6 +317,14 @@ class Browser {
 		if ( ! $asset ) {
 			$asset_name = $pattern ?? 'default';
 			wp_send_json_error( array( 'message' => "Asset {$asset_name} not found in release" ) );
+		}
+
+		// Ask for the signed URL a real download would get, so "ready" means servable,
+		// not only "the asset is listed".
+		$asset_id = isset( $asset['id'] ) && is_numeric( $asset['id'] ) ? (int) $asset['id'] : 0;
+
+		if ( $asset_id <= 0 || '' === $this->github_api->get_download_url( $repo, $asset_id ) ) {
+			wp_send_json_error( array( 'message' => 'Download URL request failed' ) );
 		}
 
 		wp_send_json_success(

@@ -112,6 +112,7 @@ class TestFileTest extends WP_Ajax_UnitTestCase {
 					'tag_name' => 'v1.0.0',
 					'assets'   => array(
 						array(
+							'id'           => 101,
 							'name'         => 'plugin.zip',
 							'size'         => 1024,
 							'content_type' => 'application/zip',
@@ -119,6 +120,8 @@ class TestFileTest extends WP_Ajax_UnitTestCase {
 					),
 				)
 			);
+		$mock_api->method( 'get_download_url' )
+			->willReturn( 'https://objects.githubusercontent.com/signed' );
 
 		new Browser(
 			array(
