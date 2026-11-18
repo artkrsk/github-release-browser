@@ -22,6 +22,9 @@ namespace Arts\GH\ReleaseBrowser\Core\Interfaces;
  * - `invalid_path`, `not_a_directory` — get_contents() input and target.
  * - `invalid_asset`, `download_failed`, `file_too_large` — download_asset_to_file().
  *
+ * @since 1.0.2
+ * @since 2.0.0 Failures are `\WP_Error`s instead of empty values or defaults; clear_cache() removed.
+ *
  * @phpstan-type RateLimitData array{remaining: int, limit: int}
  * @phpstan-type BranchData array{name: string, commit: array{sha: string, url: string}, protected: bool}
  * @phpstan-type ContentItemData array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}
@@ -30,6 +33,8 @@ namespace Arts\GH\ReleaseBrowser\Core\Interfaces;
 interface IPlatformAPI {
 	/**
 	 * Get releases for repository
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param int    $page Page number for pagination.
@@ -40,6 +45,8 @@ interface IPlatformAPI {
 	/**
 	 * Get release by tag
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param string $tag Release tag.
 	 * @return array<string, mixed>|\WP_Error Release data; `not_found` when the tag has no release.
@@ -48,6 +55,8 @@ interface IPlatformAPI {
 
 	/**
 	 * Get user repositories
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return array<int, array<string, mixed>>|\WP_Error Repository data.
 	 */
@@ -59,6 +68,9 @@ interface IPlatformAPI {
 	 * An explicit token is checked uncached, so a token being validated before it is saved
 	 * reports its own limit rather than the configured token's (or the anonymous one).
 	 *
+	 * @since 1.0.0
+	 * @since 1.1.2 Accepts `$token`.
+	 *
 	 * @param string $token Optional token to check (defaults to configured token).
 	 * @return RateLimitData|\WP_Error Rate limit data.
 	 */
@@ -66,6 +78,8 @@ interface IPlatformAPI {
 
 	/**
 	 * Get download URL for asset (follows redirects)
+	 *
+	 * @since 1.0.0
 	 *
 	 * @param string $repo     Repository name (owner/repo format).
 	 * @param int    $asset_id Asset ID.
@@ -82,6 +96,8 @@ interface IPlatformAPI {
 	 *
 	 * The caller owns the returned file and must delete it. On failure no file is left behind.
 	 *
+	 * @since 1.1.0
+	 *
 	 * @param string $repo        Repository in `owner/name` form.
 	 * @param int    $asset_id    Release asset id. Ids <= 0 are synthesized source archives and are refused.
 	 * @param int    $timeout     Seconds to allow for the download.
@@ -93,6 +109,8 @@ interface IPlatformAPI {
 	/**
 	 * Test connection with platform API
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param string $token Optional token to test (defaults to configured token).
 	 * @return true|\WP_Error
 	 */
@@ -100,11 +118,15 @@ interface IPlatformAPI {
 
 	/**
 	 * Clear the cached account data: the user's repositories and the configured token's rate limit.
+	 *
+	 * @since 2.0.0
 	 */
 	public function clear_account_cache(): void;
 
 	/**
 	 * Get repository branches
+	 *
+	 * @since 1.0.2
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @return array<int, BranchData>|\WP_Error Branch data.
@@ -113,6 +135,8 @@ interface IPlatformAPI {
 
 	/**
 	 * Get directory contents at path
+	 *
+	 * @since 1.0.2
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param string $path Directory path (empty for root).
@@ -124,6 +148,8 @@ interface IPlatformAPI {
 	/**
 	 * Get archive download URL
 	 *
+	 * @since 1.0.2
+	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param string $ref  Branch or commit reference.
 	 * @return string|\WP_Error Short-lived signed archive URL.
@@ -133,6 +159,8 @@ interface IPlatformAPI {
 	/**
 	 * Get repository info
 	 *
+	 * @since 1.0.2
+	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @return RepoInfoData|\WP_Error Repository metadata including default branch.
 	 */
@@ -141,12 +169,16 @@ interface IPlatformAPI {
 	/**
 	 * Clear the cached releases list for a repository, so "latest" sees a new release
 	 *
+	 * @since 1.0.2
+	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 */
 	public function clear_releases_cache( string $repo ): void;
 
 	/**
 	 * Clear the cached release for one tag
+	 *
+	 * @since 2.0.0
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param string $tag  Release tag, exactly as passed to get_release_by_tag().
@@ -155,6 +187,8 @@ interface IPlatformAPI {
 
 	/**
 	 * Clear branches cache for a specific repository
+	 *
+	 * @since 1.0.2
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 */

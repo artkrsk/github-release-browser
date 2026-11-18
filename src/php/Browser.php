@@ -44,6 +44,8 @@ class Browser {
 	/**
 	 * Constructor
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param array<string, mixed> $config Configuration array.
 	 * @param IPlatformAPI|null    $platform_adapter Optional platform adapter (defaults to GitHubAPI).
 	 */
@@ -140,6 +142,8 @@ class Browser {
 	/**
 	 * Get platform API service
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return IPlatformAPI Platform API instance (defaults to GitHubAPI).
 	 */
 	public function get_github_api(): IPlatformAPI {
@@ -148,6 +152,8 @@ class Browser {
 
 	/**
 	 * Get URI parser service
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return URIParser URI parser instance.
 	 */
@@ -158,6 +164,8 @@ class Browser {
 	/**
 	 * Get asset resolver service
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return AssetResolver Asset resolver instance.
 	 */
 	public function get_asset_resolver(): AssetResolver {
@@ -166,6 +174,8 @@ class Browser {
 
 	/**
 	 * Register modal integration for WordPress media library
+	 *
+	 * @since 1.0.0
 	 */
 	public function register_modal_integration(): void {
 		if ( ! $this->modal ) {
