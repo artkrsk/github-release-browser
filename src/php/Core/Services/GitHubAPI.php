@@ -6,6 +6,7 @@ use Arts\GH\ReleaseBrowser\Core\Interfaces\IHttpClient;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\ICache;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\IConfig;
 use Arts\GH\ReleaseBrowser\Core\Interfaces\IPlatformAPI;
+use Arts\GH\ReleaseBrowser\Core\Types\Response;
 
 /**
  * GitHub API service
@@ -15,9 +16,10 @@ use Arts\GH\ReleaseBrowser\Core\Interfaces\IPlatformAPI;
  * @phpstan-type RateLimitData array{remaining: int, limit: int}
  * @phpstan-type ReleaseData array<string, mixed>
  * @phpstan-type RepoData array<string, mixed>
- * @phpstan-type ErrorData array{error: true, error_code: string, status_code: int, message: string}
  */
 class GitHubAPI implements IPlatformAPI {
+	private const API_URL = 'https://api.github.com';
+
 	private IHttpClient $http_client;
 	private ICache $cache;
 	private IConfig $config;
@@ -40,9 +42,9 @@ class GitHubAPI implements IPlatformAPI {
 	 *
 	 * @param string $repo Repository name.
 	 * @param int    $page Page number.
-	 * @return array<int, array<string, mixed>> Release data.
+	 * @return array<int, array<string, mixed>>|\WP_Error Release data.
 	 */
-	public function get_releases( string $repo, int $page = 1 ): array {
+	public function get_releases( string $repo, int $page = 1 ): array|\WP_Error {
 		$cache_key = "releases_{$repo}_{$page}";
 		$cached    = $this->cache->get( $cache_key );
 
@@ -51,23 +53,10 @@ class GitHubAPI implements IPlatformAPI {
 			return $cached;
 		}
 
-		$token   = $this->get_token();
-		$headers = array();
+		$decoded = $this->fetch_json( "/repos/{$repo}/releases?page={$page}&per_page=30" );
 
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
-		}
-
-		$url      = "https://api.github.com/repos/{$repo}/releases?page={$page}&per_page=30";
-		$response = $this->http_client->get( $url, $headers );
-
-		if ( $response->status_code !== 200 ) {
-			return array();
-		}
-
-		$decoded = json_decode( $response->body, true );
-		if ( ! is_array( $decoded ) ) {
-			return array();
+		if ( $decoded instanceof \WP_Error ) {
+			return $decoded;
 		}
 
 		/** @var array<int, array<string, mixed>> $releases */
@@ -76,7 +65,7 @@ class GitHubAPI implements IPlatformAPI {
 		// Add source archives to releases with no uploaded assets
 		$releases = array_map( array( $this, 'add_source_archives' ), $releases );
 
-		$this->cache->set( $cache_key, $releases, 300 ); // 5 minutes - transients handle serialization
+		$this->cache->set( $cache_key, $releases, 5 * MINUTE_IN_SECONDS );
 
 		return $releases;
 	}
@@ -85,9 +74,9 @@ class GitHubAPI implements IPlatformAPI {
 	 * Get GitHub API rate limit
 	 *
 	 * @param string $token Optional token to check (defaults to configured token, the only cached case).
-	 * @return array{remaining: int, limit: int} Rate limit data.
+	 * @return array{remaining: int, limit: int}|\WP_Error Rate limit data.
 	 */
-	public function get_rate_limit( string $token = '' ): array {
+	public function get_rate_limit( string $token = '' ): array|\WP_Error {
 		$cache_key = 'rate_limit';
 		$use_cache = $token === '';
 
@@ -98,41 +87,27 @@ class GitHubAPI implements IPlatformAPI {
 				/** @var array{remaining: int, limit: int} */
 				return $cached;
 			}
-
-			$token = $this->get_token();
 		}
 
-		$headers = array();
+		$data = $this->fetch_json( '/rate_limit', $use_cache ? null : $token );
 
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
+		if ( $data instanceof \WP_Error ) {
+			return $data;
 		}
 
-		$response = $this->http_client->get( 'https://api.github.com/rate_limit', $headers );
+		$core = isset( $data['resources'] ) && is_array( $data['resources'] ) && isset( $data['resources']['core'] ) && is_array( $data['resources']['core'] ) ? $data['resources']['core'] : array();
 
-		if ( $response->status_code !== 200 ) {
-			return array(
-				'remaining' => 0,
-				'limit'     => 5000,
-			);
+		if ( ! isset( $core['remaining'], $core['limit'] ) || ! is_int( $core['remaining'] ) || ! is_int( $core['limit'] ) ) {
+			return $this->invalid_response();
 		}
 
-		$data = json_decode( $response->body, true );
-		if ( ! is_array( $data ) || ! isset( $data['resources'] ) || ! is_array( $data['resources'] ) || ! isset( $data['resources']['core'] ) || ! is_array( $data['resources']['core'] ) ) {
-			return array(
-				'remaining' => 0,
-				'limit'     => 5000,
-			);
-		}
-
-		/** @var array{remaining: int, limit: int} $rate_limit */
 		$rate_limit = array(
-			'remaining' => isset( $data['resources']['core']['remaining'] ) && is_int( $data['resources']['core']['remaining'] ) ? $data['resources']['core']['remaining'] : 0,
-			'limit'     => isset( $data['resources']['core']['limit'] ) && is_int( $data['resources']['core']['limit'] ) ? $data['resources']['core']['limit'] : 5000,
+			'remaining' => $core['remaining'],
+			'limit'     => $core['limit'],
 		);
 
 		if ( $use_cache ) {
-			$this->cache->set( $cache_key, $rate_limit, 60 ); // 1 minute - transients handle serialization
+			$this->cache->set( $cache_key, $rate_limit, MINUTE_IN_SECONDS );
 		}
 
 		return $rate_limit;
@@ -141,45 +116,27 @@ class GitHubAPI implements IPlatformAPI {
 	/**
 	 * Get user repositories
 	 *
-	 * @return array<string, mixed> Repository data or error information.
+	 * @return array<int, array<string, mixed>>|\WP_Error Repository data.
 	 */
-	public function get_user_repos(): array {
+	public function get_user_repos(): array|\WP_Error {
 		$cache_key = 'user_repos';
 		$cached    = $this->cache->get( $cache_key );
 
 		if ( $cached !== false && is_array( $cached ) ) {
-			/** @var array<string, mixed> */
+			/** @var array<int, array<string, mixed>> */
 			return $cached;
 		}
 
-		$token   = $this->get_token();
-		$headers = array();
+		$decoded = $this->fetch_json( '/user/repos?per_page=100&sort=updated' );
 
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
+		if ( $decoded instanceof \WP_Error ) {
+			return $decoded;
 		}
 
-		$url      = 'https://api.github.com/user/repos?per_page=100&sort=updated';
-		$response = $this->http_client->get( $url, $headers );
-
-		if ( $response->status_code !== 200 ) {
-			// Return structured error information instead of empty array
-			return array(
-				'error'       => true,
-				'error_code'  => $this->get_error_code_from_status( $response->status_code, $token ),
-				'status_code' => $response->status_code,
-				'message'     => $this->get_error_message_from_status( $response->status_code, $token ),
-			);
-		}
-
-		$decoded = json_decode( $response->body, true );
-		if ( ! is_array( $decoded ) ) {
-			return array();
-		}
-
-		/** @var array<string, mixed> $repos */
+		/** @var array<int, array<string, mixed>> $repos */
 		$repos = $decoded;
-		$this->cache->set( $cache_key, $repos, 3600 ); // 1 hour - transients handle serialization
+
+		$this->cache->set( $cache_key, $repos, HOUR_IN_SECONDS );
 
 		return $repos;
 	}
@@ -189,9 +146,9 @@ class GitHubAPI implements IPlatformAPI {
 	 *
 	 * @param string $repo Repository name.
 	 * @param string $tag Release tag.
-	 * @return array<string, mixed> Release data.
+	 * @return array<string, mixed>|\WP_Error Release data.
 	 */
-	public function get_release_by_tag( string $repo, string $tag ): array {
+	public function get_release_by_tag( string $repo, string $tag ): array|\WP_Error {
 		$cache_key = "release_{$repo}_{$tag}";
 		$cached    = $this->cache->get( $cache_key );
 
@@ -200,23 +157,10 @@ class GitHubAPI implements IPlatformAPI {
 			return $cached;
 		}
 
-		$token   = $this->get_token();
-		$headers = array();
+		$decoded = $this->fetch_json( "/repos/{$repo}/releases/tags/{$tag}" );
 
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
-		}
-
-		$url      = "https://api.github.com/repos/{$repo}/releases/tags/{$tag}";
-		$response = $this->http_client->get( $url, $headers );
-
-		if ( $response->status_code !== 200 ) {
-			return array();
-		}
-
-		$decoded = json_decode( $response->body, true );
-		if ( ! is_array( $decoded ) ) {
-			return array();
+		if ( $decoded instanceof \WP_Error ) {
+			return $decoded;
 		}
 
 		/** @var array<string, mixed> $release */
@@ -225,7 +169,7 @@ class GitHubAPI implements IPlatformAPI {
 		// Add source archives if no uploaded assets
 		$release = $this->add_source_archives( $release );
 
-		$this->cache->set( $cache_key, $release, 300 ); // 5 minutes - transients handle serialization
+		$this->cache->set( $cache_key, $release, 5 * MINUTE_IN_SECONDS );
 
 		return $release;
 	}
@@ -235,25 +179,10 @@ class GitHubAPI implements IPlatformAPI {
 	 *
 	 * @param string $repo     Repository name.
 	 * @param int    $asset_id Asset ID.
-	 * @return string Download URL or empty string on error.
+	 * @return string|\WP_Error Signed download URL.
 	 */
-	public function get_download_url( string $repo, int $asset_id ): string {
-		$token   = $this->get_token();
-		$headers = array( 'Accept' => 'application/octet-stream' );
-
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
-		}
-
-		$url      = "https://api.github.com/repos/{$repo}/releases/assets/{$asset_id}";
-		$response = $this->http_client->get( $url, $headers, array( 'redirection' => 0 ) );
-
-		// GitHub returns 302 redirect to S3
-		if ( $response->status_code === 302 && isset( $response->headers['location'] ) && is_string( $response->headers['location'] ) ) {
-			return $response->headers['location'];
-		}
-
-		return '';
+	public function get_download_url( string $repo, int $asset_id ): string|\WP_Error {
+		return $this->fetch_redirect( "/repos/{$repo}/releases/assets/{$asset_id}", array( 'Accept' => 'application/octet-stream' ) );
 	}
 
 	/**
@@ -268,18 +197,18 @@ class GitHubAPI implements IPlatformAPI {
 	 * @param int    $asset_id  Release asset id.
 	 * @param int    $timeout   Seconds to allow for the download.
 	 * @param int    $max_bytes Refuse assets larger than this, 0 for no limit.
-	 * @return string Absolute path to the downloaded file, or '' on any failure.
+	 * @return string|\WP_Error Absolute path to the downloaded file.
 	 */
-	public function download_asset_to_file( string $repo, int $asset_id, int $timeout = 60, int $max_bytes = 0 ): string {
+	public function download_asset_to_file( string $repo, int $asset_id, int $timeout = 60, int $max_bytes = 0 ): string|\WP_Error {
 		// Synthesized source archives carry negative ids and 404 on the asset endpoint.
 		if ( $asset_id <= 0 ) {
-			return '';
+			return new \WP_Error( 'invalid_asset', 'Source code archives have no release asset to download' );
 		}
 
 		$url = $this->get_download_url( $repo, $asset_id );
 
-		if ( '' === $url ) {
-			return '';
+		if ( $url instanceof \WP_Error ) {
+			return $url;
 		}
 
 		// wp_tempnam() lives in wp-admin/includes/file.php, which is NOT loaded on REST, cron or
@@ -291,39 +220,51 @@ class GitHubAPI implements IPlatformAPI {
 		$tmp = wp_tempnam( 'gh-asset-' . $asset_id );
 
 		if ( ! is_string( $tmp ) || '' === $tmp ) {
-			return '';
+			return new \WP_Error( 'download_failed', 'Could not create a temporary file for the asset' );
 		}
 
-		// No headers: the signed URL is self-authenticating (see the docblock). `max_bytes` is enforced
-		// during transfer rather than after it — the transport aborts once the cap is passed, so an
-		// oversized asset never lands on disk in full.
+		// No headers: the signed URL is self-authenticating (see the docblock).
 		$options = array(
 			'timeout'  => $timeout,
 			'stream'   => true,
 			'filename' => $tmp,
 		);
 
+		// The transport silently truncates the body at the limit and still reports 200, so the limit
+		// is one byte past the cap: a file that reaches it proves the asset is too large.
 		if ( $max_bytes > 0 ) {
-			$options['max_bytes'] = $max_bytes;
+			$options['max_bytes'] = $max_bytes + 1;
 		}
 
 		$response = $this->http_client->get( $url, array(), $options );
+
+		if ( $response instanceof \WP_Error ) {
+			wp_delete_file( $tmp );
+
+			return $response;
+		}
 
 		// A non-200 body is streamed to the file too — the transport writes whatever arrives without
 		// inspecting the status — so an error page would otherwise be handed back as if it were a ZIP.
 		if ( 200 !== $response->status_code ) {
 			wp_delete_file( $tmp );
 
-			return '';
+			return new \WP_Error( 'download_failed', "Asset storage answered HTTP {$response->status_code}", array( 'status' => $response->status_code ) );
 		}
 
 		$size = filesize( $tmp );
 
-		// wp_tempnam() creates the file up front, so "it exists" proves nothing; emptiness does.
-		if ( ! is_int( $size ) || $size <= 0 || ( $max_bytes > 0 && $size > $max_bytes ) ) {
+		if ( $max_bytes > 0 && is_int( $size ) && $size > $max_bytes ) {
 			wp_delete_file( $tmp );
 
-			return '';
+			return new \WP_Error( 'file_too_large', "Asset is larger than {$max_bytes} bytes" );
+		}
+
+		// wp_tempnam() creates the file up front, so "it exists" proves nothing; emptiness does.
+		if ( ! is_int( $size ) || $size <= 0 ) {
+			wp_delete_file( $tmp );
+
+			return new \WP_Error( 'download_failed', 'Downloaded asset is empty' );
 		}
 
 		return $tmp;
@@ -333,19 +274,12 @@ class GitHubAPI implements IPlatformAPI {
 	 * Test connection with GitHub API
 	 *
 	 * @param string $token Optional token to test (defaults to configured token).
-	 * @return bool True if connection is successful.
+	 * @return true|\WP_Error
 	 */
-	public function test_connection( string $token = '' ): bool {
-		$test_token = $token !== '' ? $token : $this->get_token();
-		$headers    = array();
+	public function test_connection( string $token = '' ): bool|\WP_Error {
+		$user = $this->fetch_json( '/user', $token !== '' ? $token : null );
 
-		if ( $test_token !== '' ) {
-			$headers['Authorization'] = "Bearer {$test_token}";
-		}
-
-		$response = $this->http_client->get( 'https://api.github.com/user', $headers );
-
-		return $response->status_code === 200;
+		return $user instanceof \WP_Error ? $user : true;
 	}
 
 	/**
@@ -390,9 +324,9 @@ class GitHubAPI implements IPlatformAPI {
 	 * Get repository branches
 	 *
 	 * @param string $repo Repository name (owner/repo format).
-	 * @return array<int, array{name: string, commit: array{sha: string, url: string}, protected: bool}> Branch data.
+	 * @return array<int, array{name: string, commit: array{sha: string, url: string}, protected: bool}>|\WP_Error Branch data.
 	 */
-	public function get_branches( string $repo ): array {
+	public function get_branches( string $repo ): array|\WP_Error {
 		$cache_key = "branches_{$repo}";
 		$cached    = $this->cache->get( $cache_key );
 
@@ -401,29 +335,16 @@ class GitHubAPI implements IPlatformAPI {
 			return $cached;
 		}
 
-		$token   = $this->get_token();
-		$headers = array();
+		$decoded = $this->fetch_json( "/repos/{$repo}/branches?per_page=100" );
 
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
-		}
-
-		$url      = "https://api.github.com/repos/{$repo}/branches?per_page=100";
-		$response = $this->http_client->get( $url, $headers );
-
-		if ( $response->status_code !== 200 ) {
-			return array();
-		}
-
-		$decoded = json_decode( $response->body, true );
-		if ( ! is_array( $decoded ) ) {
-			return array();
+		if ( $decoded instanceof \WP_Error ) {
+			return $decoded;
 		}
 
 		/** @var array<int, array{name: string, commit: array{sha: string, url: string}, protected: bool}> $branches */
 		$branches = $decoded;
 
-		$this->cache->set( $cache_key, $branches, 300 ); // 5 minutes
+		$this->cache->set( $cache_key, $branches, 5 * MINUTE_IN_SECONDS );
 
 		return $branches;
 	}
@@ -434,9 +355,9 @@ class GitHubAPI implements IPlatformAPI {
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param string $path Directory path (empty for root).
 	 * @param string $ref  Branch or commit reference.
-	 * @return array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}> Directory contents.
+	 * @return array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}>|\WP_Error Directory contents.
 	 */
-	public function get_contents( string $repo, string $path = '', string $ref = 'main' ): array {
+	public function get_contents( string $repo, string $path = '', string $ref = 'main' ): array|\WP_Error {
 		// Use SHA-256 for cache key generation (avoids Snyk MD5 warnings)
 		$path_hash = hash( 'sha256', $path );
 		$cache_key = "contents_{$repo}_{$ref}_{$path_hash}";
@@ -447,46 +368,30 @@ class GitHubAPI implements IPlatformAPI {
 			return $cached;
 		}
 
-		$token   = $this->get_token();
-		$headers = array();
-
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
-		}
-
 		// Validate path to prevent directory traversal attacks
 		if ( ! empty( $path ) && function_exists( 'validate_file' ) && validate_file( $path ) > 0 ) {
-			// Path contains .. or other invalid sequences
-			return array();
+			return new \WP_Error( 'invalid_path', 'Path contains invalid segments' );
 		}
 
 		// Encode path segments individually to preserve slashes
 		$path_segments    = explode( '/', $path );
 		$encoded_segments = array_map( 'rawurlencode', $path_segments );
 		$encoded_path     = implode( '/', $encoded_segments );
-		$url              = "https://api.github.com/repos/{$repo}/contents/{$encoded_path}?ref={$ref}";
-		$response         = $this->http_client->get( $url, $headers );
+		$decoded          = $this->fetch_json( "/repos/{$repo}/contents/{$encoded_path}?ref={$ref}" );
 
-		if ( $response->status_code !== 200 ) {
-			return array();
+		if ( $decoded instanceof \WP_Error ) {
+			return $decoded;
 		}
 
-		$decoded = json_decode( $response->body, true );
-		if ( ! is_array( $decoded ) ) {
-			return array();
-		}
-
-		// GitHub returns object for single file, array for directory
-		// We only handle directory listings
+		// GitHub returns an object for a single file and a list for a directory; only directories are browsable.
 		if ( isset( $decoded['type'] ) ) {
-			// Single file response, return empty (we only support directories)
-			return array();
+			return new \WP_Error( 'not_a_directory', 'Path is a file, not a directory' );
 		}
 
 		/** @var array<int, array{name: string, path: string, sha: string, size: int, type: string, download_url: string|null, html_url: string}> $contents */
 		$contents = $decoded;
 
-		$this->cache->set( $cache_key, $contents, 300 ); // 5 minutes
+		$this->cache->set( $cache_key, $contents, 5 * MINUTE_IN_SECONDS );
 
 		return $contents;
 	}
@@ -496,36 +401,19 @@ class GitHubAPI implements IPlatformAPI {
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 * @param string $ref  Branch or commit reference.
-	 * @return string Archive download URL (follows redirect to actual download).
+	 * @return string|\WP_Error Signed archive download URL.
 	 */
-	public function get_archive_url( string $repo, string $ref ): string {
-		$token   = $this->get_token();
-		$headers = array();
-
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
-		}
-
-		// Request zipball - GitHub will redirect to actual archive
-		$url      = "https://api.github.com/repos/{$repo}/zipball/{$ref}";
-		$response = $this->http_client->get( $url, $headers, array( 'redirection' => 0 ) );
-
-		// GitHub returns 302 redirect to actual archive URL
-		if ( $response->status_code === 302 && isset( $response->headers['location'] ) && is_string( $response->headers['location'] ) ) {
-			return $response->headers['location'];
-		}
-
-		// Fallback to direct URL (will require auth)
-		return $url;
+	public function get_archive_url( string $repo, string $ref ): string|\WP_Error {
+		return $this->fetch_redirect( "/repos/{$repo}/zipball/{$ref}" );
 	}
 
 	/**
 	 * Get repository info
 	 *
 	 * @param string $repo Repository name (owner/repo format).
-	 * @return array{default_branch: string, full_name: string, private: bool} Repository metadata.
+	 * @return array{default_branch: string, full_name: string, private: bool}|\WP_Error Repository metadata.
 	 */
-	public function get_repo_info( string $repo ): array {
+	public function get_repo_info( string $repo ): array|\WP_Error {
 		$cache_key = "repo_info_{$repo}";
 		$cached    = $this->cache->get( $cache_key );
 
@@ -534,42 +422,19 @@ class GitHubAPI implements IPlatformAPI {
 			return $cached;
 		}
 
-		$token   = $this->get_token();
-		$headers = array();
+		$decoded = $this->fetch_json( "/repos/{$repo}" );
 
-		if ( $token !== '' ) {
-			$headers['Authorization'] = "Bearer {$token}";
+		if ( $decoded instanceof \WP_Error ) {
+			return $decoded;
 		}
 
-		$url      = "https://api.github.com/repos/{$repo}";
-		$response = $this->http_client->get( $url, $headers );
-
-		if ( $response->status_code !== 200 ) {
-			// Return sensible defaults on error
-			return array(
-				'default_branch' => 'main',
-				'full_name'      => $repo,
-				'private'        => false,
-			);
-		}
-
-		$decoded = json_decode( $response->body, true );
-		if ( ! is_array( $decoded ) ) {
-			return array(
-				'default_branch' => 'main',
-				'full_name'      => $repo,
-				'private'        => false,
-			);
-		}
-
-		/** @var array{default_branch: string, full_name: string, private: bool} $repo_info */
 		$repo_info = array(
 			'default_branch' => isset( $decoded['default_branch'] ) && is_string( $decoded['default_branch'] ) ? $decoded['default_branch'] : 'main',
 			'full_name'      => isset( $decoded['full_name'] ) && is_string( $decoded['full_name'] ) ? $decoded['full_name'] : $repo,
 			'private'        => isset( $decoded['private'] ) && is_bool( $decoded['private'] ) ? $decoded['private'] : false,
 		);
 
-		$this->cache->set( $cache_key, $repo_info, 3600 ); // 1 hour
+		$this->cache->set( $cache_key, $repo_info, HOUR_IN_SECONDS );
 
 		return $repo_info;
 	}
@@ -585,49 +450,112 @@ class GitHubAPI implements IPlatformAPI {
 	}
 
 	/**
-	 * Get error code from HTTP status and token state
+	 * Request headers plus the Bearer token, when there is one.
 	 *
-	 * @param int    $status_code HTTP status code.
-	 * @param string $token GitHub token.
-	 * @return string Error code.
+	 * @param string                $token   GitHub token, '' for an anonymous request.
+	 * @param array<string, string> $headers Headers to send alongside.
+	 * @return array<string, string>
 	 */
-	private function get_error_code_from_status( int $status_code, string $token ): string {
-		if ( empty( $token ) ) {
-			return 'token_missing';
+	private function with_auth( string $token, array $headers = array() ): array {
+		if ( $token !== '' ) {
+			$headers['Authorization'] = "Bearer {$token}";
 		}
 
-		if ( $status_code === 401 ) {
-			return 'token_invalid';
-		}
-
-		if ( $status_code === 403 ) {
-			return 'rate_limit_exceeded';
-		}
-
-		return 'api_error';
+		return $headers;
 	}
 
 	/**
-	 * Get error message from HTTP status and token state
+	 * GET an API path that must answer 200 with a JSON array or object.
 	 *
-	 * @param int    $status_code HTTP status code.
-	 * @param string $token GitHub token.
-	 * @return string Error message.
+	 * @param string      $path  Path under the API root, with its query string.
+	 * @param string|null $token Token to send instead of the configured one.
+	 * @return array<mixed>|\WP_Error
 	 */
-	private function get_error_message_from_status( int $status_code, string $token ): string {
-		if ( empty( $token ) ) {
-			return 'GitHub token is not configured';
+	private function fetch_json( string $path, ?string $token = null ): array|\WP_Error {
+		$token    = $token ?? $this->get_token();
+		$response = $this->http_client->get( self::API_URL . $path, $this->with_auth( $token ) );
+
+		if ( $response instanceof \WP_Error ) {
+			return $response;
 		}
 
-		if ( $status_code === 401 ) {
-			return 'Invalid GitHub token';
+		if ( $response->status_code !== 200 ) {
+			return $this->error_from( $response, $token );
 		}
 
-		if ( $status_code === 403 ) {
-			return 'GitHub API rate limit exceeded';
+		$decoded = json_decode( $response->body, true );
+
+		return is_array( $decoded ) ? $decoded : $this->invalid_response();
+	}
+
+	/**
+	 * GET an API path that must answer with a redirect, and return where it points.
+	 *
+	 * @param string                $path    Path under the API root.
+	 * @param array<string, string> $headers Extra request headers.
+	 * @return string|\WP_Error
+	 */
+	private function fetch_redirect( string $path, array $headers = array() ): string|\WP_Error {
+		$token    = $this->get_token();
+		$response = $this->http_client->get( self::API_URL . $path, $this->with_auth( $token, $headers ), array( 'redirection' => 0 ) );
+
+		if ( $response instanceof \WP_Error ) {
+			return $response;
 		}
 
-		return "GitHub API error: {$status_code}";
+		$location = $response->headers['location'] ?? '';
+
+		if ( $response->status_code === 302 && $location !== '' ) {
+			return $location;
+		}
+
+		if ( $response->status_code >= 400 ) {
+			return $this->error_from( $response, $token );
+		}
+
+		return $this->invalid_response();
+	}
+
+	/**
+	 * Map a failed API response to the error contract documented on IPlatformAPI.
+	 *
+	 * GitHub signals rate limiting with 403 or 429 plus `x-ratelimit-remaining: 0` or `retry-after`,
+	 * and answers 404 rather than 403 for a private repository the token cannot see.
+	 *
+	 * @param Response $response Failed API response.
+	 * @param string   $token    Token the request was sent with.
+	 */
+	private function error_from( Response $response, string $token ): \WP_Error {
+		$status      = $response->status_code;
+		$data        = array( 'status' => $status );
+		$rate_limits = ( $response->headers['x-ratelimit-remaining'] ?? '' ) === '0' || isset( $response->headers['retry-after'] );
+
+		if ( $status === 429 || ( $status === 403 && $rate_limits ) ) {
+			return new \WP_Error( 'rate_limit_exceeded', 'GitHub API rate limit exceeded', $data );
+		}
+
+		if ( ( $status === 401 || $status === 403 ) && $token === '' ) {
+			return new \WP_Error( 'token_missing', 'GitHub token is not configured', $data );
+		}
+
+		if ( $status === 401 ) {
+			return new \WP_Error( 'token_invalid', 'Invalid GitHub token', $data );
+		}
+
+		if ( $status === 403 ) {
+			return new \WP_Error( 'forbidden', 'The GitHub token lacks access to this resource', $data );
+		}
+
+		if ( $status === 404 ) {
+			return new \WP_Error( 'not_found', 'Not found on GitHub, or the token cannot access it', $data );
+		}
+
+		return new \WP_Error( 'api_error', "GitHub API error: {$status}", $data );
+	}
+
+	/** A 2xx answer this client cannot use */
+	private function invalid_response(): \WP_Error {
+		return new \WP_Error( 'invalid_response', 'Unexpected response from the GitHub API' );
 	}
 
 	/**

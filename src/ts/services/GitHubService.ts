@@ -47,10 +47,23 @@ export class GitHubService {
     const result = await response.json()
 
     if (!result.success) {
-      throw new Error(result.data?.message || getString('error.unknownError'))
+      throw new Error(this.getErrorMessage(result.data))
     }
 
     return result as IApiResponse
+  }
+
+  /** Error text for a failed request; the token codes get the UI's own explanation */
+  private getErrorMessage(data: IApiResponse['data'] | undefined): string {
+    if (data?.code === 'token_missing') {
+      return getString('error.welcome.description')
+    }
+
+    if (data?.code === 'token_invalid') {
+      return getString('error.desc.invalidToken')
+    }
+
+    return data?.message || getString('error.unknownError')
   }
 
   async getReleases(repo: string, page = 1): Promise<IRelease[]> {
@@ -75,21 +88,6 @@ export class GitHubService {
 
   async getUserRepos(): Promise<IRepo[]> {
     const result = await this.makeRequest('get_user_repos')
-
-    // Check if backend returned an error structure
-    if (result.data.repos && 'error' in result.data.repos) {
-      const error = result.data.repos as any
-      let errorMessage = error.message || getString('error.unknownError')
-
-      // Use more user-friendly messages for specific error codes
-      if (error.error_code === 'token_missing') {
-        errorMessage = getString('error.welcome.description')
-      } else if (error.error_code === 'token_invalid') {
-        errorMessage = getString('error.desc.invalidToken')
-      }
-
-      throw new Error(errorMessage)
-    }
 
     return result.data.repos || []
   }

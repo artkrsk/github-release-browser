@@ -338,13 +338,10 @@ describe('GitHubService', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          success: true,
+          success: false,
           data: {
-            repos: {
-              error: true,
-              error_code: 'token_missing',
-              message: 'GitHub token is not configured'
-            }
+            code: 'token_missing',
+            message: 'GitHub token is not configured'
           }
         })
       })
@@ -356,13 +353,10 @@ describe('GitHubService', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          success: true,
+          success: false,
           data: {
-            repos: {
-              error: true,
-              error_code: 'token_invalid',
-              message: 'Invalid GitHub token'
-            }
+            code: 'token_invalid',
+            message: 'Invalid GitHub token'
           }
         })
       })
@@ -374,13 +368,10 @@ describe('GitHubService', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          success: true,
+          success: false,
           data: {
-            repos: {
-              error: true,
-              error_code: 'unknown_error',
-              message: 'Some unknown error occurred'
-            }
+            code: 'unknown_error',
+            message: 'Some unknown error occurred'
           }
         })
       })
@@ -392,13 +383,10 @@ describe('GitHubService', () => {
       mockFetch.mockResolvedValueOnce({
         ok: true,
         json: async () => ({
-          success: true,
+          success: false,
           data: {
-            repos: {
-              error: true,
-              error_code: 'missing_message'
-              // No message property
-            }
+            code: 'missing_message'
+            // No message property
           }
         })
       })

@@ -144,8 +144,9 @@ class HttpClientTest extends WP_UnitTestCase {
 
 		$response = $this->client->get( 'https://api.example.com/timeout' );
 
-		$this->assertSame( 500, $response->status_code );
-		$this->assertSame( 'Connection timed out', $response->body );
+		$this->assertInstanceOf( \WP_Error::class, $response );
+		$this->assertSame( 'http_request_failed', $response->get_error_code() );
+		$this->assertSame( 'Connection timed out', $response->get_error_message() );
 	}
 
 	public function test_get_parses_response_headers(): void {

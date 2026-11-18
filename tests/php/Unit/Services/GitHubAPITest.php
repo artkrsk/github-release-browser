@@ -134,7 +134,7 @@ class GitHubAPITest extends TestCase {
 		$this->api->get_releases( 'owner/repo', 3 );
 	}
 
-	public function test_get_releases_returns_empty_array_on_non_200_response(): void {
+	public function test_get_releases_returns_error_on_non_200_response(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
@@ -143,7 +143,9 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_releases( 'owner/repo' );
 
-		$this->assertSame( array(), $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
+		$this->assertSame( array( 'status' => 404 ), $result->get_error_data() );
 	}
 
 	public function test_get_releases_includes_authorization_header_when_token_provided(): void {
@@ -224,7 +226,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertSame( 5000, $result['limit'] );
 	}
 
-	public function test_get_rate_limit_returns_defaults_on_error(): void {
+	public function test_get_rate_limit_returns_error_on_failure(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
@@ -233,8 +235,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_rate_limit();
 
-		$this->assertSame( 0, $result['remaining'] );
-		$this->assertSame( 5000, $result['limit'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'api_error', $result->get_error_code() );
 	}
 
 	public function test_get_release_by_tag_returns_cached_data(): void {
@@ -272,7 +274,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertSame( $api_release, $result );
 	}
 
-	public function test_get_user_repos_returns_error_structure_on_401(): void {
+	public function test_get_user_repos_returns_token_invalid_on_401(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( 'invalid-token' );
 
@@ -281,22 +283,22 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_user_repos();
 
-		$this->assertIsArray( $result );
-		$this->assertTrue( $result['error'] );
-		$this->assertSame( 'token_invalid', $result['error_code'] );
-		$this->assertSame( 401, $result['status_code'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'token_invalid', $result->get_error_code() );
+		$this->assertSame( array( 'status' => 401 ), $result->get_error_data() );
 	}
 
-	public function test_get_user_repos_returns_error_structure_on_403(): void {
+	public function test_get_user_repos_returns_rate_limit_exceeded_on_403_with_exhausted_limit(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( 'token' );
 
 		$this->http_client->shouldReceive( 'get' )
-			->andReturn( new Response( 403, 'Forbidden', array() ) );
+			->andReturn( new Response( 403, 'Forbidden', array( 'x-ratelimit-remaining' => '0' ) ) );
 
 		$result = $this->api->get_user_repos();
 
-		$this->assertSame( 'rate_limit_exceeded', $result['error_code'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'rate_limit_exceeded', $result->get_error_code() );
 	}
 
 	public function test_get_user_repos_returns_token_missing_when_no_token(): void {
@@ -308,7 +310,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_user_repos();
 
-		$this->assertSame( 'token_missing', $result['error_code'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'token_missing', $result->get_error_code() );
 	}
 
 	public function test_get_download_url_follows_redirect(): void {
@@ -335,7 +338,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertSame( 'https://s3.amazonaws.com/github/asset.zip', $result );
 	}
 
-	public function test_get_download_url_returns_empty_on_non_redirect(): void {
+	public function test_get_download_url_returns_error_on_non_redirect(): void {
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
 		$this->http_client->shouldReceive( 'get' )
@@ -343,7 +346,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_download_url( 'owner/repo', 123 );
 
-		$this->assertSame( '', $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
 	public function test_test_connection_returns_true_on_success(): void {
@@ -362,7 +366,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertTrue( $result );
 	}
 
-	public function test_test_connection_returns_false_on_failure(): void {
+	public function test_test_connection_returns_error_on_failure(): void {
 		$this->config->shouldReceive( 'get' )->andReturn( 'invalid' );
 
 		$this->http_client->shouldReceive( 'get' )
@@ -370,7 +374,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->test_connection();
 
-		$this->assertFalse( $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'token_invalid', $result->get_error_code() );
 	}
 
 	public function test_test_connection_accepts_custom_token(): void {
@@ -458,7 +463,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertSame( $api_branches, $result );
 	}
 
-	public function test_get_branches_returns_empty_array_on_non_200(): void {
+	public function test_get_branches_returns_error_on_non_200(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
@@ -467,7 +472,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_branches( 'owner/repo' );
 
-		$this->assertSame( array(), $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
 	public function test_get_branches_omits_auth_header_when_no_token(): void {
@@ -535,7 +541,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertSame( $api_contents, $result );
 	}
 
-	public function test_get_contents_returns_empty_on_non_200(): void {
+	public function test_get_contents_returns_error_on_non_200(): void {
 		$path_hash = hash( 'sha256', '' );
 		$this->cache->shouldReceive( 'get' )
 			->with( "contents_owner/repo_main_{$path_hash}" )
@@ -547,10 +553,11 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_contents( 'owner/repo' );
 
-		$this->assertSame( array(), $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
-	public function test_get_contents_returns_empty_for_single_file_response(): void {
+	public function test_get_contents_returns_error_for_single_file_response(): void {
 		// GitHub returns an object (not array) when path points to a single file
 		$single_file = array(
 			'type'    => 'file',
@@ -569,7 +576,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_contents( 'owner/repo', 'README.md', 'main' );
 
-		$this->assertSame( array(), $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_a_directory', $result->get_error_code() );
 	}
 
 	public function test_get_contents_encodes_path_in_url(): void {
@@ -610,7 +618,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_contents( 'owner/repo', '../../etc/passwd', 'main' );
 
-		$this->assertSame( array(), $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'invalid_path', $result->get_error_code() );
 	}
 
 	public function test_get_contents_rejects_path_with_dot_segments(): void {
@@ -631,7 +640,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_contents( 'owner/repo', './hidden', 'main' );
 
-		$this->assertSame( array(), $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'invalid_path', $result->get_error_code() );
 	}
 
 	// ========================================
@@ -659,7 +669,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertSame( 'https://codeload.github.com/owner/repo/zip/main', $result );
 	}
 
-	public function test_get_archive_url_returns_fallback_on_non_redirect(): void {
+	public function test_get_archive_url_returns_error_on_non_redirect(): void {
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
 		$this->http_client->shouldReceive( 'get' )
@@ -667,7 +677,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_archive_url( 'owner/repo', 'v1.0.0' );
 
-		$this->assertSame( 'https://api.github.com/repos/owner/repo/zipball/v1.0.0', $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
 	public function test_get_archive_url_handles_missing_location_header(): void {
@@ -678,7 +689,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_archive_url( 'owner/repo', 'main' );
 
-		$this->assertSame( 'https://api.github.com/repos/owner/repo/zipball/main', $result );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'invalid_response', $result->get_error_code() );
 	}
 
 	// ========================================
@@ -735,7 +747,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertTrue( $result['private'] );
 	}
 
-	public function test_get_repo_info_returns_defaults_on_non_200(): void {
+	public function test_get_repo_info_returns_error_on_non_200(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
@@ -744,12 +756,11 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_repo_info( 'owner/repo' );
 
-		$this->assertSame( 'main', $result['default_branch'] );
-		$this->assertSame( 'owner/repo', $result['full_name'] );
-		$this->assertFalse( $result['private'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'not_found', $result->get_error_code() );
 	}
 
-	public function test_get_repo_info_returns_defaults_on_malformed_json(): void {
+	public function test_get_repo_info_returns_error_on_malformed_json(): void {
 		$this->cache->shouldReceive( 'get' )->andReturn( false );
 		$this->config->shouldReceive( 'get' )->andReturn( '' );
 
@@ -758,7 +769,8 @@ class GitHubAPITest extends TestCase {
 
 		$result = $this->api->get_repo_info( 'owner/repo' );
 
-		$this->assertSame( 'main', $result['default_branch'] );
+		$this->assertInstanceOf( \WP_Error::class, $result );
+		$this->assertSame( 'invalid_response', $result->get_error_code() );
 	}
 
 	// ========================================
