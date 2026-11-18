@@ -64,6 +64,18 @@ class Frontend {
 	}
 
 	/**
+	 * The bundled file's modification time, so every rebuild busts the browser cache.
+	 *
+	 * @param string $file File name inside the bundled library directory.
+	 */
+	private static function asset_version( string $file ): ?string {
+		$path  = dirname( __DIR__ ) . '/libraries/github-release-browser/' . $file;
+		$mtime = file_exists( $path ) ? filemtime( $path ) : false;
+
+		return false === $mtime ? null : (string) $mtime;
+	}
+
+	/**
 	 * Enqueue frontend scripts and styles
 	 */
 	public function enqueue_scripts(): void {
@@ -87,7 +99,7 @@ class Frontend {
 			'github-release-browser',
 			$this->assets_url . 'index.umd.js',
 			array( 'react', 'react-dom', 'wp-element', 'wp-components', 'wp-i18n' ),
-			'1.0.0',
+			self::asset_version( 'index.umd.js' ),
 			true
 		);
 
@@ -95,7 +107,7 @@ class Frontend {
 			'github-release-browser',
 			$this->assets_url . 'index.css',
 			array(),
-			'1.0.0'
+			self::asset_version( 'index.css' )
 		);
 
 		$action_prefix = isset( $this->config['action_prefix'] ) && is_string( $this->config['action_prefix'] )

@@ -10,6 +10,8 @@ export declare class GitHubService {
     });
     private getAction;
     private makeRequest;
+    /** Error text for a failed request; the token codes get the UI's own explanation */
+    private getErrorMessage;
     getReleases(repo: string, page?: number): Promise<IRelease[]>;
     getRateLimit(): Promise<IRateLimit>;
     parseUri(uri: string): Promise<Record<string, unknown>>;

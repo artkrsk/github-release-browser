@@ -16,9 +16,9 @@ class HttpClient implements IHttpClient {
 	 * @param string                                                                                     $url     URL to request.
 	 * @param array<string, string>                                                                      $headers HTTP headers.
 	 * @param array{timeout?: int, redirection?: int, stream?: bool, filename?: string, max_bytes?: int} $options Request options.
-	 * @return Response Response object.
+	 * @return Response|\WP_Error Response object, or the transport error.
 	 */
-	public function get( string $url, array $headers = array(), array $options = array() ): Response {
+	public function get( string $url, array $headers = array(), array $options = array() ): Response|\WP_Error {
 		$timeout     = $options['timeout'] ?? 30;
 		$redirection = $options['redirection'] ?? 5;
 
@@ -35,8 +35,8 @@ class HttpClient implements IHttpClient {
 			$args['filename'] = $options['filename'];
 		}
 
-		// Enforced as bytes arrive, so an oversized response is abandoned mid-transfer rather than
-		// written out in full and measured afterwards.
+		// The transport stops writing at the limit but keeps the transfer going and still reports the
+		// status it got, so the body is truncated, not refused.
 		if ( ! empty( $options['max_bytes'] ) && is_int( $options['max_bytes'] ) ) {
 			$args['limit_response_size'] = $options['max_bytes'];
 		}
@@ -44,11 +44,7 @@ class HttpClient implements IHttpClient {
 		$response = wp_remote_get( $url, $args );
 
 		if ( is_wp_error( $response ) ) {
-			return new Response(
-				500,
-				$response->get_error_message(),
-				array()
-			);
+			return $response;
 		}
 
 		$response_code    = wp_remote_retrieve_response_code( $response );

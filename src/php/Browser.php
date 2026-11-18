@@ -44,6 +44,8 @@ class Browser {
 	/**
 	 * Constructor
 	 *
+	 * @since 1.0.0
+	 *
 	 * @param array<string, mixed> $config Configuration array.
 	 * @param IPlatformAPI|null    $platform_adapter Optional platform adapter (defaults to GitHubAPI).
 	 */
@@ -140,6 +142,8 @@ class Browser {
 	/**
 	 * Get platform API service
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return IPlatformAPI Platform API instance (defaults to GitHubAPI).
 	 */
 	public function get_github_api(): IPlatformAPI {
@@ -148,6 +152,8 @@ class Browser {
 
 	/**
 	 * Get URI parser service
+	 *
+	 * @since 1.0.0
 	 *
 	 * @return URIParser URI parser instance.
 	 */
@@ -158,6 +164,8 @@ class Browser {
 	/**
 	 * Get asset resolver service
 	 *
+	 * @since 1.0.0
+	 *
 	 * @return AssetResolver Asset resolver instance.
 	 */
 	public function get_asset_resolver(): AssetResolver {
@@ -166,6 +174,8 @@ class Browser {
 
 	/**
 	 * Register modal integration for WordPress media library
+	 *
+	 * @since 1.0.0
 	 */
 	public function register_modal_integration(): void {
 		if ( ! $this->modal ) {
@@ -193,24 +203,50 @@ class Browser {
 	}
 
 	/**
-	 * Whether a URL is an https GitHub REST API endpoint. Used to gate any request that carries the
-	 * configured token: the token must never leave api.github.com. Host is compared exactly — a
-	 * suffix test would accept `api.github.com.example.com`.
+	 * Repository and asset id from a release-asset API URL, or null for anything else. Host is compared
+	 * exactly — a suffix test would accept `api.github.com.example.com`.
 	 *
-	 * @param string $url The URL to check.
-	 * @return bool
+	 * @param string $url The URL to parse.
+	 * @return array{repo: string, id: int}|null
 	 */
-	private static function is_github_api_url( string $url ): bool {
+	private static function parse_asset_api_url( string $url ): ?array {
 		$parts = wp_parse_url( $url );
 
 		if ( ! is_array( $parts ) ) {
-			return false;
+			return null;
 		}
 
 		$scheme = isset( $parts['scheme'] ) && is_string( $parts['scheme'] ) ? strtolower( $parts['scheme'] ) : '';
 		$host   = isset( $parts['host'] ) && is_string( $parts['host'] ) ? strtolower( $parts['host'] ) : '';
+		$path   = isset( $parts['path'] ) && is_string( $parts['path'] ) ? $parts['path'] : '';
 
-		return 'https' === $scheme && 'api.github.com' === $host;
+		if ( 'https' !== $scheme || 'api.github.com' !== $host || ! preg_match( '#^/repos/([A-Za-z0-9-]+/[A-Za-z0-9_.-]+)/releases/assets/([0-9]+)$#', $path, $matches ) ) {
+			return null;
+		}
+
+		return array(
+			'repo' => $matches[1],
+			'id'   => (int) $matches[2],
+		);
+	}
+
+	/**
+	 * Send a platform failure as the flat `{message, code, status}` envelope the UI reads.
+	 * `wp_send_json_error( $error )` would send a list of `{code, message}` instead.
+	 *
+	 * @param \WP_Error $error The failure.
+	 * @return never
+	 */
+	private function send_error( \WP_Error $error ): void {
+		$data = $error->get_error_data();
+
+		wp_send_json_error(
+			array(
+				'message' => $error->get_error_message(),
+				'code'    => $error->get_error_code(),
+				'status'  => is_array( $data ) && isset( $data['status'] ) && is_int( $data['status'] ) ? $data['status'] : 0,
+			)
+		);
 	}
 
 	/**
@@ -296,7 +332,7 @@ class Browser {
 		if ( $tag === 'latest' ) {
 			$this->github_api->clear_releases_cache( $repo );
 		} else {
-			$this->github_api->clear_cache( "release_{$repo}_{$tag}" );
+			$this->github_api->clear_release_cache( $repo, $tag );
 		}
 
 		// Try to resolve the release
@@ -323,8 +359,14 @@ class Browser {
 		// not only "the asset is listed".
 		$asset_id = isset( $asset['id'] ) && is_numeric( $asset['id'] ) ? (int) $asset['id'] : 0;
 
-		if ( $asset_id <= 0 || '' === $this->github_api->get_download_url( $repo, $asset_id ) ) {
+		if ( $asset_id <= 0 ) {
 			wp_send_json_error( array( 'message' => 'Download URL request failed' ) );
+		}
+
+		$download_url = $this->github_api->get_download_url( $repo, $asset_id );
+
+		if ( is_wp_error( $download_url ) ) {
+			$this->send_error( $download_url );
 		}
 
 		wp_send_json_success(
@@ -365,6 +407,10 @@ class Browser {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 
+		if ( is_wp_error( $releases ) ) {
+			$this->send_error( $releases );
+		}
+
 		wp_send_json_success( array( 'releases' => $releases ) );
 	}
 
@@ -387,6 +433,10 @@ class Browser {
 			$rate_limit = $this->github_api->get_rate_limit( $token );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+
+		if ( is_wp_error( $rate_limit ) ) {
+			$this->send_error( $rate_limit );
 		}
 
 		wp_send_json_success( array( 'rate_limit' => $rate_limit ) );
@@ -441,35 +491,22 @@ class Browser {
 			wp_send_json_error( array( 'message' => esc_html__( 'Asset URL is required', 'github-release-browser' ) ) );
 		}
 
-		// The request below attaches the GitHub token as a Bearer header, so the destination must be
-		// GitHub's own API and nothing else — otherwise any caller who can reach this handler can name
-		// a URL of their choosing and have the site hand the token to it.
-		if ( ! self::is_github_api_url( $asset_url ) ) {
+		// The platform adapter rebuilds the request from repo + id, so the token it attaches can only
+		// ever reach GitHub's API; anything that is not a release-asset API URL is refused up front.
+		$asset = self::parse_asset_api_url( $asset_url );
+
+		if ( null === $asset ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Asset URL must be a GitHub API URL', 'github-release-browser' ) ) );
 		}
 
 		try {
-			// Make a request to the GitHub asset URL to follow the redirect to S3
-			$token   = $this->config['github_token'];
-			$headers = array( 'Accept' => 'application/octet-stream' );
-
-			if ( $token !== '' ) {
-				$headers['Authorization'] = "Bearer {$token}";
-			}
-
-			// Use HttpClient directly to follow redirect
-			$http_client = new \Arts\GH\ReleaseBrowser\Adapters\WordPress\HttpClient();
-			$response    = $http_client->get( $asset_url, $headers, array( 'redirection' => 0 ) );
-
-			// GitHub returns 302 redirect to S3
-			if ( $response->status_code === 302 && isset( $response->headers['location'] ) ) {
-				$download_url = $response->headers['location'];
-			} else {
-				// Fallback to the original URL if redirect fails
-				$download_url = $asset_url;
-			}
+			$download_url = $this->github_api->get_download_url( $asset['repo'], $asset['id'] );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+
+		if ( is_wp_error( $download_url ) ) {
+			$this->send_error( $download_url );
 		}
 
 		wp_send_json_success( array( 'download_url' => $download_url ) );
@@ -493,6 +530,10 @@ class Browser {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 
+		if ( is_wp_error( $repos ) ) {
+			$this->send_error( $repos );
+		}
+
 		wp_send_json_success( array( 'repos' => $repos ) );
 	}
 
@@ -504,12 +545,12 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
 		try {
-			$this->github_api->clear_cache();
+			$this->github_api->clear_account_cache();
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
@@ -540,6 +581,10 @@ class Browser {
 			$branches = $this->github_api->get_branches( $repo );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+
+		if ( is_wp_error( $branches ) ) {
+			$this->send_error( $branches );
 		}
 
 		wp_send_json_success( array( 'branches' => $branches ) );
@@ -575,6 +620,10 @@ class Browser {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 
+		if ( is_wp_error( $contents ) ) {
+			$this->send_error( $contents );
+		}
+
 		wp_send_json_success( array( 'contents' => $contents ) );
 	}
 
@@ -606,6 +655,10 @@ class Browser {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
 
+		if ( is_wp_error( $archive_url ) ) {
+			$this->send_error( $archive_url );
+		}
+
 		wp_send_json_success( array( 'archive_url' => $archive_url ) );
 	}
 
@@ -632,6 +685,10 @@ class Browser {
 			$repo_info = $this->github_api->get_repo_info( $repo );
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
+		}
+
+		if ( is_wp_error( $repo_info ) ) {
+			$this->send_error( $repo_info );
 		}
 
 		wp_send_json_success( array( 'repo_info' => $repo_info ) );
@@ -716,7 +773,11 @@ class Browser {
 			// Fetch the most recent release
 			$releases = $this->github_api->get_releases( $repo, 1 );
 
-			if ( ! empty( $releases ) && isset( $releases[0] ) ) {
+			if ( is_wp_error( $releases ) ) {
+				return $releases;
+			}
+
+			if ( isset( $releases[0] ) ) {
 				return $releases[0];
 			}
 
@@ -729,7 +790,12 @@ class Browser {
 		// Handle specific release tags
 		$release = $this->github_api->get_release_by_tag( $repo, $tag );
 
-		if ( empty( $release ) ) {
+		// Only a missing tag is "release not found"; token, rate-limit and network failures keep their own code.
+		if ( is_wp_error( $release ) && 'not_found' !== $release->get_error_code() ) {
+			return $release;
+		}
+
+		if ( is_wp_error( $release ) || empty( $release ) ) {
 			return new \WP_Error(
 				'release_not_found',
 				sprintf(

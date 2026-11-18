@@ -8,15 +8,15 @@ import type { IRateLimit } from './IRateLimit'
 export interface IApiResponse {
   success: boolean
   data: {
-    repos?: IRepo[] | {
-      error: boolean
-      error_code?: 'token_missing' | 'token_invalid' | 'unknown_error'
-      message?: string
-    }
+    repos?: IRepo[]
     releases?: IRelease[]
     rate_limit?: IRateLimit
     download_url?: string
     message?: string
+    /** Error code of a failed request (`token_missing`, `not_found`, ...) */
+    code?: string
+    /** HTTP status GitHub answered a failed request with, 0 when none */
+    status?: number
     [key: string]: unknown
   }
 }

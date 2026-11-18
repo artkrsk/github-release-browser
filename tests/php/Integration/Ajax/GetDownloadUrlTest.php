@@ -143,9 +143,9 @@ class GetDownloadUrlTest extends WP_Ajax_UnitTestCase {
 	}
 
 	/** The other half: the same editor role, admitted past the capability gate once the config names
-	 * a capability it holds. A non-302 response falls back to the handler's own success path
-	 * (`download_url` = the original asset URL, unrelated to this test) — which is itself proof the
-	 * code reached the HTTP call at all, i.e. got past the capability check rather than refusing it. */
+	 * a capability it holds. The short-circuited request comes back as its own error code — which is
+	 * itself proof the code reached the HTTP call at all, i.e. got past the capability check rather
+	 * than refusing it. */
 	public function test_editor_passes_capability_gate_when_configured_capability_matches(): void {
 		$this->clear_handlers();
 		new Browser(
@@ -179,8 +179,8 @@ class GetDownloadUrlTest extends WP_Ajax_UnitTestCase {
 			$response = json_decode( $this->_last_response, true );
 		}
 
-		$this->assertTrue( $response['success'], 'a non-Unauthorized outcome proves the capability gate was passed' );
-		$this->assertSame( self::VALID_ASSET_URL, $response['data']['download_url'] );
+		$this->assertFalse( $response['success'] );
+		$this->assertSame( 'test_short_circuit', $response['data']['code'], 'a non-Unauthorized outcome proves the capability gate was passed' );
 	}
 
 	public function test_missing_asset_url_returns_error(): void {
