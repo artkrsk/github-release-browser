@@ -199,8 +199,8 @@ class TestFileTest extends WP_Ajax_UnitTestCase {
 
 		$mock_api = $this->createMock( IPlatformAPI::class );
 		$mock_api->expects( $this->once() )
-			->method( 'clear_cache' )
-			->with( 'release_owner/repo_v1.0.0' );
+			->method( 'clear_release_cache' )
+			->with( 'owner/repo', 'v1.0.0' );
 
 		$mock_api->method( 'get_release_by_tag' )
 			->willReturn(

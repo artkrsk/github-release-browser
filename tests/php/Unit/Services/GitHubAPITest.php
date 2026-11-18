@@ -392,7 +392,7 @@ class GitHubAPITest extends TestCase {
 		$this->assertTrue( $result );
 	}
 
-	public function test_clear_cache_deletes_common_keys_when_no_pattern(): void {
+	public function test_clear_account_cache_deletes_account_keys(): void {
 		$this->cache->shouldReceive( 'delete' )
 			->once()
 			->with( 'user_repos' );
@@ -401,15 +401,15 @@ class GitHubAPITest extends TestCase {
 			->once()
 			->with( 'rate_limit' );
 
-		$this->api->clear_cache();
+		$this->api->clear_account_cache();
 	}
 
-	public function test_clear_cache_deletes_specific_key_when_pattern_provided(): void {
+	public function test_clear_release_cache_deletes_the_tag_key(): void {
 		$this->cache->shouldReceive( 'delete' )
 			->once()
 			->with( 'release_owner/repo_v1.0.0' );
 
-		$this->api->clear_cache( 'release_owner/repo_v1.0.0' );
+		$this->api->clear_release_cache( 'owner/repo', 'v1.0.0' );
 	}
 
 	// ========================================

@@ -99,11 +99,9 @@ interface IPlatformAPI {
 	public function test_connection( string $token = '' ): bool|\WP_Error;
 
 	/**
-	 * Clear cache entries
-	 *
-	 * @param string $pattern Specific cache key to clear, or empty for common keys.
+	 * Clear the cached account data: the user's repositories and the configured token's rate limit.
 	 */
-	public function clear_cache( string $pattern = '' ): void;
+	public function clear_account_cache(): void;
 
 	/**
 	 * Get repository branches
@@ -141,11 +139,19 @@ interface IPlatformAPI {
 	public function get_repo_info( string $repo ): array|\WP_Error;
 
 	/**
-	 * Clear releases cache for a specific repository
+	 * Clear the cached releases list for a repository, so "latest" sees a new release
 	 *
 	 * @param string $repo Repository name (owner/repo format).
 	 */
 	public function clear_releases_cache( string $repo ): void;
+
+	/**
+	 * Clear the cached release for one tag
+	 *
+	 * @param string $repo Repository name (owner/repo format).
+	 * @param string $tag  Release tag, exactly as passed to get_release_by_tag().
+	 */
+	public function clear_release_cache( string $repo, string $tag ): void;
 
 	/**
 	 * Clear branches cache for a specific repository

@@ -322,7 +322,7 @@ class Browser {
 		if ( $tag === 'latest' ) {
 			$this->github_api->clear_releases_cache( $repo );
 		} else {
-			$this->github_api->clear_cache( "release_{$repo}_{$tag}" );
+			$this->github_api->clear_release_cache( $repo, $tag );
 		}
 
 		// Try to resolve the release
@@ -535,12 +535,12 @@ class Browser {
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
 		// Check user capabilities
-		if ( ! current_user_can( 'manage_options' ) ) {
+		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
 
 		try {
-			$this->github_api->clear_cache();
+			$this->github_api->clear_account_cache();
 		} catch ( \Exception $e ) {
 			wp_send_json_error( array( 'message' => $e->getMessage() ) );
 		}
