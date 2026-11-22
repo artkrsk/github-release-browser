@@ -10,15 +10,17 @@ use Arts\GH\ReleaseBrowser\Core\Types\Response;
  * Implements IHttpClient using WordPress's wp_remote_get
  */
 class HttpClient implements IHttpClient {
+	private const DEFAULT_TIMEOUT = 30;
+
 	private int $default_timeout;
 
 	/**
 	 * Constructor
 	 *
-	 * @param int $default_timeout Seconds for a request that passes no `timeout` option.
+	 * @param int $default_timeout Seconds for a request that passes no `timeout` option; 0 or less uses 30.
 	 */
-	public function __construct( int $default_timeout = 30 ) {
-		$this->default_timeout = $default_timeout > 0 ? $default_timeout : 30;
+	public function __construct( int $default_timeout = 0 ) {
+		$this->default_timeout = $default_timeout > 0 ? $default_timeout : self::DEFAULT_TIMEOUT;
 	}
 
 	/**

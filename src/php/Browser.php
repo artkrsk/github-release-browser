@@ -124,7 +124,7 @@ class Browser {
 
 		// Initialize platform adapter (defaults to GitHub if not provided)
 		$this->github_api = $platform_adapter ?? new GitHubAPI(
-			new HttpClient( $this->config['request_timeout'] ?? 30 ),
+			new HttpClient( absint( $this->config['request_timeout'] ?? 0 ) ),
 			new Cache( $this->config['cache_prefix'] ),
 			new Config( array( 'github_token' => $this->config['github_token'] ) )
 		);
