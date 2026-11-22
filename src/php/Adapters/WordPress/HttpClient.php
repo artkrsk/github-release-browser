@@ -10,6 +10,17 @@ use Arts\GH\ReleaseBrowser\Core\Types\Response;
  * Implements IHttpClient using WordPress's wp_remote_get
  */
 class HttpClient implements IHttpClient {
+	private int $default_timeout;
+
+	/**
+	 * Constructor
+	 *
+	 * @param int $default_timeout Seconds for a request that passes no `timeout` option.
+	 */
+	public function __construct( int $default_timeout = 30 ) {
+		$this->default_timeout = $default_timeout > 0 ? $default_timeout : 30;
+	}
+
 	/**
 	 * Make GET request to URL
 	 *
@@ -19,7 +30,7 @@ class HttpClient implements IHttpClient {
 	 * @return Response|\WP_Error Response object, or the transport error.
 	 */
 	public function get( string $url, array $headers = array(), array $options = array() ): Response|\WP_Error {
-		$timeout     = $options['timeout'] ?? 30;
+		$timeout     = $options['timeout'] ?? $this->default_timeout;
 		$redirection = $options['redirection'] ?? 5;
 
 		$args = array(

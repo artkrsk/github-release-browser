@@ -25,6 +25,7 @@ use Arts\GH\ReleaseBrowser\Includes\ModalIntegration;
  *   settings_url: string,
  *   strings: array<string, string>,
  *   capability?: string,
+ *   request_timeout?: int,
  *   action_prefix?: string,
  *   features?: array<string, mixed>,
  *   upgrade_url?: string,
@@ -123,7 +124,7 @@ class Browser {
 
 		// Initialize platform adapter (defaults to GitHub if not provided)
 		$this->github_api = $platform_adapter ?? new GitHubAPI(
-			new HttpClient(),
+			new HttpClient( $this->config['request_timeout'] ?? 30 ),
 			new Cache( $this->config['cache_prefix'] ),
 			new Config( array( 'github_token' => $this->config['github_token'] ) )
 		);
