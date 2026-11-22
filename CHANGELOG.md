@@ -2,6 +2,14 @@
 
 `composer.json` `version`, `package.json` `version`, the entry below and the git tag move together.
 
+## 2.1.0
+
+### Added
+
+- `request_timeout` Browser config key: seconds allowed for each GitHub API call. Unset keeps the
+  HTTP client's 30 seconds. A plugin that resolves a release while a customer waits on a download can
+  fail fast instead of holding a PHP worker. `download_asset_to_file()` keeps its own `$timeout`.
+
 ## 2.0.0
 
 Failures stop pretending to be results. Breaking for every caller of `IPlatformAPI`; see the upgrade
