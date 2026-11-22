@@ -40,7 +40,7 @@ than GitHub.
 | `capability` | `manage_options` | Required by every AJAX handler and by the enqueue that hands out the nonce. |
 | `action_prefix` | `github_release_browser` | AJAX actions are `{action_prefix}_{name}`, the nonce `{action_prefix}_nonce`. |
 | `cache_prefix` | `gh_browser_` | Transient prefix. |
-| `request_timeout` | `30` | Seconds allowed for each GitHub API call; 0 or less falls back to 30. `download_asset_to_file()` keeps its own `$timeout`, and a custom platform adapter ignores the key. |
+| `request_timeout` | `30` | Seconds allowed for each GitHub API call (per call: a lookup that makes several waits up to that many times as long). Unset or 0 keeps 30. `download_asset_to_file()` keeps its own `$timeout`, and a custom platform adapter ignores the key. |
 | `protocol` / `dir_protocol` | `github-release://` / `github-dir://` | URI schemes the UI inserts and `URIParser` reads. |
 | `enable_latest_release` | `false` | Allows the `latest` tag; without it resolving `latest` is a `pro_feature` error. |
 | `enable_directories` | `false` | Registers the branch and directory handlers and shows directory mode. |
