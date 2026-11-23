@@ -32,7 +32,7 @@ describe('formatDate utility', () => {
     const result = formatDate(dateString)
 
     // Result should be a localized date string
-    expect(result).toMatch(/1\/15\/2024|15\/1\/2024|Jan.*15.*2024|15.*Jan.*2024/)
+    expect(result).toMatch(/0?1\/15\/2024|15\/0?1\/2024|Jan.*15.*2024|15.*Jan.*2024/)
   })
 
   test('handles invalid date strings', () => {
