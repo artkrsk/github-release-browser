@@ -13,7 +13,6 @@
     "brain/monkey": "^2.6",
     "captainhook/captainhook": "^5.23",
     "dealerdirect/phpcodesniffer-composer-installer": "^1.1.2",
-    "ergebnis/composer-normalize": "^2.44",
     "mockery/mockery": "^1.6",
     "phpstan/phpstan": "2.1.x-dev",
     "phpunit/phpunit": "^9.6",
@@ -35,8 +34,7 @@
   "config": {
     "allow-plugins": {
       "captainhook/captainhook": true,
-      "dealerdirect/phpcodesniffer-composer-installer": true,
-      "ergebnis/composer-normalize": true
+      "dealerdirect/phpcodesniffer-composer-installer": true
     },
     "optimize-autoloader": true,
     "sort-packages": true
