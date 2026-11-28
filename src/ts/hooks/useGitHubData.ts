@@ -82,7 +82,7 @@ export const useGitHubData = (
     try {
       await service.clearCache()
     } catch (e) {
-      // Continue anyway
+      // A failed cache clear must not block the refetch
     }
 
     await fetchRepos()

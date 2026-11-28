@@ -10,7 +10,6 @@ import { test, expect } from '../fixtures/wordpress'
  * - Refresh invalidates cache
  * - Cache persists across modal open/close
  * - Repository-specific cache isolation
- * - Cache expiration behavior
  */
 
 test.describe('Cache Behavior', () => {
@@ -272,10 +271,10 @@ test.describe('Cache Behavior', () => {
  * - Different data types have independent caches
  *
  * Cache behavior is validated through:
- * - Timing (cached loads should be instant)
  * - Consistency (same data on subsequent loads)
  * - Isolation (different repos have different caches)
  *
- * Note: WordPress transients have 1-hour default expiration.
- * Long-running test suites won't test expiration.
+ * Timing is not measured, and expiration is not tested: the TTLs are
+ * 5 minutes for releases, branches and contents and 1 hour for the
+ * repository list (see GitHubAPI).
  */

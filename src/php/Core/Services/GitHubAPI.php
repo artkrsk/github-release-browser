@@ -11,7 +11,7 @@ use Arts\GH\ReleaseBrowser\Core\Types\Response;
 /**
  * GitHub API service
  *
- * Handles GitHub API requests with automatic caching (5 min for releases, 1 hour for repos).
+ * Handles GitHub API requests with automatic caching (5 min for releases, branches and contents; 1 hour for repos; 1 min for the rate limit).
  *
  * @phpstan-type RateLimitData array{remaining: int, limit: int}
  * @phpstan-type ReleaseData array<string, mixed>
@@ -188,7 +188,7 @@ class GitHubAPI implements IPlatformAPI {
 	}
 
 	/**
-	 * Get download URL for asset (follows redirects to S3)
+	 * Get download URL for asset (the redirect target, not followed)
 	 *
 	 * @param string $repo     Repository name.
 	 * @param int    $asset_id Asset ID.

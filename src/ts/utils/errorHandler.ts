@@ -5,7 +5,7 @@ import { getString } from './getString'
  */
 
 /**
- * Handle API errors with specific messages
+ * Message from a thrown Error, else from a `{ data: { message } }` response, else the default
  */
 export const handleApiError = (
   error: any,

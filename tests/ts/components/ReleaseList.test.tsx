@@ -6,12 +6,10 @@ import { ReleaseList } from '@/components/ReleaseList'
 import { createMockRelease, createMockAsset } from '../../test-utils'
 import { IRelease } from '@/interfaces'
 
-// Mock format utility
 vi.mock('@/utils/format', () => ({
   formatDate: vi.fn((date: string) => 'Jan 15, 2024')
 }))
 
-// Mock FeatureBadge component
 vi.mock('@/components/FeatureBadge', () => ({
   FeatureBadge: ({ feature }: { feature: string }) =>
     React.createElement('span', { className: 'mock-feature-badge' }, feature)
@@ -21,10 +19,8 @@ vi.mock('@/components/FeatureBadge', () => ({
 import { mockWordPressComponents } from '../../mocks/wordpress-components'
 vi.mock('@wordpress/components', () => mockWordPressComponents)
 
-// Mock window.open
 const mockWindowOpen = vi.fn()
 
-// Mock getString utility
 vi.mock('@/utils/getString', () => ({
   getString: (key: string) => key
 }))
@@ -96,7 +92,6 @@ describe('ReleaseList component', () => {
   }
 
   beforeEach(() => {
-    // Mock window.open
     Object.defineProperty(window, 'open', {
       value: mockWindowOpen,
       writable: true
@@ -392,7 +387,7 @@ describe('ReleaseList component', () => {
       expect(createLink).toHaveAttribute('target', '_blank')
       expect(createLink).toHaveAttribute('rel', 'noopener noreferrer')
 
-      // Test the click handler - we can't directly test stopPropagation but we can verify it doesn't call onSelectRelease
+      // The empty state has no card ancestor, so this only proves the link itself never calls onSelectRelease
       fireEvent.click(createLink)
       expect(mockOnSelectRelease).not.toHaveBeenCalled()
     })

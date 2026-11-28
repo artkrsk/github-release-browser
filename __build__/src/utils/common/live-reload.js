@@ -26,7 +26,6 @@ export async function startLiveReloadServer(config) {
       debug: console.debug
     }
 
-    // Create a browser-sync instance
     const bs = browserSync.create()
 
     // Temporarily silence console during initialization
@@ -35,7 +34,7 @@ export async function startLiveReloadServer(config) {
       console.info = () => {}
       console.warn = () => {}
       console.debug = () => {}
-      // Keep error for important issues
+      // Only errors whose first argument mentions 'Browsersync' are forwarded; all others are dropped
       console.error = (...args) => {
         if (args.length > 0 && typeof args[0] === 'string' && args[0].includes('Browsersync')) {
           // Still log browser-sync errors to our logger
@@ -99,12 +98,12 @@ export async function startLiveReloadServer(config) {
       bsConfig.snippet = false
     }
 
-    // Add custom notify styles if configured (but still keep notifications off by default)
+    // Notifications stay off unless config sets `notify` to true. `.styles` is read off that
+    // boolean, so it is always undefined and the result is always `true`.
     if (config.liveReload.notify === true) {
       bsConfig.notify = config.liveReload.notify.styles || true
     }
 
-    // Log protocol being used to our own logger
     const protocol = bsConfig.https ? 'https' : 'http'
     logger.debug(`📡 Using ${protocol} protocol for live reload`)
 
@@ -122,7 +121,7 @@ export async function startLiveReloadServer(config) {
         resolve()
       })
 
-      // Safety timeout to restore console even if browser-sync fails to initialize
+      // Safety timeout: restore console and resolve even if the init callback never fires
       setTimeout(() => {
         restoreConsole()
         resolve()
@@ -138,7 +137,6 @@ export async function startLiveReloadServer(config) {
       notifyChange: (filePath) => {
         logger.debug(`🔄 Live reloading: ${filePath}`)
 
-        // Silence console, reload, then restore
         silenceConsole()
 
         // Determine reload method based on file extension
@@ -155,9 +153,6 @@ export async function startLiveReloadServer(config) {
         restoreConsole()
       },
 
-      /**
-       * Close the browser-sync instance
-       */
       close: () => {
         if (bs && bs.active) {
           silenceConsole()

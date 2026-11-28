@@ -13,6 +13,8 @@ export interface IAsset {
   created_at: string
   updated_at: string
   browser_download_url: string
+  /** Source archive or directory entry, not an uploaded asset: negative id, size 0 */
   synthetic?: boolean
+  /** Set on the synthetic asset built for a `github-dir://` selection */
   isDirectory?: boolean
 }

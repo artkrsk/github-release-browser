@@ -5,9 +5,6 @@ namespace Arts\GH\ReleaseBrowser\Tests\Unit\Types;
 use Arts\GH\ReleaseBrowser\Core\Types\Response;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Tests for Response type
- */
 class ResponseTest extends TestCase {
 	protected function setUp(): void {
 		parent::setUp();

@@ -4,7 +4,7 @@ import { logger } from '../logger/index.js'
 import { handleBuildError } from '../logger/error-handler.js'
 
 /**
- * Default environment fallbacks
+ * Environment used when the caller passes none, and the base config file looked up in the project root
  */
 const DEFAULT_ENV = process.env.NODE_ENV || 'development'
 const CONFIG_FILENAME = 'project.config.js'
@@ -30,7 +30,6 @@ export async function loadConfig(projectRoot, env = DEFAULT_ENV) {
       throw new Error(`Configuration file not found: ${configPath}`)
     }
 
-    // Use file:// URL format for dynamic imports to ensure they work with symlinks
     const configFileUrl = new URL(`file://${configPath}`).href
     const baseConfig = (await import(configFileUrl)).default
 
@@ -74,7 +73,6 @@ export async function loadConfig(projectRoot, env = DEFAULT_ENV) {
       const tsconfigPath = path.join(absoluteProjectRoot, 'tsconfig.json')
       const hasTsConfig = await fs.pathExists(tsconfigPath)
 
-      // Build default TypeScript configuration
       mergedConfig.ts = {
         enabled: hasTsConfig,
         // Default entry point is the same as JS but with .ts extension
@@ -146,7 +144,6 @@ export function validateConfig(config) {
   if (config.ts?.enabled === true) {
     logger.info('TypeScript compilation is enabled')
 
-    // Check entry point
     if (!config.ts.entry) {
       logger.warn('TypeScript entry point not specified, using default derived from JS entry')
       config.ts.entry = config.entry.replace(

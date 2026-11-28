@@ -91,11 +91,11 @@ export class WordPressAdmin {
 		const button = this.page.locator('#test-uri-btn')
 		await button.click()
 
-		/** Wait for AJAX response - the result container appears after click */
+		/** The harness shows the container with a "Testing URI..." placeholder on click, before the AJAX returns */
 		const result = this.page.locator('#uri-test-output')
 		await result.waitFor({ state: 'visible', timeout: 10000 })
 
-		/** Wait a bit more for AJAX to complete */
+		/** Visibility proves nothing about the response, so wait a fixed time for it to replace the placeholder */
 		await this.page.waitForTimeout(2000)
 
 		return await result.textContent() || ''
@@ -127,10 +127,8 @@ export class WordPressAdmin {
 	}
 
 	/**
-	 * Clear WordPress caches via admin toolbar
-	 *
-	 * Note: This requires a caching plugin. Basic wp-env doesn't have this.
-	 * Use cache-helper.ts utilities instead for test cache management.
+	 * Does nothing: basic wp-env has no caching plugin with an admin toolbar action.
+	 * Use the cache-helper.ts utilities to reset cache between tests.
 	 */
 	async clearCacheViaAdmin() {
 		/** Placeholder - use cache-helper.ts utilities instead */

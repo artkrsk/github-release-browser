@@ -12,7 +12,6 @@ import { test, expect } from '../fixtures/wordpress'
  * - Spinner during release fetch
  * - Spinner during branch fetch
  * - Spinner during directory contents fetch
- * - Disabled states during loading
  * - Loading state transitions
  */
 
@@ -56,10 +55,9 @@ test.describe('Loading States', () => {
 		await browserModal.waitForLoading()
 		const repos = await browserModal.getVisibleRepositories()
 
-		/** Click repository and check for spinner - use iframe locator */
 		await browserModal.selectRepository(repos[0])
 
-		/** Eventually spinner disappears and releases load */
+		/** The spinner itself is not asserted (it may be too brief to catch); it must eventually disappear */
 		await browserModal.waitForLoading()
 		await browserModal.expectNotLoading()
 	})
@@ -267,7 +265,6 @@ test.describe('Loading States', () => {
  * Loading states are crucial for UX. We verify:
  * - Spinners appear during data fetching
  * - Spinners disappear when data loads
- * - UI is disabled/non-interactive during loading
  * - Loading states don't get stuck
  * - Concurrent operations are handled gracefully
  *
@@ -276,5 +273,5 @@ test.describe('Loading States', () => {
  * - We use try/catch to handle cases where loading finishes instantly
  * - Main goal: ensure loading doesn't break, not that we always see it
  *
- * Real CI environments with network latency will better test loading states.
+ * An environment with real network latency would exercise loading states better.
  */

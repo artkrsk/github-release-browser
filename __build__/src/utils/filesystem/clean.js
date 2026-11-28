@@ -18,7 +18,6 @@ import { isDevelopment } from '../../config/index.js'
 export async function cleanDirectories(config) {
   const isDev = isDevelopment(config)
 
-  // Start with base paths to clean
   const cleanPaths = []
 
   // Add dist directory in production mode if createDistFolder is not explicitly disabled
@@ -89,10 +88,8 @@ async function cleanLibraryFiles(config) {
     // Get patterns for sourcemaps
     const mapPatterns = jsPatterns.map((pattern) => `${pattern}.map`)
 
-    // Combine all patterns
     const allPatterns = [...jsPatterns, ...mapPatterns]
 
-    // Find files to delete
     const filesToDelete = files.filter((file) => {
       return allPatterns.some((pattern) => {
         if (pattern.includes('*')) {
@@ -106,7 +103,6 @@ async function cleanLibraryFiles(config) {
       })
     })
 
-    // Delete each matched file
     for (const file of filesToDelete) {
       const filePath = path.join(directLibraryPath, file)
       await fs.remove(filePath)
@@ -125,7 +121,6 @@ async function cleanLibraryFiles(config) {
  * @returns {Promise<void>}
  */
 async function ensurePluginDirectories(config) {
-  // Get library directory based on environment
   const libraryDir = getLibraryDir(config)
   await fs.ensureDir(libraryDir)
 
@@ -135,7 +130,7 @@ async function ensurePluginDirectories(config) {
     await fs.ensureDir(directLibraryPath)
   }
 
-  // Ensure chunks directory exists
+  // getDirectChunksOutputDir() returns the direct library path, so this repeats the step above
   const chunksDir = getDirectChunksOutputDir(config)
   if (chunksDir) {
     await fs.ensureDir(chunksDir)

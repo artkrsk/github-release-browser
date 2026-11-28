@@ -44,7 +44,7 @@ export default defineConfig({
 	/** Fail the build on CI if you accidentally left test.only in the source code */
 	forbidOnly: !!process.env.CI,
 
-	/** Retry on CI only */
+	/** Retry twice on CI, once locally */
 	retries: process.env.CI ? 2 : 1,
 
 	/** Limit parallel workers to avoid overwhelming wp-env */

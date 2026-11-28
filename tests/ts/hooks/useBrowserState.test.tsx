@@ -4,7 +4,6 @@ import { createMockRepo, createMockRelease, createMockAsset } from '@test-utils'
 
 describe('useBrowserState', () => {
   beforeEach(() => {
-    // Reset any global state before each test
   })
 
   it('should initialize with default state', () => {

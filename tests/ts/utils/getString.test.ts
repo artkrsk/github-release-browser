@@ -3,12 +3,10 @@ import { getString } from '@/utils/getString'
 
 describe('getString utility', () => {
   beforeEach(() => {
-    // Clear any existing global config
     delete (window as any).githubReleaseBrowserConfig
   })
 
   afterEach(() => {
-    // Clean up after each test
     delete (window as any).githubReleaseBrowserConfig
   })
 

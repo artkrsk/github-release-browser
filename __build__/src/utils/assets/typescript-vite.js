@@ -1,22 +1,17 @@
-import { build as viteBuild } from 'vite' // Use vite build
+import { build as viteBuild } from 'vite'
 import fs from 'fs-extra'
 import path from 'path'
 import chokidar from 'chokidar'
 import debounce from 'debounce'
 import { logger } from '../../logger/index.js'
-import { generateBanner } from '../common/banner.js' // Keep banner generation
+import { generateBanner } from '../common/banner.js'
 import { getPackageMetadata } from '../common/version.js'
 import {
   getLibraryDir,
-  // getOutputFilePath, // No longer needed for specific formats
-  // getDirectJsOutputPath, // We'll use getLibraryDir directly
-  // getDirectEsmOutputPath, // No longer needed
-  // getDirectChunksOutputDir, // No longer needed
-  shouldCreateDistFolder // Keep this logic if relevant elsewhere, but Vite handles output dir
+  shouldCreateDistFolder
 } from '../common/paths.js'
 import { isDevelopment, getConfigValue } from '../../config/index.js'
 
-// Define a temporary directory for Vite builds
 const getViteTempOutputDir = (config) => {
   return path.join(config._absoluteProjectRoot, '__build__', 'temp_vite_build')
 }
@@ -35,7 +30,6 @@ export async function compileTypeScript(config) {
   const finalOutputDir = getLibraryDir(config, isDev) // Target WP library dir
 
   try {
-    // Get entry point from config
     const entryPoint =
       getConfigValue(config, 'ts.entry', null) ||
       getConfigValue(config, 'entry', './src/js/index.js').replace(
@@ -49,7 +43,6 @@ export async function compileTypeScript(config) {
       ? tsconfigPath
       : path.join(config._absoluteProjectRoot, tsconfigPath)
 
-    // --- Vite Build Configuration ---
     const viteConfig = {
       configFile: false, // Don't look for vite.config.js
       root: config._absoluteProjectRoot, // Project root for resolving paths
@@ -94,12 +87,11 @@ export async function compileTypeScript(config) {
             }
           : {}
       },
-      // Add tsconfig path if it exists
+      // Top-level `tsconfig` is not a Vite config option, so this key has no effect on the build
       ...((await fs.pathExists(tsconfigFullPath)) ? { tsconfig: tsconfigFullPath } : {}),
       // Add any additional Vite options from config (optional)
       ...getConfigValue(config, 'ts.viteOptions', {})
     }
-    // --- End Vite Build Configuration ---
 
     // Run Vite build
     await viteBuild(viteConfig)
@@ -135,7 +127,7 @@ async function syncViteOutputToLibrary(sourceDir, targetDir, isDev) {
 
     // Read all files/dirs in the source directory
     const items = await fs.readdir(sourceDir)
-    logger.debug(`  Items found in temp dir (${sourceDir}): ${items.join(', ')}`) // Log items found
+    logger.debug(`  Items found in temp dir (${sourceDir}): ${items.join(', ')}`)
 
     for (const item of items) {
       const sourcePath = path.join(sourceDir, item)
@@ -144,7 +136,7 @@ async function syncViteOutputToLibrary(sourceDir, targetDir, isDev) {
 
       if (stats.isDirectory()) {
         // Recursively copy directories (e.g., chunks, assets)
-        logger.debug(`  Attempting to copy directory: ${item}`) // Log directory copy attempt
+        logger.debug(`  Attempting to copy directory: ${item}`)
         await fs.copy(sourcePath, targetPath, { overwrite: true })
         logger.debug(`  Copied directory: ${item}`)
       } else if (stats.isFile()) {
@@ -164,7 +156,7 @@ async function syncViteOutputToLibrary(sourceDir, targetDir, isDev) {
     // --- TEMPORARY CHANGE: Comment out cleanup for debugging ---
     // await fs.remove(sourceDir)
     // logger.debug(`🗑️ Removed temporary build directory: ${sourceDir}`)
-    logger.warn(`⚠️ Temporary build directory NOT removed for debugging: ${sourceDir}`) // Add warning
+    logger.warn(`⚠️ Temporary build directory NOT removed for debugging: ${sourceDir}`)
     // --- END TEMPORARY CHANGE ---
 
     logger.success(`✅ Sync complete to: ${targetDir}`)
@@ -173,9 +165,9 @@ async function syncViteOutputToLibrary(sourceDir, targetDir, isDev) {
     // Attempt to clean up temp dir even on sync error
     // --- TEMPORARY CHANGE: Comment out cleanup on error too ---
     // await fs.remove(sourceDir).catch(() => {}) // Ignore errors during cleanup on error
-    logger.warn(`⚠️ Temporary build directory NOT removed after error: ${sourceDir}`) // Add warning
+    logger.warn(`⚠️ Temporary build directory NOT removed after error: ${sourceDir}`)
     // --- END TEMPORARY CHANGE ---
-    throw error // Re-throw the sync error
+    throw error
   }
 }
 
@@ -200,7 +192,7 @@ export async function watchTypeScript(config, liveReloadServer) {
       logger.info(`🔄 TypeScript file changed: ${path.relative(process.cwd(), filePath)}`)
 
       try {
-        await compileTypeScript(config) // This now uses Vite and syncs
+        await compileTypeScript(config) // Builds with Vite and syncs
 
         // Notify live reload server *after* files are synced to the final location
         if (liveReloadServer) {
@@ -215,12 +207,10 @@ export async function watchTypeScript(config, liveReloadServer) {
           if (await fs.pathExists(mainCssFile)) {
             liveReloadServer.notifyChange(mainCssFile)
           }
-          // Note: LiveReload might automatically pick up chunk changes if watching the whole dir,
-          // but explicitly notifying for the main entry point is usually sufficient.
+          // Note: browser-sync is started without a `files` option, so only these explicit notifications trigger a reload.
         }
       } catch (error) {
         // Error is already logged in compileTypeScript/syncViteOutputToLibrary
-        // logger.error('❌ Failed to rebuild TypeScript files:', error)
       }
     },
     getConfigValue(config, 'ts.debounceTime', 300)
@@ -254,11 +244,6 @@ export async function watchTypeScript(config, liveReloadServer) {
 
   return watcher
 }
-
-// Remove unused functions related to esbuild/manual UMD wrapping/ESM handling
-// - wrapTsAsUmd
-// - copyUmdToLibrary
-// - copyEsmToLibrary
 
 export default {
   compileTypeScript,

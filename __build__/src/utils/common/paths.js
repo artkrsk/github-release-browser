@@ -29,7 +29,6 @@ export function resolveProjectPath(config, relativePath) {
  * @returns {string} Library directory path
  */
 export function getLibraryDir(config, isDev = null) {
-  // If isDev is not provided, detect from config
   if (isDev === null) {
     isDev = isDevelopment(config)
   }
@@ -111,12 +110,10 @@ export function shouldCreateDistFolder(config) {
  * @returns {string} Plugin destination path
  */
 export function getPluginDestPath(config, isDev = null) {
-  // If isDev is not provided, detect from config
   if (isDev === null) {
     isDev = isDevelopment(config)
   }
 
-  // In development, use plugin target if provided
   if (isDev && config.wordpressPlugin?.target) {
     return config.wordpressPlugin.target
   }
@@ -141,7 +138,6 @@ export function getOutputFilePath(config, format) {
     return null
   }
 
-  // Get filename based on format
   let filename
   if (format === 'esm') {
     filename = config.build.output.esm || 'index.mjs'

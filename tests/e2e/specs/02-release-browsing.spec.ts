@@ -120,7 +120,7 @@ test.describe('Release Browsing', () => {
 		/** Click refresh */
 		await browserModal.refresh()
 
-		/** Verify assets are still loaded after refresh */
+		/** Weak check: a count is never negative, so this only proves the refresh did not throw */
 		await browserModal.waitForLoading()
 		const assets = await browserModal.getVisibleAssets()
 		expect(assets.length).toBeGreaterThanOrEqual(0)
@@ -128,12 +128,10 @@ test.describe('Release Browsing', () => {
 
 	test('should handle repository with no releases gracefully', async ({ browserModal, page }) => {
 		/** This test would need a repository with no releases */
-		/** For now, we test the error state handling */
+		/** Placeholder: no such repository fixture exists, so this only checks that hasError() returns a boolean */
 		await browserModal.waitForLoading()
 
-		/** If all repos have releases, this test verifies error handling exists */
 		const hasError = await browserModal.hasError()
-		/** Error handling should be present in the code, even if not triggered */
 		expect(typeof hasError).toBe('boolean')
 	})
 })

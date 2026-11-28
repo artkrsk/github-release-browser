@@ -31,7 +31,7 @@ export async function compileSass(config) {
       `Environment: ${config.currentEnvironment}, isDev: ${isDev}, outputStyle: ${config.sass.options.outputStyle}`
     )
 
-    // Get file contents with banner
+    // Source maps are generated in development only, and only unless disabled in the sass options
     const result = sassCompiler.compile(config.sass.entry, {
       ...config.sass.options,
       sourceMap: config.sass.options.sourceMap !== false ? isDev : false,
@@ -78,7 +78,7 @@ export async function compileSass(config) {
       await copyCssToLibrary(outputFile, cssContent, config, isDev, result.sourceMap)
     }
 
-    // Always copy to the production library directory if we're in production mode
+    // In production, also copy to the library directory unless the direct output already lies under dist
     if (!isDev && !directOutputPath.includes(config.paths.dist)) {
       const libraryDir = getLibraryDir(config, isDev)
       const targetFile = path.join(libraryDir, path.basename(config.sass.output))
@@ -114,10 +114,8 @@ async function copyCssToLibrary(outputFile, cssContent, config, isDev, sourceMap
     return
   }
 
-  // Ensure the directory exists
   await fs.ensureDir(libraryDir)
 
-  // Copy main CSS file
   await fs.writeFile(targetFile, cssContent)
 
   // Copy sourcemap if in development mode

@@ -87,8 +87,7 @@ class GetReleasesTest extends WP_Ajax_UnitTestCase {
 	/**
 	 * Half of the pair that proves the capability comes from config rather than being hardcoded: an
 	 * editor (holds `edit_posts`, not `manage_options`) is refused under the default config. The other
-	 * half — the SAME role admitted once the config names a capability it holds — is the next test;
-	 * split across two methods because _handleAjax() only supports one call per test.
+	 * half, the SAME role admitted once the config names a capability it holds, is the next test.
 	 */
 	public function test_ajax_get_releases_editor_is_refused_under_default_capability(): void {
 		remove_all_actions( "wp_ajax_{$this->action_prefix}_get_releases" );

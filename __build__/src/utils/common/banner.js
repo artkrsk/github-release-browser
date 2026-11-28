@@ -5,7 +5,6 @@
  * @returns {string} The UMD wrapper opening code
  */
 export function generateUmdBanner(globalName, externals = {}) {
-  // Get external package names as an array
   const externalPackages = Object.keys(externals)
 
   // If no externals, generate a simpler UMD wrapper
@@ -25,7 +24,6 @@ export function generateUmdBanner(globalName, externals = {}) {
     )
   }
 
-  // Generate parts for the UMD pattern
   const commonJsRequires = externalPackages.map((pkg) => `require('${pkg}')`).join(', ')
   const amdDeps = JSON.stringify(externalPackages)
   const globalAccess = externalPackages.map((pkg) => `root.${externals[pkg]}`).join(', ')
@@ -73,10 +71,10 @@ export function generateUmdFooter(globalName) {
  * @param {string} [options.homepage] - Project homepage
  * @param {string} [options.copyright] - Project copyright
  * @param {string} [options.repository] - Project repository
+ * @param {string} [options.description] - Project description
  * @returns {string} - Banner text
  */
 export function generateBanner(options = {}) {
-  // Default values
   options = {
     name: 'Unknown Project',
     version: '1.0.0',
@@ -90,12 +88,10 @@ export function generateBanner(options = {}) {
 
   const currentYear = new Date().getFullYear()
 
-  // Generate the copyright line
   const copyrightLine =
     options.copyright ||
     (options.author ? `© ${currentYear} ${options.author}` : `© ${currentYear}`)
 
-  // Build the banner
   const bannerLines = [
     `/*!`,
     ` * ${options.name} v${options.version}`,
@@ -107,7 +103,7 @@ export function generateBanner(options = {}) {
     ` */`
   ]
 
-  // Filter out empty lines and join
+  // Unset optional fields above are '' placeholders; drop them
   return bannerLines.filter((line) => line !== '').join('\n')
 }
 
@@ -160,7 +156,6 @@ export function generatePackageBanner(packageInfo) {
 export function wrapAsUmd(content, globalName, externals = {}, packageMetadata = {}) {
   const banner = generateBanner(packageMetadata)
 
-  // Get UMD wrapper
   const umdBanner = generateUmdBanner(globalName, externals)
   const umdFooter = generateUmdFooter(globalName)
 

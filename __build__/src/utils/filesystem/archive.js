@@ -33,16 +33,14 @@ export async function createZipArchive(config) {
   }
 
   try {
-    // Create output stream
     const output = fs.createWriteStream(outputZip)
     const archive = archiver('zip', {
       zlib: { level: 9 } // Highest compression level
     })
 
-    // Set up pipeline
     archive.pipe(output)
 
-    // Add files from the plugin directory to the archive root
+    // Add the plugin directory to the archive under a top-level folder named after the package
     archive.directory(pluginDir, config.wordpressPlugin.packageName, (entry) => {
       // Skip hidden files and directories (like .DS_Store)
       if (entry.name.split('/').some((part) => part.startsWith('.'))) {
@@ -64,10 +62,8 @@ export async function createZipArchive(config) {
       })
     })
 
-    // Finalize the archive
     await archive.finalize()
 
-    // Wait for completion
     await archivePromise
 
     return outputZip

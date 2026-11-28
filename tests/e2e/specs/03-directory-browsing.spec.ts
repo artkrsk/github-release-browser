@@ -121,7 +121,7 @@ test.describe('Directory Browsing', () => {
 	})
 
 	test('should navigate back from directory view to repository list', async ({ browserModal }) => {
-		/** Navigate deep into directory mode */
+		/** Switch to directory mode and select a repository */
 		await browserModal.waitForLoading()
 		await browserModal.switchToDirectoryMode()
 

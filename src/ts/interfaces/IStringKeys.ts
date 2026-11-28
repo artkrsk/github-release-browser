@@ -96,5 +96,4 @@ export interface IStringKeys {
   'directory.modeDirectory': string;
 }
 
-// Export type for use in components
 export type StringKey = keyof IStringKeys;

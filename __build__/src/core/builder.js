@@ -23,7 +23,7 @@ import { generatePot, watchPhpForTranslations } from '../utils/wordpress/i18n.js
 import { startLiveReloadServer } from '../utils/common/live-reload.js'
 
 /**
- * Main Builder class for the Fluid Design System
+ * Loads the project config and runs the production build or the dev watch mode
  */
 export class Builder {
   constructor() {
@@ -52,11 +52,9 @@ export class Builder {
    */
   async loadConfig(env = process.env.NODE_ENV || 'development') {
     try {
-      // Load configuration
       logger.info(`📋 Loading configuration for "${env}" environment...`)
       this.config = await loadProjectConfig(this.paths.project, env)
 
-      // Validate configuration
       validateConfig(this.config)
 
       logger.success(`✅ Configuration loaded for "${env}" environment`)
@@ -226,13 +224,12 @@ export class Builder {
       // Sync files to target directories (if any)
       await syncFiles(this.config, false)
 
-      // Force copy library files to ensure they're in the right place
+      // Only ensures the library directory exists before archiving; no files are copied here
       if (shouldCreateDistFolder(this.config)) {
         logger.info('🔄 Ensuring library files are correctly placed...')
 
         const libraryDir = getLibraryDir(this.config, false)
 
-        // Log what we're going to copy for debugging
         logger.debug(`📂 Making sure library directory exists: ${libraryDir}`)
         await fs.ensureDir(libraryDir)
 

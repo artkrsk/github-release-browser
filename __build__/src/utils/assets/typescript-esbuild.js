@@ -30,7 +30,7 @@ export async function compileTypeScript(config) {
   // Get TypeScript config or use defaults
   const tsConfig = config.ts || {}
 
-  // In development, always include ESM format for code splitting
+  // Dev and dist-less builds always emit the dev format (IIFE by default) and ESM (code splitting); config.build.formats applies only when dist is created
   const formats = isDev
     ? [getConfigValue(config, 'ts.devFormat', 'iife'), 'esm']
     : shouldCreateDist
@@ -170,7 +170,7 @@ export async function compileTypeScript(config) {
           logger.debug('📝 Added banner to index.mjs')
         }
 
-        // Copy ESM files to dist if needed
+        // Copy ESM files to the library directory when dist is created
         if (shouldCreateDist) {
           await copyEsmToLibrary(config, isDev)
         }
@@ -218,10 +218,8 @@ async function copyUmdToLibrary(outputFile, config, isDev) {
     return
   }
 
-  // Get library directory
   const libraryDir = getLibraryDir(config, isDev)
 
-  // Ensure dir exists
   await fs.ensureDir(libraryDir)
 
   logger.debug(`📂 Copying TypeScript UMD build to library: ${libraryDir}`)

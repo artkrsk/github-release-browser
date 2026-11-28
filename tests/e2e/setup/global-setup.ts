@@ -6,10 +6,9 @@ import * as path from 'path'
  * Global Setup for Playwright E2E Tests
  *
  * This runs once before all tests. It:
- * 1. Verifies wp-env is running
- * 2. Waits for WordPress to be ready
- * 3. Injects GitHub token for CI environments
- * 4. Performs any necessary database seeding
+ * 1. Writes the GitHub token to .wp-env.override.json in CI
+ * 2. Waits for WordPress (wp-env) to answer
+ * 3. Fails if .wp-env.override.json is missing
  *
  * @see https://playwright.dev/docs/test-global-setup-teardown
  */
@@ -64,7 +63,7 @@ async function globalSetup(config: FullConfig) {
 
 	await browser.close()
 
-	/** Step 3: Verify GitHub token is configured */
+	/** Step 3: Verify the override file that carries the GitHub token exists */
 	const overridePath = path.resolve(process.cwd(), '.wp-env.override.json')
 	if (!fs.existsSync(overridePath)) {
 		throw new Error('No .wp-env.override.json found. Create it with your GitHub token.')

@@ -5,7 +5,6 @@ import userEvent from '@testing-library/user-event'
 import { RepositorySearch } from '@/components/RepositorySearch'
 import { render, setupTestEnvironment } from '@test-utils'
 
-// Import centralized WordPress component mocks
 import { mockWordPressComponents } from '../../mocks/wordpress-components'
 vi.mock('@wordpress/components', () => mockWordPressComponents)
 

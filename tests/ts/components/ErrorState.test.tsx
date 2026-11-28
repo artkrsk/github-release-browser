@@ -409,7 +409,6 @@ describe('ErrorState Component', () => {
       expect(screen.getByText('Try Again')).toBeInTheDocument()
       expect(screen.getByTestId('button-secondary')).toBeInTheDocument()
 
-      // Check for error icon
       const errorIcon = document.querySelector('.github-release-browser-icon_error')
       expect(errorIcon).toBeInTheDocument()
     })
@@ -917,7 +916,7 @@ describe('ErrorState Component', () => {
 
       await user.hover(retryButton)
       expect(retryButton).toBeInTheDocument()
-      // WordPress Button component handles hover styles internally
+      // Button is the mock from wordpress-components, which has no hover styling: this only checks hover does not break rendering
 
       await user.unhover(retryButton)
       expect(retryButton).toBeInTheDocument()
@@ -990,7 +989,6 @@ describe('ErrorState Component', () => {
         </div>
       )
 
-      // Component should render even if parent is hidden
       rerender(
         <div style={{ display: 'block' }}>
           <ErrorState

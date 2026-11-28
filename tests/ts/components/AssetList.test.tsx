@@ -6,7 +6,7 @@ import { AssetList } from '@/components/AssetList'
 import { IAsset } from '@/interfaces'
 import { createMockAsset, render } from '@test-utils'
 
-// Mock format utility
+// Deterministic size text ("N bytes") instead of the real formatter output
 vi.mock('@/utils/format', () => ({
 	formatFileSize: vi.fn((size: number) => `${size} bytes`)
 }))

@@ -198,7 +198,7 @@ export class BrowserModal {
 		for (let i = 0; i < count; i++) {
 			const text = await buttons.nth(i).textContent()
 			if (text) {
-				/** Extract just the repository name (remove checkmarks and lock symbols) */
+				/** Extract just the repository name (remove the selected checkmark and the private-repo asterisk) */
 				const cleanText = text.trim().replace(/[✓*]/g, '').trim()
 				if (cleanText) {
 					names.push(cleanText)

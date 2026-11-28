@@ -797,7 +797,7 @@ describe('BrowserApp - Handlers Integration', () => {
         render(<BrowserApp config={mockConfig} />)
 
         // Even though we're in directory view, without selectedRepo the handler
-        // would return early at line 147 if it were called
+        // would return early at its guard if it were called
         expect(mockGetArchiveUrl).not.toHaveBeenCalled()
       })
     })

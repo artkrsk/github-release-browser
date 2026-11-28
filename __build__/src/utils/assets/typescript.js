@@ -27,7 +27,6 @@ export async function compileTypeScript(config, watchMode = false, liveReloadSer
   const distOutputDir = shouldCreateDist ? getDistPath(config) : null
 
   try {
-    // Get entry point from config
     const entryPoint =
       getConfigValue(config, 'ts.entry', null) ||
       getConfigValue(config, 'entry', './src/js/index.js').replace(
@@ -104,10 +103,8 @@ export async function compileTypeScript(config, watchMode = false, liveReloadSer
     // If we should create a dist folder, prepare second config for ESM output
     let esmWebpackConfig = null
     if (shouldCreateDist && !isDev) {
-      // Create a separate ESM build that outputs to dist
       esmWebpackConfig = { ...webpackConfig }
 
-      // Configure ESM output
       esmWebpackConfig.output = {
         path: distOutputDir,
         filename: 'index.mjs',
@@ -125,10 +122,8 @@ export async function compileTypeScript(config, watchMode = false, liveReloadSer
       }
     }
 
-    // Create UMD compiler
     const compiler = webpack(webpackConfig)
 
-    // Create ESM compiler if needed
     const esmCompiler = esmWebpackConfig ? webpack(esmWebpackConfig) : null
 
     const handleBuildComplete = async (err, stats, isEsm = false) => {
@@ -154,7 +149,6 @@ export async function compileTypeScript(config, watchMode = false, liveReloadSer
           `✅ Webpack ${isEsm ? 'ESM' : 'UMD'} build completed in ${stats.endTime - stats.startTime}ms`
         )
 
-        // Notify live reload server if needed
         if (liveReloadServer) {
           const outputFile = isEsm
             ? path.join(distOutputDir, 'index.mjs')
@@ -174,12 +168,10 @@ export async function compileTypeScript(config, watchMode = false, liveReloadSer
         (err, stats) => handleBuildComplete(err, stats, false)
       )
     } else {
-      // Run single build
       return new Promise((resolve, reject) => {
         compiler.run(async (err, stats) => {
           handleBuildComplete(err, stats, false)
 
-          // If we need to build ESM version as well
           if (esmCompiler) {
             logger.info('🔧 Building ESM version for dist folder...')
 

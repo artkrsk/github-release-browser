@@ -293,10 +293,9 @@ describe('useRepositoryActions', () => {
       )
     )
 
-    // Rerender with same dependencies should not create new functions
     rerender()
 
-    // Functions should remain stable
+    // Only checks the returned shape; callback identity across renders is not asserted
     const { result } = renderHook(() =>
       useRepositoryActions(
         mockSetView,

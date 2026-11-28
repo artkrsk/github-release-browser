@@ -55,9 +55,9 @@ test.describe('Repository Search', () => {
 		/** Search for something that definitely won't match */
 		await browserModal.searchRepository('xyzabc123notfound')
 
-		/** Verify no repositories are visible or empty state is shown */
+		/** Verify no repositories are visible (the "no results" message itself is not asserted) */
 		const repos = await browserModal.getVisibleRepositories()
-		/** Either no repos shown, or an empty state message */
+		/** Passes with no repos, or when the error state shows; hasError() does not look at the empty-state message */
 		expect(repos.length === 0 || await browserModal.hasError()).toBe(true)
 	})
 

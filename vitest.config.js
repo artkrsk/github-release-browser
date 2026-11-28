@@ -24,7 +24,6 @@ export default defineConfig({
       'tests/msw/**'
     ],
 
-    // Coverage configuration
     coverage: {
       include: ['src/ts/**/*.{ts,tsx}'],
       exclude: [

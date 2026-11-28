@@ -30,7 +30,8 @@ export const formatDate = (dateString: string): string => {
 }
 
 /**
- * Format relative time
+ * Elapsed whole days as today / yesterday / days / weeks / months / years,
+ * counting a month as 30 days and a year as 365
  */
 export const formatRelativeTime = (dateString: string): string => {
   const date = new Date(dateString)

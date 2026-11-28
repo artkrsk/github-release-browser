@@ -1,9 +1,9 @@
 /**
  * Error constants for consistent error handling
  *
- * Note: These constants reference string keys that are translated
- * via the WordPress i18n system in the backend PHP code.
- * The actual translated values are available via getString()
+ * Note: These constants hold string keys resolved through getString().
+ * Most have a translated value sent by the PHP backend; the rest (directory.*, common.loading,
+ * error.archiveUrlFailed, error.refreshFailed) exist only as English entries in TRANSLATION_FALLBACKS.
  */
 
 /** String keys for error messages */

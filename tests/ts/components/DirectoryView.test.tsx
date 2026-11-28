@@ -10,7 +10,6 @@ import { IBranch, IContentItem } from '@/interfaces'
 import { mockWordPressComponents } from '../../mocks/wordpress-components'
 vi.mock('@wordpress/components', () => mockWordPressComponents)
 
-// Mock BranchSelector component
 vi.mock('@/components/BranchSelector', () => ({
   BranchSelector: ({ branches, selectedBranch, onSelectBranch, loading, defaultBranch }: any) => (
     <div data-testid="branch-selector">
@@ -31,7 +30,6 @@ vi.mock('@/components/BranchSelector', () => ({
   )
 }))
 
-// Mock DirectoryBrowser component
 vi.mock('@/components/DirectoryBrowser', () => ({
   DirectoryBrowser: ({
     contents,
@@ -64,7 +62,6 @@ vi.mock('@/components/DirectoryBrowser', () => ({
   )
 }))
 
-// Helper to create mock branch data
 const createMockBranch = (overrides: Partial<IBranch> = {}): IBranch => ({
   name: 'main',
   commit: {
@@ -75,7 +72,6 @@ const createMockBranch = (overrides: Partial<IBranch> = {}): IBranch => ({
   ...overrides
 })
 
-// Helper to create mock content item
 const createMockContentItem = (overrides: Partial<IContentItem> = {}): IContentItem => ({
   name: 'folder',
   path: 'folder',

@@ -46,7 +46,7 @@ type WordPressAjaxResponse<T = any> = WordPressAjaxSuccess<T> | WordPressAjaxErr
  * Create a successful GitHub API response in WordPress AJAX format
  *
  * @param data - The GitHub API data to wrap
- * @param rateLimit - Optional rate limit information
+ * @param rateLimit - Accepted but unused; it never appears in the response
  * @returns WordPress AJAX success response
  */
 export function createGitHubApiResponse<T>(
@@ -68,8 +68,8 @@ export function createGitHubApiResponse<T>(
  *
  * Simulates GitHub API rate limit error
  *
- * @param remaining - Number of requests remaining (typically 0)
- * @param resetTime - Unix timestamp when rate limit resets
+ * @param remaining - Accepted but unused; the payload carries no rate limit numbers
+ * @param resetTime - Accepted but unused, as above
  * @returns WordPress AJAX error response
  */
 export function createRateLimitResponse(
@@ -180,7 +180,7 @@ export function createEmptyResultsResponse(): WordPressAjaxSuccess<[]> {
 /**
  * Create a paginated response
  *
- * Simulates GitHub API pagination headers
+ * Wraps the items with page metadata derived from `page` and `totalPages`
  *
  * @param data - The page data
  * @param page - Current page number
