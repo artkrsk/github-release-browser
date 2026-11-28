@@ -1,6 +1,6 @@
 import { DEFAULT_PROTOCOL } from '../constants'
 
-/** Parse GitHub URL to extract components */
+/** Parse a `github-release://owner/repo/release/filename` URI; null unless all four parts are present */
 export function parseGitHubUrl(url: string): {
   owner?: string
   repo?: string
@@ -26,7 +26,7 @@ export function parseGitHubUrl(url: string): {
   return null
 }
 
-/** Build GitHub URL from components */
+/** Build a `github-release://` URI from components */
 export function buildGitHubUrl(repo: string, release: string | 'latest', filename: string): string {
   return `${DEFAULT_PROTOCOL}${repo}/${release}/${filename}`
 }

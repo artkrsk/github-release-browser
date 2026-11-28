@@ -117,10 +117,7 @@ export const test = base.extend<WordPressFixtures>({
 
 		/** Run the test */
 		await use()
-
-		/** Cleanup after test (if needed) */
-		// Additional cleanup can go here
-	}, { auto: true }] // auto: true means this runs for every test
+	}, { auto: true }]
 })
 
 /**

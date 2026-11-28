@@ -85,7 +85,7 @@ export async function generatePot(config) {
 }
 
 /**
- * Calculate a hash of just the actual translation strings (msgid/msgstr pairs)
+ * Calculate a hash of just the translatable strings (msgids only, msgstr is ignored)
  * This ignores all header metadata, dates, and file information
  * @param {string} potContent - The content of a POT file
  * @returns {string} A hash representing just the translatable strings
@@ -117,7 +117,7 @@ function calculateTranslationHash(potContent) {
   // Convert to a stable string representation (just msgids in order)
   const translationString = translations.map((t) => t.msgid).join('|')
 
-  // Generate hash (using SHA-256 for security best practices)
+  // Hash is only for change detection, so the POT is rewritten (and its date bumped) only when msgids change
   return crypto.createHash('sha256').update(translationString).digest('hex')
 }
 

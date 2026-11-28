@@ -2,17 +2,19 @@
  * Shared Component Mocks Reference for Integration Tests
  *
  * **Purpose**: This file serves as the reference implementation for component mocks
- * used in BrowserApp integration tests. Due to Vitest's hoisting behavior, these
- * mocks cannot be directly imported into test files and must be inlined within
- * vi.hoisted() blocks.
+ * used in BrowserApp integration tests. Nothing imports this file: the tests copy
+ * the mocks in, because a mock imported from a helper module is not reliably
+ * available inside a vi.mock factory.
  *
  * **Why Inline Mocks Are Required**:
  * Vitest hoists vi.mock() calls to the top of the file, before any imports execute.
- * This means imported mock functions aren't available when vi.mock factories run.
- * The solution is to use vi.hoisted() with inline mock definitions that use
- * require('react') instead of ES imports.
+ * A factory that reads an imported mock fails with "Cannot access '__vi_import_0__'
+ * before initialization" when it runs first, depending on import order. Define the
+ * mocks inline in the factory (browser-app-handlers, -directory and -repository do
+ * this with JSX) or in vi.hoisted() with require('react') instead of ES imports
+ * (browser-app-core and -assets do this).
  *
- * **Usage Pattern** (copy into test files):
+ * **vi.hoisted() Pattern** (copy into test files):
  * ```typescript
  * const componentMocks = vi.hoisted(() => {
  *   const React = require('react')
@@ -42,8 +44,8 @@
 
 /**
  * Creates all component mocks. This is the reference implementation.
- * Due to Vitest hoisting limitations, this function cannot be directly
- * used in test files - copy the pattern into vi.hoisted() blocks instead.
+ * Not imported by the tests (see the header): copy the mocks into a
+ * vi.hoisted() block or inline into the vi.mock factories instead.
  */
 export function createComponentMocks() {
   const React = require('react')

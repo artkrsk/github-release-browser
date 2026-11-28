@@ -3,7 +3,7 @@ import { test, expect } from '../fixtures/wordpress'
 /**
  * E2E Tests: Error Handling
  *
- * Tests how the application handles various error scenarios:
+ * Scenarios the UI is meant to handle:
  * - Invalid GitHub token (401)
  * - Rate limit exceeded (403)
  * - Network errors (500)
@@ -19,27 +19,23 @@ test.describe('Error Handling', () => {
 		/** Wait for modal to load */
 		await browserModal.waitForLoading()
 
-		/** Check if error handling components exist in the DOM */
-		/** Even if not triggered, error components should be present */
+		/** No error is triggered here, so this only proves the locator resolves */
 		const errorContainer = browserModal.iframe.locator('.error-state, [role="alert"], .components-notice')
 
-		/** Error components should exist (even if hidden) */
-		/** This verifies error handling is implemented */
+		/** count() is never negative: this assertion cannot fail */
 		const exists = await errorContainer.count()
 		expect(exists).toBeGreaterThanOrEqual(0) // May be 0 if not rendered yet, but shouldn't throw
 	})
 
 	test('should show try again button when error occurs', async ({ browserModal }) => {
-		/** This tests that retry functionality exists */
-		/** We can't easily trigger real errors, but we can check UI */
+		/** We can't easily trigger real errors, so this only looks for the button in the DOM */
 
 		await browserModal.waitForLoading()
 
-		/** Check if retry/try again button exists in the code */
 		const retryButton = browserModal.iframe.locator('button:has-text("Try Again"), button:has-text("try again")')
 		const retryExists = await retryButton.count()
 
-		/** Button may not be visible if no error, but should exist in DOM or be renderable */
+		/** The button renders only on error, and count() is never negative: this assertion cannot fail */
 		expect(retryExists).toBeGreaterThanOrEqual(0)
 	})
 
@@ -67,11 +63,11 @@ test.describe('Error Handling', () => {
 		/** Check if settings link exists (shown on invalid token error) */
 		await browserModal.waitForLoading()
 
-		/** Settings link may not be visible without error, but should be in code */
+		/** The settings control is rendered only on error, so 0 is the normal result here */
 		const settingsLink = browserModal.iframe.locator('a:has-text("settings"), a:has-text("Settings"), a[href*="options-general"]')
 		const linkCount = await settingsLink.count()
 
-		/** Link exists in the error handling code */
+		/** count() is never negative: this assertion cannot fail */
 		expect(linkCount).toBeGreaterThanOrEqual(0)
 	})
 
@@ -83,7 +79,7 @@ test.describe('Error Handling', () => {
 		const errorText = browserModal.iframe.locator('.error-message, [role="alert"], .components-notice')
 		const errorCount = await errorText.count()
 
-		/** Error components should be implemented */
+		/** count() is never negative: this assertion cannot fail */
 		expect(errorCount).toBeGreaterThanOrEqual(0)
 	})
 
@@ -213,10 +209,10 @@ test.describe('Error Handling', () => {
  * we can't easily trigger 401/403/500 errors on demand.
  *
  * Our approach:
- * 1. Verify error UI components exist in the codebase
+ * 1. Look for error UI components in the DOM (smoke checks only)
  * 2. Test empty state handling (no repos, no releases, no assets)
- * 3. Verify recovery mechanisms (retry buttons, settings links)
- * 4. Ensure graceful degradation (no crashes, clear messages)
+ * 3. Click a refresh/retry button when one is present
+ * 4. Ensure graceful degradation (no crashes)
  *
  * For more comprehensive error testing, use MSW integration tests
  * where we can mock specific HTTP status codes.

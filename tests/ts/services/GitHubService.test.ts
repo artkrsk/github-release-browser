@@ -22,11 +22,9 @@ describe('GitHubService', () => {
   let mockFetch: ReturnType<typeof vi.fn>
 
   beforeEach(() => {
-    // Reset fetch mock before each test
     mockFetch = vi.fn()
     global.fetch = mockFetch
 
-    // Create service instance
     service = new GitHubService({
       apiUrl: 'https://example.com/wp-admin/admin-ajax.php',
       nonce: 'test-nonce',
@@ -296,7 +294,7 @@ describe('GitHubService', () => {
         json: async () => ({
           success: true,
           data: {
-            repos: mockRepos // Changed from 'releases' to 'repos' to match API
+            repos: mockRepos
           }
         })
       })
@@ -522,7 +520,7 @@ describe('GitHubService', () => {
     })
 
     test('only appends own properties to FormData, not inherited ones', async () => {
-      // Create object with prototype that has inherited property
+      // Never passed to the service (getReleases below takes only a repo string), so makeRequest's hasOwnProperty guard is not exercised
       const dataWithPrototype = Object.create({ inheritedProp: 'should-not-appear' })
       dataWithPrototype.ownProp = 'should-appear'
 
@@ -534,13 +532,13 @@ describe('GitHubService', () => {
         })
       })
 
-      // Make request with object that has both own and inherited properties
+      // Plain getReleases call
       await service.getReleases('owner/repo')
 
-      // Should only append own properties
+      // Only the regular request fields are appended
       expect(mockFormDataAppend).toHaveBeenCalledWith('repo', 'owner/repo')
       expect(mockFormDataAppend).toHaveBeenCalledWith('page', '1')
-      // Should not append inherited properties
+      // Trivially true: dataWithPrototype is not sent anywhere
       expect(mockFormDataAppend).not.toHaveBeenCalledWith('inheritedProp', 'should-not-appear')
     })
   })

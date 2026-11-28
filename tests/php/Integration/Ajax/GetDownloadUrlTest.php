@@ -9,9 +9,9 @@ use WPAjaxDieStopException;
 
 /**
  * Integration tests for ajax_get_download_url — the handler that attaches the configured GitHub
- * token as a Bearer header. Two properties matter most here and had no coverage before this suite:
- * the capability floor is driven by config (not hardcoded, not silently `read`), and the token is
- * never sent anywhere but api.github.com.
+ * token as a Bearer header. Two properties matter most here: the capability floor is driven by
+ * config (not hardcoded, not silently `read`), and the token is never sent anywhere but
+ * api.github.com.
  *
  * @group ajax
  */
@@ -119,8 +119,7 @@ class GetDownloadUrlTest extends WP_Ajax_UnitTestCase {
 	/**
 	 * Half of the pair that proves the capability comes from config rather than being hardcoded: an
 	 * editor (holds `edit_posts`, not `manage_options`) is refused under the default config. The other
-	 * half is the next test — split across two methods because _handleAjax() only supports one call
-	 * per test.
+	 * half is the next test.
 	 */
 	public function test_editor_is_refused_under_default_capability(): void {
 		$this->clear_handlers();

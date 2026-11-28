@@ -108,7 +108,7 @@ describe('GitHub API with MSW', () => {
 			/** Override with rate limit handler */
 			server.use(rateLimitHandler)
 
-			/** Should throw for all endpoints */
+			/** Should throw */
 			await expect(service.getUserRepos()).rejects.toThrow()
 		})
 	})

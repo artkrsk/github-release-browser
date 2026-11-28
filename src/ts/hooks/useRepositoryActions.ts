@@ -16,7 +16,7 @@ export const useRepositoryActions = (
   fetchReleasesForRepo: (repoFullName: string) => Promise<void>
 ) => {
   const handleRepoToggle = useCallback((repoFullName: string) => {
-    if (!repoFullName) return // Early return for undefined values
+    if (!repoFullName) return
     setExpandedRepo((prev) => {
       if (prev === repoFullName) {
         return null

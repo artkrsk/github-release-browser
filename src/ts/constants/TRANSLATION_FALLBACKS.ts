@@ -1,6 +1,6 @@
 /**
- * Default fallback translations for development and testing
- * These are used when translation keys are not found in the backend configuration
+ * Default strings for keys missing from the config the PHP side sends.
+ * Some keys (`directory.*`, `common.defaultBranch`, the `error.*` extras) have no counterpart in Browser.php, so these are the shipped values, not only dev/test stand-ins.
  */
 
 export const TRANSLATION_FALLBACKS: Record<string, string> = {

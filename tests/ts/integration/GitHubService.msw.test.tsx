@@ -25,8 +25,9 @@ import { createMockBrowserConfig } from '@test-utils'
  * - clearCache()
  * - clearReleasesCache()
  * - clearBranchesCache()
+ * - getUserRepos() and getReleases() (error scenarios only)
  *
- * Plus error handling scenarios for all methods.
+ * Plus 401, 403, 404, 500 and malformed-JSON scenarios.
  */
 
 describe('GitHubService MSW Integration', () => {

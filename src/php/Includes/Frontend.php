@@ -32,7 +32,6 @@ class Frontend {
 		/** @var BrowserConfig $config */
 		$this->config = $config;
 
-		// Allow custom asset URL to be passed in config
 		if ( isset( $config['assets_url'] ) && is_string( $config['assets_url'] ) ) {
 			$this->assets_url = $config['assets_url'];
 		} else {
@@ -94,7 +93,6 @@ class Frontend {
 
 		$enqueued = true;
 
-		// Use the correct file name that matches the build output
 		wp_enqueue_script(
 			'github-release-browser',
 			$this->assets_url . 'index.umd.js',
@@ -137,7 +135,6 @@ class Frontend {
 			'settingsUrl'  => $this->config['settings_url'] ?? admin_url( 'options-general.php' ),
 		);
 
-		// Pass configuration to JavaScript
 		wp_localize_script(
 			'github-release-browser',
 			'githubReleaseBrowserConfig',

@@ -554,8 +554,7 @@ describe('BrowserApp - Core Integration', () => {
       // Unmount component to trigger cleanup function
       unmount()
 
-      // Cleanup function (isMountedRef.current = false) should be called
-      // This test covers the useEffect cleanup function on lines 79-81
+      // The mount effect's cleanup sets isMountedRef.current = false
     })
   })
 })

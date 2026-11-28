@@ -23,7 +23,7 @@ export default defineConfig({
     ],
     globals: true,
 
-    /** Longer timeout for MSW tests (network simulation) */
+    /** Explicit 5s timeout for MSW tests (network simulation); equals vitest's default */
     testTimeout: 5000,
 
     /** Only run MSW-enhanced tests */

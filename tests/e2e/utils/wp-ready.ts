@@ -83,7 +83,6 @@ export async function waitForBrowserScript(
 	timeout: number = 10000
 ): Promise<boolean> {
 	try {
-		/** Wait for the config object to exist */
 		await page.waitForFunction(
 			() => {
 				const config = (window as any).githubReleaseBrowserConfig
@@ -101,7 +100,7 @@ export async function waitForBrowserScript(
  * Retry a function with exponential backoff
  *
  * @param fn - Async function to retry
- * @param maxRetries - Maximum number of retries
+ * @param maxRetries - Total number of attempts, including the first
  * @param initialDelay - Initial delay in milliseconds
  * @returns Result of the function
  */
@@ -128,7 +127,7 @@ export async function retryWithBackoff<T>(
 }
 
 /**
- * Wait for element to be stable (not animating)
+ * Wait for element to be visible, then a fixed 300ms for animations to settle
  *
  * Useful for waiting for WordPress modals/dialogs to finish opening
  *
@@ -145,10 +144,8 @@ export async function waitForElementStable(
 	const element = page.locator(selector)
 
 	try {
-		/** Wait for element to be visible */
 		await element.waitFor({ state: 'visible', timeout })
 
-		/** Wait a bit for animations to complete */
 		await page.waitForTimeout(300)
 
 		return true

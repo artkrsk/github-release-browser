@@ -5,7 +5,7 @@ import { getString } from '../utils/getString'
 const { Button } = wp.components
 
 /**
- * Detect error type using explicit string matching
+ * Recover the error type from the message text: the service turns the PHP `token_missing` / `token_invalid` codes into UI strings (GitHubService.getErrorMessage), so only the message reaches this component
  */
 export function detectErrorType(error: string): 'token_missing' | 'token_invalid' | 'general' {
   // Remove any leading numbers and clean the error message

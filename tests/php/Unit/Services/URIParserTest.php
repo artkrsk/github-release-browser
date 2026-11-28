@@ -6,9 +6,6 @@ use Arts\GH\ReleaseBrowser\Core\Services\URIParser;
 use PHPUnit\Framework\TestCase;
 use Brain\Monkey\Functions;
 
-/**
- * Tests for URIParser service
- */
 class URIParserTest extends TestCase {
 	private URIParser $parser;
 

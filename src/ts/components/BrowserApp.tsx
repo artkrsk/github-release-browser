@@ -19,17 +19,15 @@ import { getString } from '../utils/getString'
 const { Button } = wp.components
 
 /**
- * Complete GitHub Release Browser with repository browsing - refactored for better testability
+ * Root component: owns the service and the shared state, and renders the loading, error, directory, assets or repositories view
  */
 export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
-  // Initialize GitHub service
   const [service] = useState(() => new GitHubService({
     apiUrl: config.apiUrl,
     nonce: config.nonce,
     actionPrefix: config.actionPrefix
   }))
 
-  // State management via custom hooks
   const browserState = useBrowserState()
   const {
     view, setView,
@@ -56,7 +54,6 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     isMountedRef
   } = browserState
 
-  // Data fetching via custom hook
   const { fetchRepos, fetchReleasesForRepo, refreshRepos } = useGitHubData(
     service,
     isMountedRef,
@@ -70,7 +67,6 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setError
   )
 
-  // Directory data fetching via custom hook
   const { fetchBranches, fetchContents, fetchRepoInfo } = useDirectoryData(
     service,
     isMountedRef,
@@ -82,7 +78,6 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setError
   )
 
-  // Repository actions via custom hook
   const { handleRepoToggle, handleSelectRelease, handleBackToRepos } = useRepositoryActions(
     setView,
     setExpandedRepo,
@@ -93,7 +88,6 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     fetchReleasesForRepo
   )
 
-  // Asset confirmation via custom hook
   const { handleConfirmAsset, canConfirmAsset } = useAssetConfirmation(
     selectedRepo,
     selectedRelease,
@@ -188,7 +182,6 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setError(null)
 
     try {
-      // Clear specific releases cache for this repo
       await service.clearReleasesCache(selectedRepo)
 
       // Clear local state to force UI refresh
@@ -225,10 +218,8 @@ export const BrowserApp: React.FC<IBrowserAppProps> = ({ config }) => {
     setError(null)
 
     try {
-      // Clear specific branches cache for this repo
       await service.clearBranchesCache(selectedRepo)
 
-      // Clear local state
       setDirectoryContents([])
       setBranches([])
 

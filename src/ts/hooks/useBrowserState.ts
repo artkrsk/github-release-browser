@@ -3,8 +3,7 @@ import { IRepo, IRelease, IAsset, IBranch, IContentItem } from '../interfaces'
 import { TBrowserView, TSourceMode, TUseBrowserStateReturn } from '../types'
 
 /**
- * Hook to manage all browser state
- * Centralizes state initialization and provides utilities for state management
+ * Hook to hold all browser state in one place
  */
 export const useBrowserState = (): TUseBrowserStateReturn => {
   // View state

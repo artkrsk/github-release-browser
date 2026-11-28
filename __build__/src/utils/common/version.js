@@ -8,7 +8,6 @@ import path from 'path'
  */
 export async function getPackageVersion(config) {
   try {
-    // Use project root from config if available, otherwise use current working directory
     const projectRoot = config?._absoluteProjectRoot || process.cwd()
     const packageData = await fs.readJson(path.join(projectRoot, 'package.json'))
     return packageData.version || '0.0.0'
@@ -25,7 +24,6 @@ export async function getPackageVersion(config) {
  */
 export async function getComposerVersion(config) {
   try {
-    // Use project root from config if available, otherwise use current working directory
     const projectRoot = config?._absoluteProjectRoot || process.cwd()
     const composerData = await fs.readJson(path.join(projectRoot, 'composer.json'))
     return composerData.version || '0.0.0'

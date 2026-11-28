@@ -31,7 +31,7 @@ export const useDirectoryData = (
         const defaultBranchName = getString('common.defaultBranch')
         let defaultBranch = defaultBranchName
         if (branches.length > 0 && !branches.find(b => b.name === defaultBranchName)) {
-          // If no default branch, try to get repo info for default branch
+          // 'main' is only a guess: when no branch has that name, ask the repo for its real default_branch
           try {
             const repoInfo = await service.getRepoInfo(repo)
             defaultBranch = repoInfo.default_branch

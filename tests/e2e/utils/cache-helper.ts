@@ -13,7 +13,7 @@ const execAsync = promisify(exec)
 /**
  * Clear all WordPress transients via WP-CLI
  *
- * This ensures each test starts with a clean cache state.
+ * Gives each test a clean cache state, best effort: failures are swallowed.
  *
  * @returns Promise that resolves when cache is cleared
  */
@@ -82,13 +82,11 @@ export async function seedCache(
 }
 
 /**
- * Wait for cache to be available
+ * Short fixed pause before touching the cache
  *
- * Some caching systems need time to warm up
- *
- * @param timeout - Maximum time to wait in milliseconds
+ * @param timeout - Unused; the pause is always 100ms
  */
 export async function waitForCacheReady(timeout: number = 5000): Promise<void> {
-	/** Simple wait - WordPress transients are always ready */
+	/** Nothing to poll: WordPress transients are always ready */
 	await new Promise(resolve => setTimeout(resolve, 100))
 }

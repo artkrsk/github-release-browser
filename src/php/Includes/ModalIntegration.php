@@ -83,13 +83,11 @@ class ModalIntegration {
 			'settingsUrl'  => $this->config['settings_url'] ?? admin_url( 'options-general.php' ),
 		);
 
-		// Enqueue scripts and styles
 		do_action( 'admin_enqueue_scripts' );
 
-		// Localize script with config
 		wp_localize_script( 'github-release-browser', 'githubReleaseBrowserConfig', $js_config );
 
-		// Print styles in head
+		// wp_iframe() has already closed </head> before this callback runs, so these styles print into the body
 		do_action( 'admin_print_styles' );
 		?>
 

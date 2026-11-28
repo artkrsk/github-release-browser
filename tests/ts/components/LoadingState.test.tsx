@@ -28,7 +28,6 @@ describe('LoadingState', () => {
     expect(screen.getByText('Loading repositories...')).toBeInTheDocument()
     expect(screen.getByTestId('spinner')).toBeInTheDocument()
 
-    // Check the wrapper has the custom class
     const wrapper = screen.getByText('Loading repositories...').parentElement
     expect(wrapper).toHaveClass('github-release-browser-browser__loading')
     expect(wrapper).toHaveClass('custom-class')

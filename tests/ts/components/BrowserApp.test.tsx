@@ -4,7 +4,6 @@ import { BrowserApp } from '@/components/BrowserApp'
 import { IBrowserConfig } from '@/interfaces'
 import { setupTestEnvironment } from '@test-utils'
 
-// Mock GitHubService
 vi.mock('@/services/GitHubService', () => ({
   GitHubService: vi.fn().mockImplementation(() => ({
     getUserRepos: vi.fn(),
@@ -13,17 +12,14 @@ vi.mock('@/services/GitHubService', () => ({
   }))
 }))
 
-// Mock ReleaseList component
 vi.mock('@/components/ReleaseList', () => ({
   ReleaseList: () => React.createElement('div', { 'data-testid': 'release-list' })
 }))
 
-// Mock AssetList component
 vi.mock('@/components/AssetList', () => ({
   AssetList: () => React.createElement('div', { 'data-testid': 'asset-list' })
 }))
 
-// Mock window.open
 const mockWindowOpen = vi.fn()
 
 describe('BrowserApp component', () => {
@@ -49,7 +45,6 @@ describe('BrowserApp component', () => {
 
   beforeEach(() => {
     setupTestEnvironment()
-    // Mock window.open
     Object.defineProperty(window, 'open', {
       value: mockWindowOpen,
       writable: true

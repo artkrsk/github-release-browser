@@ -3,7 +3,7 @@ import { TRANSLATION_FALLBACKS } from '../constants'
 
 /**
  * Get translated string by key from backend configuration
- * Falls back to user-friendly defaults if translation is not found
+ * Falls back to TRANSLATION_FALLBACKS, then to the key itself
  */
 export const getString = (key: keyof IStringKeys): string => {
   // Access global config passed from PHP backend
@@ -11,6 +11,6 @@ export const getString = (key: keyof IStringKeys): string => {
     return window.githubReleaseBrowserConfig.strings[key];
   }
 
-  // Fallback to user-friendly defaults for development/testing
+  // Config absent (development/testing) or key missing from the PHP strings map
   return TRANSLATION_FALLBACKS[key] || key;
 };

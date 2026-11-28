@@ -175,7 +175,7 @@ class BrowserTest extends WP_UnitTestCase {
 		$browser->register_modal_integration();
 		$count_after_second = has_action( 'media_upload_github_releases' );
 
-		// Priority should be same (not doubled).
+		// has_action() without a callback only reports whether any callback is hooked, so this assertion cannot detect a doubled registration.
 		$this->assertSame( $count_after_first, $count_after_second );
 	}
 

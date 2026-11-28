@@ -105,7 +105,6 @@ export const mockWordPressComponents = {
 	),
 
 	__experimentalToggleGroupControl: ({ value, onChange, children, className, disabled, isBlock, hideLabelFromVision, __next40pxDefaultSize, __nextHasNoMarginBottom, ...props }: any) => {
-		// Filter out WordPress-specific props that aren't valid DOM attributes
 		const { ...domProps } = props
 
 		return (

@@ -5,7 +5,6 @@ import { IRepo, IRelease } from '@/interfaces'
 import { TUseGitHubDataReturn } from '@/types'
 import { createMockRepo, createMockRelease } from '@test-utils'
 
-// Mock GitHubService
 vi.mock('@/services/GitHubService')
 
 describe('useGitHubData', () => {
@@ -19,17 +18,14 @@ describe('useGitHubData', () => {
   let isMountedRef: React.MutableRefObject<boolean>
 
   beforeEach(() => {
-    // Reset all mocks
     vi.clearAllMocks()
 
-    // Setup mock service
     mockService = new GitHubService({
       apiUrl: 'https://example.com/api',
       nonce: 'test-nonce',
       actionPrefix: 'github'
     }) as jest.Mocked<GitHubService>
 
-    // Setup mock functions
     mockSetRepos = vi.fn()
     mockSetRepoReleases = vi.fn()
     mockSetReleaseErrors = vi.fn()
@@ -37,7 +33,6 @@ describe('useGitHubData', () => {
     mockSetLoadingRepo = vi.fn()
     mockSetError = vi.fn()
 
-    // Setup mounted ref
     isMountedRef = { current: true }
   })
 

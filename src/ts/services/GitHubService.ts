@@ -21,13 +21,9 @@ export class GitHubService {
   private async makeRequest(action: string, data: Record<string, unknown> = {}): Promise<IApiResponse> {
     const formData = new FormData()
 
-    // Add nonce
     formData.append('nonce', this.nonce)
-
-    // Add action
     formData.append('action', this.getAction(action))
 
-    // Add data
     for (const key in data) {
       if (Object.prototype.hasOwnProperty.call(data, key)) {
         formData.append(key, String(data[key]))

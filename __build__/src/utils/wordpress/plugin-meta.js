@@ -6,7 +6,7 @@ import { logger } from '../../logger/index.js'
 import { getPluginMainFile, getPluginPath, getPluginDestPath } from '../common/paths.js'
 
 /**
- * WordPress plugin file header fields and their regex patterns
+ * WordPress plugin file header fields and the label prefix each is matched on in the header
  */
 const PLUGIN_HEADER_FIELDS = {
   'Plugin Name': 'Plugin Name:',
@@ -29,7 +29,7 @@ const PLUGIN_HEADER_FIELDS = {
 }
 
 /**
- * Update WordPress plugin metadata based on composer.json
+ * Update WordPress plugin metadata based on composer.json and package.json
  * @param {Object} config - Project configuration
  * @returns {Promise<void>}
  */
@@ -123,7 +123,7 @@ function extractPluginMetadata(composerData, packageData) {
   }
   if (composerData.license) metadata['License'] = composerData.license
 
-  // Get text domain from project config or infer from name
+  // Infer text domain from the plugin name (overridable by the wordpress/plugin keys below)
   metadata['Text Domain'] = metadata['Plugin Name'].toLowerCase().replace(/\s+/g, '-')
 
   // WordPress-specific fields take absolute priority if defined in composer.json

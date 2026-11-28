@@ -132,7 +132,6 @@ class Browser {
 		$this->uri_parser     = new URIParser( $this->config['protocol'], $this->config['dir_protocol'] );
 		$this->asset_resolver = new AssetResolver();
 
-		// Register AJAX handlers
 		$this->register_ajax_handlers();
 
 		// Initialize frontend (auto-enqueues assets)
@@ -251,9 +250,6 @@ class Browser {
 	}
 
 	/**
-	 * Register AJAX handlers for GitHub API calls
-	 */
-	/**
 	 * Admin-only AJAX surface. Deliberately no `wp_ajax_nopriv_` twins: every handler here reads a
 	 * private repo or mints a signed URL with the configured token, so an unauthenticated caller has
 	 * no business reaching one even when the capability check would refuse it.
@@ -261,25 +257,18 @@ class Browser {
 	private function register_ajax_handlers(): void {
 		$action_prefix = $this->get_action_prefix();
 
-		// Get releases
 		add_action( "wp_ajax_{$action_prefix}_get_releases", array( $this, 'ajax_get_releases' ) );
 
-		// Get rate limit
 		add_action( "wp_ajax_{$action_prefix}_get_rate_limit", array( $this, 'ajax_get_rate_limit' ) );
 
-		// Parse URI
 		add_action( "wp_ajax_{$action_prefix}_parse_uri", array( $this, 'ajax_parse_uri' ) );
 
-		// Get asset download URL
 		add_action( "wp_ajax_{$action_prefix}_get_download_url", array( $this, 'ajax_get_download_url' ) );
 
-		// Get user repositories
 		add_action( "wp_ajax_{$action_prefix}_get_user_repos", array( $this, 'ajax_get_user_repos' ) );
 
-		// Clear cache
 		add_action( "wp_ajax_{$action_prefix}_clear_cache", array( $this, 'ajax_clear_cache' ) );
 
-		// Test file
 		add_action( "wp_ajax_{$action_prefix}_test_file", array( $this, 'ajax_test_file' ) );
 
 		// Cache refresh handlers (always available for manual refresh)
@@ -336,7 +325,6 @@ class Browser {
 			$this->github_api->clear_release_cache( $repo, $tag );
 		}
 
-		// Try to resolve the release
 		$release = $this->resolve_release( $parsed );
 
 		if ( is_wp_error( $release ) ) {
@@ -348,7 +336,6 @@ class Browser {
 			);
 		}
 
-		// Find asset in release
 		$asset = $this->asset_resolver->find_asset_in_release( $release, $pattern );
 
 		if ( ! $asset ) {
@@ -387,7 +374,6 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		// Check user capabilities
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
@@ -422,7 +408,6 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		// Check user capabilities
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
@@ -450,7 +435,6 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		// Check user capabilities
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
@@ -479,7 +463,6 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		// Check user capabilities
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
@@ -520,7 +503,6 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		// Check user capabilities
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
@@ -545,7 +527,6 @@ class Browser {
 		$action_prefix = $this->get_action_prefix();
 		check_ajax_referer( "{$action_prefix}_nonce", 'nonce' );
 
-		// Check user capabilities
 		if ( ! current_user_can( $this->get_capability() ) ) {
 			wp_send_json_error( array( 'message' => esc_html__( 'Unauthorized', 'github-release-browser' ) ) );
 		}
@@ -761,9 +742,7 @@ class Browser {
 		$repo = $parsed['repo'] ?? '';
 		$tag  = $parsed['release'] ?? 'latest';
 
-		// Handle "latest" keyword
 		if ( $tag === 'latest' ) {
-			// Check if latest release feature is enabled
 			if ( ! $this->config['enable_latest_release'] ) {
 				return new \WP_Error(
 					'pro_feature',
@@ -771,7 +750,6 @@ class Browser {
 				);
 			}
 
-			// Fetch the most recent release
 			$releases = $this->github_api->get_releases( $repo, 1 );
 
 			if ( is_wp_error( $releases ) ) {
@@ -788,7 +766,6 @@ class Browser {
 			);
 		}
 
-		// Handle specific release tags
 		$release = $this->github_api->get_release_by_tag( $repo, $tag );
 
 		// Only a missing tag is "release not found"; token, rate-limit and network failures keep their own code.

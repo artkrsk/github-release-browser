@@ -9,10 +9,9 @@ import { render, setupTestEnvironment, createMockBrowserConfig, createMockRepo }
 import { mockWordPressComponents } from '../../mocks/wordpress-components'
 vi.mock('@wordpress/components', () => mockWordPressComponents)
 
-// Mock ReleaseList component
 vi.mock('@/components/ReleaseList', () => ({
   ReleaseList: ({ releases, selectedRelease, onSelectRelease, repository, strings, features, upgradeUrl, error, onRetry }: any) => {
-    // Handle all falsy values that trigger the || [] fallback
+    // RepositoryList already applies its own || [] before passing releases, so this is only defensive
     const releasesArray = releases || []
 
     if (error) {
@@ -588,8 +587,8 @@ describe('RepositoryList - Simple Testing', () => {
                 assets: []
               }
             ],
-            'organization/proj-repo-2': undefined,  // Should trigger fallback
-            'user/demo-repo-3': null  // Should trigger fallback
+            'organization/proj-repo-2': undefined,  // Not expanded, so its panel content never renders
+            'user/demo-repo-3': null  // Not expanded, so its panel content never renders
           }}
         />
       )

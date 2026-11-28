@@ -58,7 +58,7 @@ describe('formatDate utility', () => {
 
 describe('formatRelativeTime utility', () => {
   beforeEach(() => {
-    // Mock Date.now() for consistent testing
+    // Fake timers freeze new Date() / Date.now() so the relative-time output is deterministic
     vi.useFakeTimers()
   })
 

@@ -77,7 +77,7 @@ interface IPlatformAPI {
 	public function get_rate_limit( string $token = '' ): array|\WP_Error;
 
 	/**
-	 * Get download URL for asset (follows redirects)
+	 * Get download URL for asset (the redirect target; the redirect itself is not followed)
 	 *
 	 * @since 1.0.0
 	 *

@@ -16,14 +16,14 @@ import {
 
 export const handlers = [
 	/**
-	 * Handler: Get User Repositories
-	 * Action: github_release_browser_get_user_repos
+	 * Default handler for every action: dispatches on the `action` suffix, so it works with any
+	 * `action_prefix`. Unknown actions get a 400.
 	 */
 	http.post('*/wp-admin/admin-ajax.php', async ({ request }) => {
 		const formData = await request.formData()
 		const action = formData.get('action')
 
-		/** Match any prefix + action suffix pattern */
+		/** Get User Repositories */
 		if (action && action.toString().endsWith('_get_user_repos')) {
 			/** Default: Return list of repositories in WordPress AJAX format */
 			const repos = [
@@ -226,7 +226,7 @@ export const handlers = [
  * These handlers can be used in tests to simulate error conditions:
  * - invalidTokenHandler: Simulates 401 Unauthorized (invalid GitHub token)
  * - rateLimitHandler: Simulates 403 Forbidden (rate limit exceeded)
- * - networkErrorHandler: Simulates network failure
+ * - networkErrorHandler: Simulates a 500 server error
  * - notFoundHandler: Simulates 404 Not Found (repository doesn't exist)
  */
 
@@ -250,7 +250,7 @@ export const rateLimitHandler = http.post('*/wp-admin/admin-ajax.php', async ({ 
 	}
 })
 
-/** Handler for network errors */
+/** Handler for server errors (500) */
 export const networkErrorHandler = http.post('*/wp-admin/admin-ajax.php', async ({ request }) => {
 	const formData = await request.formData()
 	const action = formData.get('action')
